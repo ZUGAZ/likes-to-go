@@ -1,0 +1,55 @@
+{
+	"name": "likes-to-go",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"description": "A Chrome extension that saves your SoundCloud likes as a file",
+	"author": "Evgeniy Ugryumov <evgeniy.ugryumov@gmail.com>",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ZUGAZ/likes-to-go.git"
+	},
+	"packageManager": "pnpm@10.28.2",
+	"scripts": {
+		"dev": "wxt",
+		"build": "wxt build",
+		"package": "wxt zip",
+		"test": "vitest",
+		"test:run": "vitest run",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"prepare": "husky",
+		"postinstall": "wxt prepare"
+	},
+	"dependencies": {
+		"effect": "^3.19.18",
+		"solid-js": "^1.9.11"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^20.4.2",
+		"@commitlint/config-conventional": "^20.4.2",
+		"@solidjs/testing-library": "^0.8.10",
+		"@tailwindcss/vite": "^4.2.0",
+		"@wxt-dev/module-solid": "^1.1.4",
+		"eslint": "^9.39.2",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-solid": "^0.14.5",
+		"fast-check": "^4.5.3",
+		"happy-dom": "^20.6.3",
+		"husky": "^9.1.7",
+		"prettier": "^3.8.1",
+		"tailwindcss": "^4.2.0",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.56.0",
+		"vitest": "^4.0.18",
+		"wxt": "^0.20.17"
+	}
+}

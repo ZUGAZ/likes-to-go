@@ -1,0 +1,37 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"noEmit": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"jsx": "preserve",
+		"jsxImportSource": "solid-js",
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true,
+		"paths": {
+			"@": ["./src"],
+			"@/*": ["./src/*"],
+			"~": ["./src"],
+			"~/*": ["./src/*"],
+			"@@": ["."],
+			"@@/*": ["./*"],
+			"~~": ["."],
+			"~~/*": ["./*"]
+		}
+	},
+	"include": ["**/*", ".wxt/wxt.d.ts"],
+	"exclude": [".output", "node_modules"]
+}
