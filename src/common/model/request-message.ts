@@ -26,12 +26,18 @@ export type RequestMessage = Schema.Schema.Type<typeof RequestMessageSchema>;
 
 // --- Response type for GetState (background → popup) ---
 
-export type CollectionStatus = "idle" | "collecting" | "done" | "error";
+const COLLECTION_STATUSES = ["idle", "collecting", "done", "error"] as const;
 
-export interface GetStateResponse {
-	readonly status: CollectionStatus;
-	readonly trackCount: number;
-	readonly errorMessage?: string;
-}
+export type CollectionStatus = (typeof COLLECTION_STATUSES)[number];
+
+const CollectionStatusSchema = Schema.Literal(...COLLECTION_STATUSES);
+
+export const GetStateResponseSchema = Schema.Struct({
+	status: CollectionStatusSchema,
+	trackCount: Schema.Number,
+	errorMessage: Schema.optional(Schema.String),
+});
+
+export type GetStateResponse = Schema.Schema.Type<typeof GetStateResponseSchema>;
 
 export type MessageResponse = GetStateResponse | undefined;

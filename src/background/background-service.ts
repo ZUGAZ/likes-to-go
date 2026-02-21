@@ -8,6 +8,8 @@ import {
 	registerRuntimeListener,
 	sendToTab,
 } from "@/common/infrastructure/chrome-messaging";
+import { downloadJson } from "@/common/infrastructure/chrome-downloads";
+import { buildExportPayload } from "@/common/model/exporter";
 
 const LIKES_URL = "https://soundcloud.com/you/likes";
 
@@ -101,9 +103,15 @@ async function handleMessage(
 			closeTabIfSet();
 			resetToIdle();
 			return undefined;
-		case "DownloadExport":
+		case "DownloadExport": {
+			const payload = buildExportPayload({ tracks: state.tracks });
+			downloadJson(JSON.stringify(payload)).catch((err: unknown) => {
+				state.status = "error";
+				state.errorMessage = err instanceof Error ? err.message : String(err);
+			});
 			resetToIdle();
 			return undefined;
+		}
 		case "GetState": {
 			const res: GetStateResponse = {
 				status: state.status,

@@ -7,4 +7,5 @@ export type {
 export { parseRequestMessage } from "@/common/infrastructure/parse-request-message";
 export { registerRuntimeListener } from "@/common/infrastructure/register-runtime-listener";
 export { sendToBackground } from "@/common/infrastructure/send-to-background";
+export { getState } from "@/common/infrastructure/get-state";
 export { sendToTab } from "@/common/infrastructure/send-to-tab";
