@@ -16,6 +16,21 @@ export default tseslint.config(
 				tsconfigRootDir: import.meta.dirname,
 			},
 		},
+		rules: {
+			'@typescript-eslint/no-confusing-void-expression': 'off',
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['*../*'],
+							message:
+								'Use the @/ alias for src-root-relative imports instead of parent relative (../).',
+						},
+					],
+				},
+			],
+		},
 	},
 	{
 		files: ['*.config.ts'],
