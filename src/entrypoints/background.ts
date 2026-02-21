@@ -1,5 +1,7 @@
-import { defineBackground } from 'wxt/utils/define-background';
+import { defineBackground } from "wxt/utils/define-background";
+
+import { initBackgroundService } from "@/background/background-service";
 
 export default defineBackground(() => {
-	// 🚧 placeholder -- implementation coming soon
+	initBackgroundService();
 });
