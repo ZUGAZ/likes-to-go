@@ -1,128 +1,120 @@
-import type {
-	CollectionStatus,
-	GetStateResponse,
-	RequestMessage,
-} from "@/common/model/request-message";
-import type { Track } from "@/common/model/track";
+import type { GetStateResponse, RequestMessage } from "@/common/model/request-message";
+import {
+	collectionStateToGetStateResponse,
+	initialCollectionState,
+	transition,
+	type CollectionCommand,
+	type CollectionEvent,
+	type CollectionState,
+} from "@/common/model/collection-state";
+import { buildExportPayload } from "@/common/model/exporter";
 import {
 	registerRuntimeListener,
 	sendToTab,
 } from "@/common/infrastructure/chrome-messaging";
 import { downloadJson } from "@/common/infrastructure/chrome-downloads";
-import { buildExportPayload } from "@/common/model/exporter";
 
-const LIKES_URL = "https://soundcloud.com/you/likes";
-
-interface State {
-	status: CollectionStatus;
-	tracks: Track[];
-	tabId: number | null;
-	errorMessage: string | undefined;
-}
-
-const state: State = {
-	status: "idle",
-	tracks: [],
-	tabId: null,
-	errorMessage: undefined,
+// Single reference to current state; only updated via transition() in dispatch().
+const stateRef: { current: CollectionState } = {
+	current: initialCollectionState,
 };
 
-function appendTracksDeduped(newTracks: readonly Track[]): void {
-	const urlSet = new Set(state.tracks.map((t) => t.url.toString()));
-	for (const t of newTracks) {
-		const urlStr = t.url.toString();
-		if (!urlSet.has(urlStr)) {
-			state.tracks.push(t);
-			urlSet.add(urlStr);
+function messageToEvent(message: RequestMessage): CollectionEvent | null {
+	switch (message._tag) {
+		case "StartCollection":
+			return { _tag: "StartCollection" };
+		case "TracksBatch":
+			return { _tag: "TracksBatch", tracks: message.tracks };
+		case "CollectionComplete":
+			return { _tag: "CollectionComplete" };
+		case "CollectionError":
+			return { _tag: "CollectionError", message: message.message };
+		case "CancelCollection":
+			return { _tag: "CancelCollection" };
+		case "DownloadExport":
+			return { _tag: "DownloadExport" };
+		case "GetState":
+			return null;
+	}
+}
+
+async function runCommand(
+	cmd: CollectionCommand,
+	dispatch: (event: CollectionEvent) => Promise<void>,
+): Promise<void> {
+	switch (cmd._tag) {
+		case "CreateTab": {
+			try {
+				const tab = await chrome.tabs.create({
+					url: cmd.url,
+					active: false,
+				});
+				const tabId = tab.id;
+				if (tabId === undefined) {
+					await dispatch({ _tag: "TabCreateFailed", message: "Failed to create tab" });
+				} else {
+					await dispatch({ _tag: "TabCreated", tabId });
+				}
+			} catch (err: unknown) {
+				const message = err instanceof Error ? err.message : String(err);
+				await dispatch({ _tag: "TabCreateFailed", message });
+			}
+			break;
+		}
+		case "CloseTab":
+			await chrome.tabs.remove(cmd.tabId);
+			break;
+		case "SendStartToTab":
+			sendToTab(cmd.tabId, { _tag: "StartCollection" }).catch(
+				async (err: unknown) => {
+					const message = err instanceof Error ? err.message : String(err);
+					await dispatch({ _tag: "SendToTabFailed", message });
+				},
+			);
+			break;
+		case "DownloadExport": {
+			const payload = buildExportPayload({ tracks: [...cmd.tracks] });
+			downloadJson(JSON.stringify(payload)).catch(async (err: unknown) => {
+				const message = err instanceof Error ? err.message : String(err);
+				await dispatch({ _tag: "DownloadFailed", message });
+			});
+			break;
 		}
 	}
 }
 
-function closeTabIfSet(): void {
-	if (state.tabId !== null) {
-		void chrome.tabs.remove(state.tabId);
-		state.tabId = null;
+async function runCommands(
+	commands: readonly CollectionCommand[],
+	dispatch: (event: CollectionEvent) => Promise<void>,
+): Promise<void> {
+	for (const cmd of commands) {
+		await runCommand(cmd, dispatch);
 	}
 }
 
-function resetToIdle(): void {
-	state.tracks = [];
-	state.tabId = null;
-	state.errorMessage = undefined;
-	state.status = "idle";
-}
-
-async function handleStartCollection(): Promise<undefined> {
-	state.status = "collecting";
-	state.tracks = [];
-	state.errorMessage = undefined;
-	const tab = await chrome.tabs.create({
-		url: LIKES_URL,
-		active: false,
-	});
-	const tabId = tab.id;
-	if (tabId === undefined) {
-		state.status = "error";
-		state.errorMessage = "Failed to create tab";
-		return undefined;
-	}
-	state.tabId = tabId;
-	return undefined;
-}
-
-function handleTabComplete(tabId: number): void {
-	if (state.tabId !== tabId || state.status !== "collecting") return;
-	sendToTab(tabId, { _tag: "StartCollection" }).catch((err: unknown) => {
-		state.status = "error";
-		state.errorMessage = err instanceof Error ? err.message : String(err);
-		state.tabId = null;
-	});
+async function dispatch(event: CollectionEvent): Promise<void> {
+	const result = transition(stateRef.current, event);
+	stateRef.current = result.state;
+	await runCommands(result.commands, dispatch);
 }
 
 async function handleMessage(
 	message: RequestMessage,
 	sender: chrome.runtime.MessageSender,
 ): Promise<GetStateResponse | undefined> {
-	void sender; // Required by registerRuntimeListener signature; not used by this handler.
-	switch (message._tag) {
-		case "StartCollection":
-			await handleStartCollection();
-			return undefined;
-		case "TracksBatch":
-			appendTracksDeduped(message.tracks);
-			return undefined;
-		case "CollectionComplete":
-			state.status = "done";
-			return undefined;
-		case "CollectionError":
-			state.status = "error";
-			state.errorMessage = message.message;
-			closeTabIfSet();
-			return undefined;
-		case "CancelCollection":
-			closeTabIfSet();
-			resetToIdle();
-			return undefined;
-		case "DownloadExport": {
-			const payload = buildExportPayload({ tracks: state.tracks });
-			downloadJson(JSON.stringify(payload)).catch((err: unknown) => {
-				state.status = "error";
-				state.errorMessage = err instanceof Error ? err.message : String(err);
-			});
-			resetToIdle();
-			return undefined;
-		}
-		case "GetState": {
-			const res: GetStateResponse = {
-				status: state.status,
-				trackCount: state.tracks.length,
-				...(state.errorMessage !== undefined && {
-					errorMessage: state.errorMessage,
-				}),
-			};
-			return res;
-		}
+	void sender;
+	if (message._tag === "GetState") {
+		return collectionStateToGetStateResponse(stateRef.current);
 	}
+	const event = messageToEvent(message);
+	if (event !== null) {
+		await dispatch(event);
+	}
+	return undefined;
+}
+
+function handleTabComplete(tabId: number): void {
+	void dispatch({ _tag: "TabComplete", tabId });
 }
 
 export function initBackgroundService(): void {
