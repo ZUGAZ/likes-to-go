@@ -118,4 +118,69 @@ describe('getTracksFromRoot', () => {
 		const tracks = getTracksFromRoot(root, baseUrl);
 		expect(tracks[0]?.url).toBe('https://soundcloud.com/user/song');
 	});
+
+	it('extracts artwork_url from .playableTile__artwork .sc-artwork.image__full style', () => {
+		const root = createFixture(`
+			<li class="badgeList__item">
+				<div class="playableTile">
+					<div class="playableTile__artwork">
+						<a class="audibleTile__artworkLink" href="/artist/track"></a>
+						<div class="playableTile__image">
+							<span class="sc-artwork image__full" style="background-image: url(&quot;https://i1.sndcdn.com/artworks-abc-t500x500.png&quot;);"></span>
+						</div>
+					</div>
+					<a class="playableTile__mainHeading">Track</a>
+					<a class="playableTile__usernameHeading">Artist</a>
+				</div>
+				<span class="playbackTimeline__duration">1:00</span>
+			</li>
+		`);
+		const tracks = getTracksFromRoot(root, baseUrl);
+		expect(tracks).toHaveLength(1);
+		expect(tracks[0]?.artwork_url).toBe(
+			'https://i1.sndcdn.com/artworks-abc-t500x500.png',
+		);
+	});
+
+	it('extracts playback_count and likes_count from .soundStats text', () => {
+		const root = createFixture(`
+			<li class="badgeList__item">
+				<div class="audibleTile">
+					<a class="audibleTile__artworkLink" href="/a/b"></a>
+					<a class="playableTile__mainHeading">Track</a>
+					<a class="playableTile__usernameHeading">Artist</a>
+				</div>
+				<span class="playbackTimeline__duration">2:00</span>
+				<div class="soundStats">12.5K 890</div>
+			</li>
+		`);
+		const tracks = getTracksFromRoot(root, baseUrl);
+		expect(tracks).toHaveLength(1);
+		expect(tracks[0]?.playback_count).toBe(12_500);
+		expect(tracks[0]?.likes_count).toBe(890);
+	});
+
+	it('omits optional fields when missing; does not fail card', () => {
+		const root = createFixture(`
+			<li class="badgeList__item">
+				<div class="audibleTile">
+					<a class="audibleTile__artworkLink" href="/x/y"></a>
+					<a class="playableTile__mainHeading">Minimal</a>
+					<a class="playableTile__usernameHeading">Who</a>
+				</div>
+				<span class="playbackTimeline__duration">0:00</span>
+			</li>
+		`);
+		const tracks = getTracksFromRoot(root, baseUrl);
+		expect(tracks).toHaveLength(1);
+		expect(tracks[0]).toEqual({
+			title: 'Minimal',
+			artist: 'Who',
+			url: 'https://soundcloud.com/x/y',
+			duration_ms: 0,
+		});
+		expect('artwork_url' in (tracks[0] ?? {})).toBe(false);
+		expect('playback_count' in (tracks[0] ?? {})).toBe(false);
+		expect('likes_count' in (tracks[0] ?? {})).toBe(false);
+	});
 });
