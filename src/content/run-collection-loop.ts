@@ -14,8 +14,9 @@ function scrollToBottom(root: Element): void {
 }
 
 /**
- * Run the collection loop: read DOM, validate, send batch, pace, scroll, wait for new nodes, repeat.
- * Stops when cancelledRef.current is true or after NO_NEW_TRACKS_PASSES passes with no new tracks.
+ * Run the collection loop: read DOM, validate through full track schema, send batch, pace, scroll, wait for new nodes, repeat.
+ * Only validated tracks are sent and count toward progress ("preparing N tracks…"). Invalid cards are skipped; one bad card does not abort collection.
+ * Stops when cancelledRef.current is true or after NO_NEW_TRACKS_PASSES passes with no new raw cards.
  */
 export async function runCollectionLoop(
 	root: Element,
@@ -29,6 +30,16 @@ export async function runCollectionLoop(
 	while (ctx.isValid && !cancelledRef.current) {
 		const raw = getTracksFromRoot(root, LIKES_PAGE_BASE_URL);
 		const tracks = decodeTracksFromRaw(raw);
+		if (raw.length > tracks.length) {
+			console.log(
+				'[likes-to-go] content skipped invalid cards',
+				raw.length - tracks.length,
+				'raw:',
+				raw.length,
+				'validated:',
+				tracks.length,
+			);
+		}
 		if (tracks.length > 0) {
 			try {
 				console.log('[likes-to-go] content sending TracksBatch', tracks.length);
