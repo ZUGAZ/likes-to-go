@@ -3,7 +3,11 @@ import {
 	setToInitial,
 	setToProcessing,
 } from "@/popup/popup-state";
-import { getState, sendToBackground } from "@/common/infrastructure/chrome-messaging";
+import {
+	decodeGetStateResponse,
+	getState,
+	sendToBackground,
+} from "@/common/infrastructure/chrome-messaging";
 
 const POLL_INTERVAL_MS = 500;
 
@@ -37,6 +41,7 @@ function startPolling(): void {
 }
 
 export async function startCollection(): Promise<void> {
+	console.log("[likes-to-go] popup startCollection → sending StartCollection");
 	await sendToBackground({ _tag: "StartCollection" });
 	setToProcessing();
 	startPolling();
@@ -49,8 +54,14 @@ export async function cancelCollection(): Promise<void> {
 }
 
 export async function download(): Promise<void> {
-	await sendToBackground({ _tag: "DownloadExport" });
-	setToInitial();
+	console.log("[likes-to-go] popup download → sending DownloadExport");
+	const raw = await sendToBackground({ _tag: "DownloadExport" });
+	try {
+		const res = await decodeGetStateResponse(raw);
+		applyGetStateResponse(res.status, res.trackCount, res.errorMessage);
+	} catch {
+		setToInitial();
+	}
 }
 
 /** Sync popup state from background (e.g. when popup opens). */

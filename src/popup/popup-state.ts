@@ -13,6 +13,11 @@ export function applyGetStateResponse(
 	trackCountFromBg: number,
 	errorMessageFromBg?: string,
 ): void {
+	console.log("[likes-to-go] popup applyGetStateResponse", {
+		status,
+		trackCountFromBg,
+		errorMessageFromBg,
+	});
 	setTrackCount(trackCountFromBg);
 	setErrorMessage(errorMessageFromBg);
 	if (status === "idle") {

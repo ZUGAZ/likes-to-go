@@ -44,6 +44,7 @@ async function runCommand(
 ): Promise<void> {
 	switch (cmd._tag) {
 		case "CreateTab": {
+			console.log("[likes-to-go] background CreateTab", cmd.url);
 			try {
 				const tab = await chrome.tabs.create({
 					url: cmd.url,
@@ -65,6 +66,7 @@ async function runCommand(
 			await chrome.tabs.remove(cmd.tabId);
 			break;
 		case "SendStartToTab":
+			console.log("[likes-to-go] background SendStartToTab", cmd.tabId);
 			sendToTab(cmd.tabId, { _tag: "StartCollection" }).catch(
 				async (err: unknown) => {
 					const message = err instanceof Error ? err.message : String(err);
@@ -73,9 +75,11 @@ async function runCommand(
 			);
 			break;
 		case "DownloadExport": {
+			console.log("[likes-to-go] background DownloadExport", { tracks: cmd.tracks.length });
 			const payload = buildExportPayload({ tracks: [...cmd.tracks] });
 			downloadJson(JSON.stringify(payload)).catch(async (err: unknown) => {
 				const message = err instanceof Error ? err.message : String(err);
+				console.error("[likes-to-go] background download failed", message);
 				await dispatch({ _tag: "DownloadFailed", message });
 			});
 			break;
@@ -95,6 +99,9 @@ async function runCommands(
 async function dispatch(event: CollectionEvent): Promise<void> {
 	const result = transition(stateRef.current, event);
 	stateRef.current = result.state;
+	const stateTag = stateRef.current._tag;
+	const tracksLen = stateTag === "Collecting" || stateTag === "Done" ? stateRef.current.tracks.length : undefined;
+	console.log("[likes-to-go] background dispatch", event._tag, "→ state", stateTag, tracksLen !== undefined ? { tracks: tracksLen } : "");
 	await runCommands(result.commands, dispatch);
 }
 
@@ -106,11 +113,13 @@ async function handleMessage(
 	if (message._tag === "GetState") {
 		return collectionStateToGetStateResponse(stateRef.current);
 	}
+	const batchInfo = message._tag === "TracksBatch" ? { tracks: message.tracks.length } : undefined;
+	console.log("[likes-to-go] background received", message._tag, batchInfo);
 	const event = messageToEvent(message);
 	if (event !== null) {
 		await dispatch(event);
 	}
-	return undefined;
+	return collectionStateToGetStateResponse(stateRef.current);
 }
 
 function handleTabComplete(tabId: number): void {

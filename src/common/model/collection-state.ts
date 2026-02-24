@@ -116,7 +116,7 @@ export function transition(
 			if (event._tag === "CollectionComplete") {
 				return {
 					state: { _tag: "Done", tracks: current.tracks },
-					commands: [],
+					commands: [{ _tag: "CloseTab", tabId: current.tabId }],
 				};
 			}
 			if (event._tag === "CollectionError") {

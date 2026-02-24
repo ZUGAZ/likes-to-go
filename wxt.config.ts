@@ -7,6 +7,11 @@ export default defineConfig({
 	modules: ['@wxt-dev/module-solid', '@wxt-dev/auto-icons'],
 	autoIcons: { baseIconPath: 'assets/icon.svg' },
 	imports: false,
+	manifest: {
+		permissions: ['downloads'],
+	},
+	// Don't auto-open a browser; load extension manually (e.g. Chrome on host when dev in container).
+	webExt: { disabled: true },
 	vite: () => ({
 		plugins: [tailwindcss()],
 		resolve: {

@@ -42,22 +42,22 @@ describe("getTracksFromRoot", () => {
 		expect(getTracksFromRoot(root, baseUrl)).toEqual([]);
 	});
 
-	it("parses cards with soundList__item and soundTitle/duration selectors", () => {
+	it("parses cards with badgeList__item and playableTile selectors", () => {
 		const root = createFixture(`
-			<ul class="soundList">
-				<li class="soundList__item">
-					<div class="soundTitle">
-						<a class="soundTitle__link" href="/artist-one/track-a">Track A</a>
-						<span class="soundTitle__title">Track A</span>
-						<span class="soundTitle__username">Artist One</span>
+			<ul class="lazyLoadingList__list">
+				<li class="badgeList__item">
+					<div class="audibleTile">
+						<a class="audibleTile__artworkLink" href="/artist-one/track-a"></a>
+						<a class="playableTile__mainHeading">Track A</a>
+						<a class="playableTile__usernameHeading">Artist One</a>
 					</div>
 					<span class="playbackTimeline__duration">2:30</span>
 				</li>
-				<li class="soundList__item">
-					<div class="soundTitle">
-						<a href="/artist-two/track-b">Track B</a>
-						<span class="soundTitle__title">Track B</span>
-						<span class="soundTitle__username">Artist Two</span>
+				<li class="badgeList__item">
+					<div class="audibleTile">
+						<a class="audibleTile__artworkLink" href="/artist-two/track-b"></a>
+						<a class="playableTile__mainHeading">Track B</a>
+						<a class="playableTile__usernameHeading">Artist Two</a>
 					</div>
 					<span class="playbackTimeline__duration">1:00</span>
 				</li>
@@ -81,17 +81,21 @@ describe("getTracksFromRoot", () => {
 
 	it("skips cards without title or url", () => {
 		const root = createFixture(`
-			<ul class="soundList">
-				<li class="soundList__item">
-					<span class="soundTitle__title">No link</span>
-					<span class="soundTitle__username">Who</span>
-					<a href="">empty href</a>
+			<ul class="lazyLoadingList__list">
+				<li class="badgeList__item">
+					<div class="audibleTile">
+						<a class="audibleTile__artworkLink" href=""></a>
+						<a class="playableTile__mainHeading">No link</a>
+						<a class="playableTile__usernameHeading">Who</a>
+					</div>
 					<span class="playbackTimeline__duration">0:00</span>
 				</li>
-				<li class="soundList__item">
-					<a href="/artist/track">Link only</a>
-					<span class="soundTitle__title"></span>
-					<span class="soundTitle__username">Artist</span>
+				<li class="badgeList__item">
+					<div class="audibleTile">
+						<a class="audibleTile__artworkLink" href="/artist/track"></a>
+						<a class="playableTile__mainHeading"></a>
+						<a class="playableTile__usernameHeading">Artist</a>
+					</div>
 					<span class="playbackTimeline__duration">1:00</span>
 				</li>
 			</ul>
@@ -102,10 +106,12 @@ describe("getTracksFromRoot", () => {
 
 	it("resolves relative hrefs with baseUrl", () => {
 		const root = createFixture(`
-			<li class="soundList__item">
-				<a href="/user/song">Song</a>
-				<span class="soundTitle__title">Song</span>
-				<span class="soundTitle__username">User</span>
+			<li class="badgeList__item">
+				<div class="audibleTile">
+					<a class="audibleTile__artworkLink" href="/user/song"></a>
+					<a class="playableTile__mainHeading">Song</a>
+					<a class="playableTile__usernameHeading">User</a>
+				</div>
 				<span class="playbackTimeline__duration">3:00</span>
 			</li>
 		`);

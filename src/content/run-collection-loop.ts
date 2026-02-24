@@ -31,6 +31,7 @@ export async function runCollectionLoop(
 		const tracks = decodeTracksFromRaw(raw);
 		if (tracks.length > 0) {
 			try {
+				console.log("[likes-to-go] content sending TracksBatch", tracks.length);
 				await sendToBackground({ _tag: "TracksBatch", tracks });
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
@@ -63,6 +64,7 @@ export async function runCollectionLoop(
 
 	// Context can be invalidated; check before sending completion.
 	if (ctx.isValid && !cancelledRef.current) {
+		console.log("[likes-to-go] content sending CollectionComplete");
 		await sendToBackground({ _tag: "CollectionComplete" });
 	}
 }
