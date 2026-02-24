@@ -117,12 +117,10 @@ function getStats(card: Element): {
 }
 
 /**
- * Given the track list container root, query track cards and parse each into a raw track.
- * Uses selectors only. baseUrl is used to resolve relative hrefs (e.g. https://soundcloud.com).
+ * Parse a list of track card elements into raw tracks. Uses selectors only; baseUrl resolves relative hrefs.
  * Missing or malformed optional fields are omitted; one bad card does not stop collection.
  */
-export function getTracksFromRoot(root: Element, baseUrl: string): RawTrack[] {
-	const cards = root.querySelectorAll(TRACK_CARD);
+export function getTracksFromCards(cards: readonly Element[], baseUrl: string): RawTrack[] {
 	const out: RawTrack[] = [];
 	for (const card of cards) {
 		const title = getText(card.querySelector(TRACK_TITLE));
@@ -146,4 +144,14 @@ export function getTracksFromRoot(root: Element, baseUrl: string): RawTrack[] {
 		});
 	}
 	return out;
+}
+
+/**
+ * Given the track list container root, query track cards and parse each into a raw track.
+ * Uses selectors only. baseUrl is used to resolve relative hrefs (e.g. https://soundcloud.com).
+ * Missing or malformed optional fields are omitted; one bad card does not stop collection.
+ */
+export function getTracksFromRoot(root: Element, baseUrl: string): RawTrack[] {
+	const cards = root.querySelectorAll(TRACK_CARD);
+	return getTracksFromCards(Array.from(cards), baseUrl);
 }

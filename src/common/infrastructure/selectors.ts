@@ -29,9 +29,19 @@ export const TRACK_ARTWORK = '.playableTile__artwork .sc-artwork.image__full';
 /** Selector for stats container (relative to card); contains playback count and likes count. May be absent on grid. */
 export const TRACK_STATS = '.soundStats';
 
+/**
+ * Selector for track cards from 0-based index onward (for incremental collection).
+ * Uses :nth-child(n+K) so the DOM returns only cards at index >= fromIndex. Assumes cards are direct children of the list root.
+ */
+export function trackCardsFromIndex(fromIndex: number): string {
+	const k = fromIndex + 1;
+	return `${TRACK_CARD}:nth-child(n+${String(k)})`;
+}
+
 export const selectors = {
 	trackListContainer: TRACK_LIST_CONTAINER,
 	trackCard: TRACK_CARD,
+	trackCardsFromIndex,
 	trackTitle: TRACK_TITLE,
 	trackArtist: TRACK_ARTIST,
 	trackLink: TRACK_LINK,

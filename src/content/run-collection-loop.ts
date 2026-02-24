@@ -4,19 +4,17 @@ import {
 	NO_NEW_TRACKS_PASSES,
 	WAIT_FOR_NODES_MS,
 } from '@/content/constants';
-import { decodeTracksFromRaw } from '@/common/infrastructure/decode-tracks-from-raw';
-import { getTracksFromRoot } from '@/common/infrastructure/dom-reader';
+import { collectBatches } from '@/content/collect-batches';
 import { sendToBackground } from '@/common/infrastructure/send-to-background';
 import { delayMs, nextDelayMs, rateCapWaitMs } from '@/common/model/pacing';
 
-function scrollToBottom(root: Element): void {
-	root.scrollTop = root.scrollHeight;
+function scrollToBottom(): void {
+	window.scrollTo(0, document.body.scrollHeight);
 }
 
 /**
- * Run the collection loop: read DOM, validate through full track schema, send batch, pace, scroll, wait for new nodes, repeat.
- * Only validated tracks are sent and count toward progress ("preparing N tracks…"). Invalid cards are skipped; one bad card does not abort collection.
- * Stops when cancelledRef.current is true or after NO_NEW_TRACKS_PASSES passes with no new raw cards.
+ * Run the collection loop: drive collectBatches generator, send each batch, pace, scroll, wait.
+ * Only validated tracks are sent; invalid cards are skipped. Stops when cancelled or after NO_NEW_TRACKS_PASSES with no new cards.
  */
 export async function runCollectionLoop(
 	root: Element,
@@ -24,40 +22,29 @@ export async function runCollectionLoop(
 	ctx: { isValid: boolean },
 ): Promise<void> {
 	const actionTimestamps: number[] = [];
-	let previousCount = 0;
-	let passesWithNoNewTracks = 0;
+	const generator = collectBatches(root, LIKES_PAGE_BASE_URL, NO_NEW_TRACKS_PASSES);
 
-	while (ctx.isValid && !cancelledRef.current) {
-		const raw = getTracksFromRoot(root, LIKES_PAGE_BASE_URL);
-		const tracks = decodeTracksFromRaw(raw);
-		if (raw.length > tracks.length) {
+	for (const batch of generator) {
+		if (batch.rawLength > batch.tracks.length) {
 			console.log(
 				'[likes-to-go] content skipped invalid cards',
-				raw.length - tracks.length,
+				batch.rawLength - batch.tracks.length,
 				'raw:',
-				raw.length,
+				batch.rawLength,
 				'validated:',
-				tracks.length,
+				batch.tracks.length,
 			);
 		}
-		if (tracks.length > 0) {
+		if (batch.tracks.length > 0) {
 			try {
-				console.log('[likes-to-go] content sending TracksBatch', tracks.length);
-				await sendToBackground({ _tag: 'TracksBatch', tracks });
+				console.log('[likes-to-go] content sending TracksBatch', batch.tracks.length);
+				await sendToBackground({ _tag: 'TracksBatch', tracks: [...batch.tracks] });
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
 				await sendToBackground({ _tag: 'CollectionError', message });
 				return;
 			}
 		}
-
-		if (raw.length <= previousCount) {
-			passesWithNoNewTracks++;
-			if (passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES) break;
-		} else {
-			passesWithNoNewTracks = 0;
-		}
-		previousCount = raw.length;
 
 		const now = Date.now();
 		actionTimestamps.push(now);
@@ -69,15 +56,12 @@ export async function runCollectionLoop(
 		);
 		await delayMs(delay + capWait);
 
-		// Context can be invalidated (e.g. extension reload); check at runtime.
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ctx.isValid is runtime-checked by WXT.
 		if (!ctx.isValid || cancelledRef.current) break;
 
-		scrollToBottom(root);
+		scrollToBottom();
 		await delayMs(WAIT_FOR_NODES_MS);
 	}
 
-	// Context can be invalidated; check before sending completion.
 	if (ctx.isValid && !cancelledRef.current) {
 		console.log('[likes-to-go] content sending CollectionComplete');
 		await sendToBackground({ _tag: 'CollectionComplete' });

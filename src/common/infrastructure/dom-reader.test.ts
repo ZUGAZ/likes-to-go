@@ -1,5 +1,7 @@
+import { TRACK_CARD } from '@/common/infrastructure/selectors';
 import { describe, expect, it } from 'vitest';
 import {
+	getTracksFromCards,
 	getTracksFromRoot,
 	parseDurationToMs,
 } from '@/common/infrastructure/dom-reader';
@@ -182,5 +184,30 @@ describe('getTracksFromRoot', () => {
 		expect('artwork_url' in (tracks[0] ?? {})).toBe(false);
 		expect('playback_count' in (tracks[0] ?? {})).toBe(false);
 		expect('likes_count' in (tracks[0] ?? {})).toBe(false);
+	});
+
+	it('getTracksFromCards matches getTracksFromRoot when given all cards from root', () => {
+		const root = createFixture(`
+			<li class="badgeList__item">
+				<div class="audibleTile">
+					<a class="audibleTile__artworkLink" href="/a/b"></a>
+					<a class="playableTile__mainHeading">One</a>
+					<a class="playableTile__usernameHeading">Artist</a>
+				</div>
+				<span class="playbackTimeline__duration">1:00</span>
+			</li>
+			<li class="badgeList__item">
+				<div class="audibleTile">
+					<a class="audibleTile__artworkLink" href="/c/d"></a>
+					<a class="playableTile__mainHeading">Two</a>
+					<a class="playableTile__usernameHeading">Other</a>
+				</div>
+				<span class="playbackTimeline__duration">2:30</span>
+			</li>
+		`);
+		const cards = Array.from(root.querySelectorAll(TRACK_CARD));
+		expect(getTracksFromCards(cards, baseUrl)).toEqual(
+			getTracksFromRoot(root, baseUrl),
+		);
 	});
 });
