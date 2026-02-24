@@ -4,7 +4,7 @@
  */
 function base64EncodeUtf8(str: string): string {
 	const bytes = new TextEncoder().encode(str);
-	let binary = "";
+	let binary = '';
 	for (const byte of bytes) {
 		binary += String.fromCharCode(byte);
 	}
@@ -20,15 +20,12 @@ export function downloadJson(jsonString: string): Promise<void> {
 	const filename = `likes-to-go-${new Date().toISOString().slice(0, 10)}.json`;
 	const url = `data:application/json;base64,${base64EncodeUtf8(jsonString)}`;
 	return new Promise((resolve, reject) => {
-		chrome.downloads.download(
-			{ url, filename, saveAs: true },
-			() => {
-				if (chrome.runtime.lastError) {
-					reject(new Error(chrome.runtime.lastError.message));
-				} else {
-					resolve();
-				}
-			},
-		);
+		chrome.downloads.download({ url, filename, saveAs: true }, () => {
+			if (chrome.runtime.lastError) {
+				reject(new Error(chrome.runtime.lastError.message));
+			} else {
+				resolve();
+			}
+		});
 	});
 }

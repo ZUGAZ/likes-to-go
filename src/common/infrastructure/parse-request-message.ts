@@ -1,7 +1,7 @@
-import { Either, Schema } from "effect";
-import { InvalidMessage } from "@/common/model/errors";
-import type { RequestMessage } from "@/common/model/request-message";
-import { RequestMessageSchema } from "@/common/model/request-message";
+import { Either, Schema } from 'effect';
+import { InvalidMessage } from '@/common/model/errors';
+import type { RequestMessage } from '@/common/model/request-message';
+import { RequestMessageSchema } from '@/common/model/request-message';
 
 /**
  * Parse and validate an unknown message payload. Treat all incoming messages as untrusted.

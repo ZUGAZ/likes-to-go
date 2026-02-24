@@ -1,4 +1,4 @@
-import type { RequestMessage } from "@/common/model/request-message";
+import type { RequestMessage } from '@/common/model/request-message';
 
 /**
  * Send a request to the background script. Returns a Promise that resolves with the response

@@ -1,4 +1,4 @@
-import type { RequestMessage } from "@/common/model/request-message";
+import type { RequestMessage } from '@/common/model/request-message';
 
 /**
  * Send a request from background to a specific tab (e.g. content script).

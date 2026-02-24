@@ -1,4 +1,4 @@
-import type { Track } from "@/common/model/track";
+import type { Track } from '@/common/model/track';
 
 /** JSON-serializable track shape (url as string). */
 export interface ExportTrack {
@@ -22,7 +22,7 @@ export interface ExportPayload {
 	readonly tracks: readonly ExportTrack[];
 }
 
-const DEFAULT_SOURCE_URL = "https://soundcloud.com/you/likes";
+const DEFAULT_SOURCE_URL = 'https://soundcloud.com/you/likes';
 
 function trackToExportTrack(t: Track): ExportTrack {
 	return {
@@ -39,7 +39,7 @@ function trackToExportTrack(t: Track): ExportTrack {
  */
 export function buildExportPayload(input: ExportInput): ExportPayload {
 	const exportedAt =
-		typeof input.exported_at === "string"
+		typeof input.exported_at === 'string'
 			? input.exported_at
 			: (input.exported_at ?? new Date()).toISOString();
 	return {

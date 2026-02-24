@@ -1,6 +1,9 @@
-import { Either } from "effect";
-import type { MessageResponse, RequestMessage } from "@/common/model/request-message";
-import { parseRequestMessage } from "@/common/infrastructure/parse-request-message";
+import { Either } from 'effect';
+import type {
+	MessageResponse,
+	RequestMessage,
+} from '@/common/model/request-message';
+import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
 
 /**
  * Register the runtime message listener (call once from background script, synchronously at top level).
@@ -22,7 +25,7 @@ export function registerRuntimeListener(
 			const parsed = parseRequestMessage(message);
 			if (Either.isLeft(parsed)) {
 				sendResponse({
-					status: "error",
+					status: 'error',
 					trackCount: 0,
 					errorMessage: parsed.left.reason,
 				});
@@ -32,7 +35,7 @@ export function registerRuntimeListener(
 				.then(sendResponse)
 				.catch((err: unknown) => {
 					sendResponse({
-						status: "error",
+						status: 'error',
 						trackCount: 0,
 						errorMessage: err instanceof Error ? err.message : String(err),
 					});

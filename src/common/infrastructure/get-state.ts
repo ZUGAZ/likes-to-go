@@ -6,7 +6,9 @@ import { Schema } from 'effect';
 /**
  * Decode unknown value as GetStateResponse. Use at message boundary when background returns state.
  */
-export function decodeGetStateResponse(raw: unknown): Promise<GetStateResponse> {
+export function decodeGetStateResponse(
+	raw: unknown,
+): Promise<GetStateResponse> {
 	return Schema.decodeUnknownPromise(GetStateResponseSchema)(raw);
 }
 

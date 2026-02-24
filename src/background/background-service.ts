@@ -1,4 +1,7 @@
-import type { GetStateResponse, RequestMessage } from "@/common/model/request-message";
+import type {
+	GetStateResponse,
+	RequestMessage,
+} from '@/common/model/request-message';
 import {
 	collectionStateToGetStateResponse,
 	initialCollectionState,
@@ -6,13 +9,13 @@ import {
 	type CollectionCommand,
 	type CollectionEvent,
 	type CollectionState,
-} from "@/common/model/collection-state";
-import { buildExportPayload } from "@/common/model/exporter";
+} from '@/common/model/collection-state';
+import { buildExportPayload } from '@/common/model/exporter';
 import {
 	registerRuntimeListener,
 	sendToTab,
-} from "@/common/infrastructure/chrome-messaging";
-import { downloadJson } from "@/common/infrastructure/chrome-downloads";
+} from '@/common/infrastructure/chrome-messaging';
+import { downloadJson } from '@/common/infrastructure/chrome-downloads';
 
 // Single reference to current state; only updated via transition() in dispatch().
 const stateRef: { current: CollectionState } = {
@@ -21,19 +24,19 @@ const stateRef: { current: CollectionState } = {
 
 function messageToEvent(message: RequestMessage): CollectionEvent | null {
 	switch (message._tag) {
-		case "StartCollection":
-			return { _tag: "StartCollection" };
-		case "TracksBatch":
-			return { _tag: "TracksBatch", tracks: message.tracks };
-		case "CollectionComplete":
-			return { _tag: "CollectionComplete" };
-		case "CollectionError":
-			return { _tag: "CollectionError", message: message.message };
-		case "CancelCollection":
-			return { _tag: "CancelCollection" };
-		case "DownloadExport":
-			return { _tag: "DownloadExport" };
-		case "GetState":
+		case 'StartCollection':
+			return { _tag: 'StartCollection' };
+		case 'TracksBatch':
+			return { _tag: 'TracksBatch', tracks: message.tracks };
+		case 'CollectionComplete':
+			return { _tag: 'CollectionComplete' };
+		case 'CollectionError':
+			return { _tag: 'CollectionError', message: message.message };
+		case 'CancelCollection':
+			return { _tag: 'CancelCollection' };
+		case 'DownloadExport':
+			return { _tag: 'DownloadExport' };
+		case 'GetState':
 			return null;
 	}
 }
@@ -43,8 +46,8 @@ async function runCommand(
 	dispatch: (event: CollectionEvent) => Promise<void>,
 ): Promise<void> {
 	switch (cmd._tag) {
-		case "CreateTab": {
-			console.log("[likes-to-go] background CreateTab", cmd.url);
+		case 'CreateTab': {
+			console.log('[likes-to-go] background CreateTab', cmd.url);
 			try {
 				const tab = await chrome.tabs.create({
 					url: cmd.url,
@@ -52,35 +55,40 @@ async function runCommand(
 				});
 				const tabId = tab.id;
 				if (tabId === undefined) {
-					await dispatch({ _tag: "TabCreateFailed", message: "Failed to create tab" });
+					await dispatch({
+						_tag: 'TabCreateFailed',
+						message: 'Failed to create tab',
+					});
 				} else {
-					await dispatch({ _tag: "TabCreated", tabId });
+					await dispatch({ _tag: 'TabCreated', tabId });
 				}
 			} catch (err: unknown) {
 				const message = err instanceof Error ? err.message : String(err);
-				await dispatch({ _tag: "TabCreateFailed", message });
+				await dispatch({ _tag: 'TabCreateFailed', message });
 			}
 			break;
 		}
-		case "CloseTab":
+		case 'CloseTab':
 			await chrome.tabs.remove(cmd.tabId);
 			break;
-		case "SendStartToTab":
-			console.log("[likes-to-go] background SendStartToTab", cmd.tabId);
-			sendToTab(cmd.tabId, { _tag: "StartCollection" }).catch(
+		case 'SendStartToTab':
+			console.log('[likes-to-go] background SendStartToTab', cmd.tabId);
+			sendToTab(cmd.tabId, { _tag: 'StartCollection' }).catch(
 				async (err: unknown) => {
 					const message = err instanceof Error ? err.message : String(err);
-					await dispatch({ _tag: "SendToTabFailed", message });
+					await dispatch({ _tag: 'SendToTabFailed', message });
 				},
 			);
 			break;
-		case "DownloadExport": {
-			console.log("[likes-to-go] background DownloadExport", { tracks: cmd.tracks.length });
+		case 'DownloadExport': {
+			console.log('[likes-to-go] background DownloadExport', {
+				tracks: cmd.tracks.length,
+			});
 			const payload = buildExportPayload({ tracks: [...cmd.tracks] });
 			downloadJson(JSON.stringify(payload)).catch(async (err: unknown) => {
 				const message = err instanceof Error ? err.message : String(err);
-				console.error("[likes-to-go] background download failed", message);
-				await dispatch({ _tag: "DownloadFailed", message });
+				console.error('[likes-to-go] background download failed', message);
+				await dispatch({ _tag: 'DownloadFailed', message });
 			});
 			break;
 		}
@@ -100,8 +108,17 @@ async function dispatch(event: CollectionEvent): Promise<void> {
 	const result = transition(stateRef.current, event);
 	stateRef.current = result.state;
 	const stateTag = stateRef.current._tag;
-	const tracksLen = stateTag === "Collecting" || stateTag === "Done" ? stateRef.current.tracks.length : undefined;
-	console.log("[likes-to-go] background dispatch", event._tag, "→ state", stateTag, tracksLen !== undefined ? { tracks: tracksLen } : "");
+	const tracksLen =
+		stateTag === 'Collecting' || stateTag === 'Done'
+			? stateRef.current.tracks.length
+			: undefined;
+	console.log(
+		'[likes-to-go] background dispatch',
+		event._tag,
+		'→ state',
+		stateTag,
+		tracksLen !== undefined ? { tracks: tracksLen } : '',
+	);
 	await runCommands(result.commands, dispatch);
 }
 
@@ -110,11 +127,14 @@ async function handleMessage(
 	sender: chrome.runtime.MessageSender,
 ): Promise<GetStateResponse | undefined> {
 	void sender;
-	if (message._tag === "GetState") {
+	if (message._tag === 'GetState') {
 		return collectionStateToGetStateResponse(stateRef.current);
 	}
-	const batchInfo = message._tag === "TracksBatch" ? { tracks: message.tracks.length } : undefined;
-	console.log("[likes-to-go] background received", message._tag, batchInfo);
+	const batchInfo =
+		message._tag === 'TracksBatch'
+			? { tracks: message.tracks.length }
+			: undefined;
+	console.log('[likes-to-go] background received', message._tag, batchInfo);
 	const event = messageToEvent(message);
 	if (event !== null) {
 		await dispatch(event);
@@ -123,13 +143,13 @@ async function handleMessage(
 }
 
 function handleTabComplete(tabId: number): void {
-	void dispatch({ _tag: "TabComplete", tabId });
+	void dispatch({ _tag: 'TabComplete', tabId });
 }
 
 export function initBackgroundService(): void {
 	chrome.tabs.onUpdated.addListener(
 		(id: number, changeInfo: chrome.tabs.OnUpdatedInfo) => {
-			if (changeInfo.status === "complete") {
+			if (changeInfo.status === 'complete') {
 				handleTabComplete(id);
 			}
 		},

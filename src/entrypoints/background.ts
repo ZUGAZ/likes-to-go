@@ -1,8 +1,11 @@
-import { defineBackground } from "wxt/utils/define-background";
+import { defineBackground } from 'wxt/utils/define-background';
 
-import { initBackgroundService } from "@/background/background-service";
+import { initBackgroundService } from '@/background/background-service';
 
 export default defineBackground(() => {
-	console.log("[likes-to-go] background loaded with hot reload!!", new Date().toISOString());
+	console.log(
+		'[likes-to-go] background loaded with hot reload!!',
+		new Date().toISOString(),
+	);
 	initBackgroundService();
 });

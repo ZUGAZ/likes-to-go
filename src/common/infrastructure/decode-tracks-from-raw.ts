@@ -1,7 +1,7 @@
-import { Either, Schema } from "effect";
-import type { RawTrack } from "@/common/infrastructure/dom-reader";
-import type { Track } from "@/common/model/track";
-import { TrackSchema } from "@/common/model/track";
+import { Either, Schema } from 'effect';
+import type { RawTrack } from '@/common/infrastructure/dom-reader';
+import type { Track } from '@/common/model/track';
+import { TrackSchema } from '@/common/model/track';
 
 /**
  * Decode raw DOM-reader output to validated Track[]. Invalid items are skipped.

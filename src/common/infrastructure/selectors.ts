@@ -6,22 +6,22 @@
  */
 
 /** CSS selector for the track list container (root for dom-reader). */
-export const TRACK_LIST_CONTAINER = ".lazyLoadingList__list";
+export const TRACK_LIST_CONTAINER = '.lazyLoadingList__list';
 
 /** CSS selector for a single track card within the list (li per track). */
-export const TRACK_CARD = ".badgeList__item";
+export const TRACK_CARD = '.badgeList__item';
 
 /** Selector for track title (relative to card). */
-export const TRACK_TITLE = ".playableTile__mainHeading";
+export const TRACK_TITLE = '.playableTile__mainHeading';
 
 /** Selector for artist/username (relative to card). */
-export const TRACK_ARTIST = ".playableTile__usernameHeading";
+export const TRACK_ARTIST = '.playableTile__usernameHeading';
 
 /** Selector for track link (relative to card); artwork link points to track page. */
-export const TRACK_LINK = ".audibleTile__artworkLink";
+export const TRACK_LINK = '.audibleTile__artworkLink';
 
 /** Selector for duration (relative to card); may be absent on likes grid. */
-export const TRACK_DURATION = ".playbackTimeline__duration";
+export const TRACK_DURATION = '.playbackTimeline__duration';
 
 export const selectors = {
 	trackListContainer: TRACK_LIST_CONTAINER,

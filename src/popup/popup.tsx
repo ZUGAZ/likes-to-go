@@ -1,15 +1,15 @@
-import { onCleanup, onMount, Show } from "solid-js";
-import { createSignal } from "solid-js";
+import { onCleanup, onMount, Show } from 'solid-js';
+import { createSignal } from 'solid-js';
 
 import {
 	cancelCollection,
 	download,
 	startCollection,
 	syncStateFromBackground,
-} from "@/popup/actions";
-import { errorMessage, state, trackCount } from "@/popup/popup-state";
+} from '@/popup/actions';
+import { errorMessage, state, trackCount } from '@/popup/popup-state';
 
-const PROCESSING_HEARTS = ["💛", "🧡"] as const;
+const PROCESSING_HEARTS = ['💛', '🧡'] as const;
 const HEART_INTERVAL_MS = 800;
 
 function ProcessingHeart() {
@@ -33,7 +33,7 @@ export function Popup() {
 
 	return (
 		<div class="min-w-[280px] p-4 font-sans text-sm">
-			<Show when={state() === "initial"} fallback={null}>
+			<Show when={state() === 'initial'} fallback={null}>
 				<div class="flex flex-col items-center gap-2">
 					<button
 						type="button"
@@ -46,7 +46,7 @@ export function Popup() {
 				</div>
 			</Show>
 
-			<Show when={state() === "processing"} fallback={null}>
+			<Show when={state() === 'processing'} fallback={null}>
 				<div class="flex flex-col items-center gap-3">
 					<div class="text-2xl">
 						<ProcessingHeart />
@@ -62,7 +62,7 @@ export function Popup() {
 				</div>
 			</Show>
 
-			<Show when={state() === "done"} fallback={null}>
+			<Show when={state() === 'done'} fallback={null}>
 				<div class="flex flex-col items-center gap-2">
 					<button
 						type="button"
@@ -74,7 +74,7 @@ export function Popup() {
 				</div>
 			</Show>
 
-			<Show when={state() === "error"} fallback={null}>
+			<Show when={state() === 'error'} fallback={null}>
 				<div class="flex flex-col items-center gap-2">
 					<button
 						type="button"
@@ -85,7 +85,7 @@ export function Popup() {
 					</button>
 					<p class="text-neutral-600">Waiting for order</p>
 					<p class="text-center text-rose-600" role="alert">
-						💔 {errorMessage() ?? "Something went wrong"}
+						💔 {errorMessage() ?? 'Something went wrong'}
 					</p>
 				</div>
 			</Show>

@@ -2,12 +2,12 @@ import {
 	applyGetStateResponse,
 	setToInitial,
 	setToProcessing,
-} from "@/popup/popup-state";
+} from '@/popup/popup-state';
 import {
 	decodeGetStateResponse,
 	getState,
 	sendToBackground,
-} from "@/common/infrastructure/chrome-messaging";
+} from '@/common/infrastructure/chrome-messaging';
 
 const POLL_INTERVAL_MS = 500;
 
@@ -25,12 +25,8 @@ function startPolling(): void {
 	pollingId = setInterval(() => {
 		getState()
 			.then((res) => {
-				applyGetStateResponse(
-					res.status,
-					res.trackCount,
-					res.errorMessage,
-				);
-				if (res.status !== "collecting") {
+				applyGetStateResponse(res.status, res.trackCount, res.errorMessage);
+				if (res.status !== 'collecting') {
 					stopPolling();
 				}
 			})
@@ -41,21 +37,21 @@ function startPolling(): void {
 }
 
 export async function startCollection(): Promise<void> {
-	console.log("[likes-to-go] popup startCollection → sending StartCollection");
-	await sendToBackground({ _tag: "StartCollection" });
+	console.log('[likes-to-go] popup startCollection → sending StartCollection');
+	await sendToBackground({ _tag: 'StartCollection' });
 	setToProcessing();
 	startPolling();
 }
 
 export async function cancelCollection(): Promise<void> {
 	stopPolling();
-	await sendToBackground({ _tag: "CancelCollection" });
+	await sendToBackground({ _tag: 'CancelCollection' });
 	setToInitial();
 }
 
 export async function download(): Promise<void> {
-	console.log("[likes-to-go] popup download → sending DownloadExport");
-	const raw = await sendToBackground({ _tag: "DownloadExport" });
+	console.log('[likes-to-go] popup download → sending DownloadExport');
+	const raw = await sendToBackground({ _tag: 'DownloadExport' });
 	try {
 		const res = await decodeGetStateResponse(raw);
 		applyGetStateResponse(res.status, res.trackCount, res.errorMessage);

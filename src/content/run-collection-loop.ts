@@ -3,11 +3,11 @@ import {
 	MAX_ACTIONS_PER_MINUTE,
 	NO_NEW_TRACKS_PASSES,
 	WAIT_FOR_NODES_MS,
-} from "@/content/constants";
-import { decodeTracksFromRaw } from "@/common/infrastructure/decode-tracks-from-raw";
-import { getTracksFromRoot } from "@/common/infrastructure/dom-reader";
-import { sendToBackground } from "@/common/infrastructure/send-to-background";
-import { delayMs, nextDelayMs, rateCapWaitMs } from "@/common/model/pacing";
+} from '@/content/constants';
+import { decodeTracksFromRaw } from '@/common/infrastructure/decode-tracks-from-raw';
+import { getTracksFromRoot } from '@/common/infrastructure/dom-reader';
+import { sendToBackground } from '@/common/infrastructure/send-to-background';
+import { delayMs, nextDelayMs, rateCapWaitMs } from '@/common/model/pacing';
 
 function scrollToBottom(root: Element): void {
 	root.scrollTop = root.scrollHeight;
@@ -31,11 +31,11 @@ export async function runCollectionLoop(
 		const tracks = decodeTracksFromRaw(raw);
 		if (tracks.length > 0) {
 			try {
-				console.log("[likes-to-go] content sending TracksBatch", tracks.length);
-				await sendToBackground({ _tag: "TracksBatch", tracks });
+				console.log('[likes-to-go] content sending TracksBatch', tracks.length);
+				await sendToBackground({ _tag: 'TracksBatch', tracks });
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
-				await sendToBackground({ _tag: "CollectionError", message });
+				await sendToBackground({ _tag: 'CollectionError', message });
 				return;
 			}
 		}
@@ -51,7 +51,11 @@ export async function runCollectionLoop(
 		const now = Date.now();
 		actionTimestamps.push(now);
 		const delay = nextDelayMs();
-		const capWait = rateCapWaitMs(actionTimestamps, MAX_ACTIONS_PER_MINUTE, now);
+		const capWait = rateCapWaitMs(
+			actionTimestamps,
+			MAX_ACTIONS_PER_MINUTE,
+			now,
+		);
 		await delayMs(delay + capWait);
 
 		// Context can be invalidated (e.g. extension reload); check at runtime.
@@ -64,7 +68,7 @@ export async function runCollectionLoop(
 
 	// Context can be invalidated; check before sending completion.
 	if (ctx.isValid && !cancelledRef.current) {
-		console.log("[likes-to-go] content sending CollectionComplete");
-		await sendToBackground({ _tag: "CollectionComplete" });
+		console.log('[likes-to-go] content sending CollectionComplete');
+		await sendToBackground({ _tag: 'CollectionComplete' });
 	}
 }

@@ -1,39 +1,39 @@
-import type { GetStateResponse } from "@/common/model/request-message";
-import type { Track } from "@/common/model/track";
+import type { GetStateResponse } from '@/common/model/request-message';
+import type { Track } from '@/common/model/track';
 
-const LIKES_URL = "https://soundcloud.com/you/likes";
+const LIKES_URL = 'https://soundcloud.com/you/likes';
 
 // --- State machine (discriminated union) ---
 
 export type CollectionState =
-	| { _tag: "Idle" }
-	| { _tag: "CollectingRequested" }
-	| { _tag: "Collecting"; tabId: number; tracks: readonly Track[] }
-	| { _tag: "Done"; tracks: readonly Track[] }
-	| { _tag: "Error"; message: string };
+	| { _tag: 'Idle' }
+	| { _tag: 'CollectingRequested' }
+	| { _tag: 'Collecting'; tabId: number; tracks: readonly Track[] }
+	| { _tag: 'Done'; tracks: readonly Track[] }
+	| { _tag: 'Error'; message: string };
 
 // --- Events (input to transitions) ---
 
 export type CollectionEvent =
-	| { _tag: "StartCollection" }
-	| { _tag: "TabCreated"; tabId: number }
-	| { _tag: "TabCreateFailed"; message: string }
-	| { _tag: "TracksBatch"; tracks: readonly Track[] }
-	| { _tag: "CollectionComplete" }
-	| { _tag: "CollectionError"; message: string }
-	| { _tag: "CancelCollection" }
-	| { _tag: "DownloadExport" }
-	| { _tag: "TabComplete"; tabId: number }
-	| { _tag: "SendToTabFailed"; message: string }
-	| { _tag: "DownloadFailed"; message: string };
+	| { _tag: 'StartCollection' }
+	| { _tag: 'TabCreated'; tabId: number }
+	| { _tag: 'TabCreateFailed'; message: string }
+	| { _tag: 'TracksBatch'; tracks: readonly Track[] }
+	| { _tag: 'CollectionComplete' }
+	| { _tag: 'CollectionError'; message: string }
+	| { _tag: 'CancelCollection' }
+	| { _tag: 'DownloadExport' }
+	| { _tag: 'TabComplete'; tabId: number }
+	| { _tag: 'SendToTabFailed'; message: string }
+	| { _tag: 'DownloadFailed'; message: string };
 
 // --- Commands (side effects for the orchestrator to run) ---
 
 export type CollectionCommand =
-	| { _tag: "CreateTab"; url: string }
-	| { _tag: "CloseTab"; tabId: number }
-	| { _tag: "SendStartToTab"; tabId: number }
-	| { _tag: "DownloadExport"; tracks: readonly Track[] };
+	| { _tag: 'CreateTab'; url: string }
+	| { _tag: 'CloseTab'; tabId: number }
+	| { _tag: 'SendStartToTab'; tabId: number }
+	| { _tag: 'DownloadExport'; tracks: readonly Track[] };
 
 export interface TransitionResult {
 	state: CollectionState;
@@ -65,118 +65,118 @@ export function transition(
 	event: CollectionEvent,
 ): TransitionResult {
 	switch (current._tag) {
-		case "Idle": {
-			if (event._tag === "StartCollection") {
+		case 'Idle': {
+			if (event._tag === 'StartCollection') {
 				return {
-					state: { _tag: "CollectingRequested" },
-					commands: [{ _tag: "CreateTab", url: LIKES_URL }],
+					state: { _tag: 'CollectingRequested' },
+					commands: [{ _tag: 'CreateTab', url: LIKES_URL }],
 				};
 			}
-			if (event._tag === "DownloadFailed") {
+			if (event._tag === 'DownloadFailed') {
 				return {
-					state: { _tag: "Error", message: event.message },
+					state: { _tag: 'Error', message: event.message },
 					commands: [],
 				};
 			}
 			break;
 		}
-		case "CollectingRequested": {
-			if (event._tag === "TabCreated") {
+		case 'CollectingRequested': {
+			if (event._tag === 'TabCreated') {
 				return {
 					state: {
-						_tag: "Collecting",
+						_tag: 'Collecting',
 						tabId: event.tabId,
 						tracks: [],
 					},
 					commands: [],
 				};
 			}
-			if (event._tag === "TabCreateFailed") {
+			if (event._tag === 'TabCreateFailed') {
 				return {
-					state: { _tag: "Error", message: event.message },
+					state: { _tag: 'Error', message: event.message },
 					commands: [],
 				};
 			}
-			if (event._tag === "CancelCollection") {
-				return { state: { _tag: "Idle" }, commands: [] };
+			if (event._tag === 'CancelCollection') {
+				return { state: { _tag: 'Idle' }, commands: [] };
 			}
 			break;
 		}
-		case "Collecting": {
-			if (event._tag === "TracksBatch") {
+		case 'Collecting': {
+			if (event._tag === 'TracksBatch') {
 				return {
 					state: {
-						_tag: "Collecting",
+						_tag: 'Collecting',
 						tabId: current.tabId,
 						tracks: appendTracksDeduped(current.tracks, event.tracks),
 					},
 					commands: [],
 				};
 			}
-			if (event._tag === "CollectionComplete") {
+			if (event._tag === 'CollectionComplete') {
 				return {
-					state: { _tag: "Done", tracks: current.tracks },
-					commands: [{ _tag: "CloseTab", tabId: current.tabId }],
+					state: { _tag: 'Done', tracks: current.tracks },
+					commands: [{ _tag: 'CloseTab', tabId: current.tabId }],
 				};
 			}
-			if (event._tag === "CollectionError") {
+			if (event._tag === 'CollectionError') {
 				return {
-					state: { _tag: "Error", message: event.message },
-					commands: [{ _tag: "CloseTab", tabId: current.tabId }],
+					state: { _tag: 'Error', message: event.message },
+					commands: [{ _tag: 'CloseTab', tabId: current.tabId }],
 				};
 			}
-			if (event._tag === "CancelCollection") {
+			if (event._tag === 'CancelCollection') {
 				return {
-					state: { _tag: "Idle" },
-					commands: [{ _tag: "CloseTab", tabId: current.tabId }],
+					state: { _tag: 'Idle' },
+					commands: [{ _tag: 'CloseTab', tabId: current.tabId }],
 				};
 			}
-			if (event._tag === "TabComplete" && event.tabId === current.tabId) {
+			if (event._tag === 'TabComplete' && event.tabId === current.tabId) {
 				return {
 					state: current,
-					commands: [{ _tag: "SendStartToTab", tabId: current.tabId }],
+					commands: [{ _tag: 'SendStartToTab', tabId: current.tabId }],
 				};
 			}
-			if (event._tag === "SendToTabFailed") {
+			if (event._tag === 'SendToTabFailed') {
 				return {
-					state: { _tag: "Error", message: event.message },
-					commands: [{ _tag: "CloseTab", tabId: current.tabId }],
+					state: { _tag: 'Error', message: event.message },
+					commands: [{ _tag: 'CloseTab', tabId: current.tabId }],
 				};
 			}
-			if (event._tag === "DownloadExport") {
+			if (event._tag === 'DownloadExport') {
 				return {
-					state: { _tag: "Idle" },
-					commands: [{ _tag: "DownloadExport", tracks: current.tracks }],
+					state: { _tag: 'Idle' },
+					commands: [{ _tag: 'DownloadExport', tracks: current.tracks }],
 				};
 			}
 			break;
 		}
-		case "Done": {
-			if (event._tag === "DownloadExport") {
+		case 'Done': {
+			if (event._tag === 'DownloadExport') {
 				return {
-					state: { _tag: "Idle" },
-					commands: [{ _tag: "DownloadExport", tracks: current.tracks }],
+					state: { _tag: 'Idle' },
+					commands: [{ _tag: 'DownloadExport', tracks: current.tracks }],
 				};
 			}
-			if (event._tag === "CancelCollection") {
-				return { state: { _tag: "Idle" }, commands: [] };
+			if (event._tag === 'CancelCollection') {
+				return { state: { _tag: 'Idle' }, commands: [] };
 			}
 			break;
 		}
-		case "Error": {
-			if (event._tag === "DownloadFailed") {
+		case 'Error': {
+			if (event._tag === 'DownloadFailed') {
 				return {
-					state: { _tag: "Error", message: event.message },
+					state: { _tag: 'Error', message: event.message },
 					commands: [],
 				};
 			}
-			if (event._tag === "CancelCollection") {
-				return { state: { _tag: "Idle" }, commands: [] };
+			if (event._tag === 'CancelCollection') {
+				return { state: { _tag: 'Idle' }, commands: [] };
 			}
-			if (event._tag === "StartCollection") {
+			if (event._tag === 'StartCollection') {
 				return {
-					state: { _tag: "CollectingRequested" },
-					commands: [{ _tag: "CreateTab", url: LIKES_URL }],
+					state: { _tag: 'CollectingRequested' },
+					commands: [{ _tag: 'CreateTab', url: LIKES_URL }],
 				};
 			}
 			break;
@@ -192,18 +192,18 @@ export function collectionStateToGetStateResponse(
 	state: CollectionState,
 ): GetStateResponse {
 	const status =
-		state._tag === "Idle"
-			? "idle"
-			: state._tag === "CollectingRequested" || state._tag === "Collecting"
-				? "collecting"
-				: state._tag === "Done"
-					? "done"
-					: "error";
+		state._tag === 'Idle'
+			? 'idle'
+			: state._tag === 'CollectingRequested' || state._tag === 'Collecting'
+				? 'collecting'
+				: state._tag === 'Done'
+					? 'done'
+					: 'error';
 	const trackCount =
-		state._tag === "Collecting" || state._tag === "Done"
+		state._tag === 'Collecting' || state._tag === 'Done'
 			? state.tracks.length
 			: 0;
-	const errorMessage = state._tag === "Error" ? state.message : undefined;
+	const errorMessage = state._tag === 'Error' ? state.message : undefined;
 	return {
 		status,
 		trackCount,
@@ -211,4 +211,4 @@ export function collectionStateToGetStateResponse(
 	};
 }
 
-export const initialCollectionState: CollectionState = { _tag: "Idle" };
+export const initialCollectionState: CollectionState = { _tag: 'Idle' };
