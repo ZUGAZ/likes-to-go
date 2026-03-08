@@ -1,4 +1,6 @@
 export const LIKES_PAGE_BASE_URL = 'https://soundcloud.com';
-export const NO_NEW_TRACKS_PASSES = 2;
-export const WAIT_FOR_NODES_MS = 2000;
-export const MAX_ACTIONS_PER_MINUTE = 12;
+/** Consecutive passes with 0 new cards before stopping. Higher = more resilient to slow lazy-load. */
+export const NO_NEW_TRACKS_PASSES = 4;
+/** Wait after each scroll so lazy-loaded track cards can render. */
+export const WAIT_FOR_NODES_MS = 3000;
+export const MAX_ACTIONS_PER_MINUTE = 120;

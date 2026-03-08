@@ -1,17 +1,36 @@
-import { Either } from 'effect';
 import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
-import { sendToBackground } from '@/common/infrastructure/send-to-background';
 import { TRACK_LIST_CONTAINER } from '@/common/infrastructure/selectors';
-import { runCollectionLoop } from '@/content/run-collection-loop';
+import { sendToBackground } from '@/common/infrastructure/send-to-background';
+import {
+	collectionPipeline,
+	type CollectionOutcome,
+} from '@/content/model/collection-pipeline';
+import { makeCollectionLive } from '@/content/infrastructure/collection-services';
+import { Effect, Either, Exit, Fiber } from 'effect';
+
+export interface ContentScriptCtx {
+	readonly isValid: boolean;
+	readonly onInvalidated: (cb: () => void) => () => void;
+}
 
 export function createContentMessageHandler(
-	ctx: { isValid: boolean },
-	cancelledRef: { current: boolean },
+	ctx: ContentScriptCtx,
 ): (
 	message: unknown,
 	_sender: chrome.runtime.MessageSender,
 	sendResponse: (response?: unknown) => void,
 ) => boolean {
+	let fiber: Fiber.RuntimeFiber<CollectionOutcome> | null = null;
+
+	const interuptFiber = () => {
+		if (fiber !== null) {
+			Effect.runFork(Fiber.interrupt(fiber));
+			fiber = null;
+		}
+	};
+
+	ctx.onInvalidated(interuptFiber);
+
 	return (
 		message: unknown,
 		_sender: chrome.runtime.MessageSender,
@@ -20,9 +39,12 @@ export function createContentMessageHandler(
 		const parsed = parseRequestMessage(message);
 		if (Either.isLeft(parsed)) return false;
 		const msg = parsed.right;
+
 		if (msg._tag === 'StartCollection') {
 			console.log('[likes-to-go] content StartCollection received');
-			cancelledRef.current = false;
+
+			interuptFiber();
+
 			const root = document.querySelector(TRACK_LIST_CONTAINER);
 			if (root === null) {
 				console.log('[likes-to-go] content track list not found');
@@ -32,16 +54,33 @@ export function createContentMessageHandler(
 				}).then(() => sendResponse());
 				return true;
 			}
-			void runCollectionLoop(root, cancelledRef, ctx).then(() =>
-				sendResponse(),
+
+			const pipeline = collectionPipeline.pipe(
+				Effect.provide(makeCollectionLive(root)),
 			);
+
+			fiber = Effect.runFork(pipeline);
+
+			void Effect.runPromise(
+				Fiber.await(fiber).pipe(
+					Effect.tap((exit) => {
+						fiber = null;
+						if (Exit.isInterrupted(exit)) {
+							console.log('[likes-to-go] content collection interrupted');
+						}
+					}),
+				),
+			).then(() => sendResponse());
+
 			return true;
 		}
+
 		if (msg._tag === 'CancelCollection') {
-			cancelledRef.current = true;
+			interuptFiber();
 			sendResponse();
 			return false;
 		}
+
 		return false;
 	};
 }

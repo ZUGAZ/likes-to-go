@@ -1,9 +1,9 @@
-import { createContentMessageHandler } from '@/content/content-message-handler';
+import {
+	createContentMessageHandler,
+	type ContentScriptCtx,
+} from '@/content/content-message-handler';
 
-export function initContentScript(ctx: { isValid: boolean }): void {
-	const cancelledRef = { current: false };
+export function initContentScript(ctx: ContentScriptCtx): void {
 	console.log('[likes-to-go] initContentScript');
-	chrome.runtime.onMessage.addListener(
-		createContentMessageHandler(ctx, cancelledRef),
-	);
+	chrome.runtime.onMessage.addListener(createContentMessageHandler(ctx));
 }
