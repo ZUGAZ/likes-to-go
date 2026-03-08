@@ -46,17 +46,19 @@ Four layers. Dependencies flow downward only. No circular imports.
 
 ### Where things live
 
+The folder layout is **context-based**: code is grouped by runtime context; the four architecture layers (View, ViewModel, Model, Infrastructure) live **inside** those contexts.
+
 ```
 src/
   entrypoints/       WXT entrypoints (popup, background, content script)
-  view/              Solid.js UI components
-  viewmodel/         Reactive state and action handlers
-  model/             Effect-powered data pipeline, schemas, typed errors
-  infrastructure/    DOM reader, Chrome API adapters, CSS selectors
+  popup/             Popup UI + viewmodel (View + ViewModel)
+  background/       Service worker orchestration
+  content/           Content script (Model + Infrastructure: content/model/, content/infrastructure/)
+  common/            Shared across contexts: common/model/, common/infrastructure/
   assets/            CSS (Tailwind)
 ```
 
-**WXT entrypoints** are the extension's entry points -- they wire things together but contain minimal logic. The real work lives in the four architecture layers.
+**WXT entrypoints** are the extension's entry points -- they wire things together but contain minimal logic. The real work lives in the four architecture layers, nested under the context folders above.
 
 ### Runtime components
 
