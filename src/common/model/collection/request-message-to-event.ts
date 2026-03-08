@@ -1,5 +1,5 @@
-import type { RequestMessage } from '@/common/model/request-message';
 import {
+	type RequestMessage,
 	isCancelCollection,
 	isCollectionComplete,
 	isCollectionError,
@@ -16,7 +16,7 @@ import {
 	type CollectionEvent,
 	StartCollection,
 	TracksBatch,
-} from '@/common/model/collection-event';
+} from './event';
 
 /**
  * Maps a validated RequestMessage to the corresponding CollectionEvent, or null for GetState.

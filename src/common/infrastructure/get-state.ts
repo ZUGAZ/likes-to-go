@@ -1,7 +1,9 @@
 import { sendToBackground } from '@/common/infrastructure/send-to-background';
-import type { GetStateResponse } from '@/common/model/get-state-response';
-import { GetStateResponseSchema } from '@/common/model/get-state-response';
-import { GetStateRequest } from '@/common/model/request-message';
+import {
+	GetStateRequest,
+	GetStateResponseSchema,
+	type GetStateResponse,
+} from '@/common/model/request-message';
 import { Schema } from 'effect';
 
 /**

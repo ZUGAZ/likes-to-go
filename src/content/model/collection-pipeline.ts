@@ -24,7 +24,9 @@ export const CollectionOutcomeSchema = Schema.Union(
 	OutcomeErrorSchema,
 );
 
-export type CollectionOutcome = Schema.Schema.Type<typeof CollectionOutcomeSchema>;
+export type CollectionOutcome = Schema.Schema.Type<
+	typeof CollectionOutcomeSchema
+>;
 
 type Completed = Schema.Schema.Type<typeof CompletedSchema>;
 export const Completed = Data.tagged<Completed>('Completed');

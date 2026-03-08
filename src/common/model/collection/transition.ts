@@ -1,27 +1,25 @@
-import type { GetStateResponse } from '@/common/model/get-state-response';
 import type { Track } from '@/common/model/track';
-import type { CollectionCommand } from '@/common/model/collection-command';
-import type { CollectionEvent } from '@/common/model/collection-event';
-import type { CollectionState } from '@/common/model/collection-state';
 import {
 	Collecting,
 	CollectingRequested,
 	Done,
 	ErrorState,
 	Idle,
-	hasTracks,
 	isCollecting,
 	isCollectingRequested,
 	isDone,
 	isErrorState,
 	isIdle,
-} from '@/common/model/collection-state';
+} from './state';
 import {
 	CloseTab,
 	CreateTab,
 	DownloadExportCommand,
 	SendStartToTab,
-} from '@/common/model/collection-command';
+} from './command';
+import type { CollectionCommand } from './command';
+import type { CollectionEvent } from './event';
+import type { CollectionState } from './state';
 import {
 	isCancelCollectionEvent,
 	isCollectionCompleteEvent,
@@ -34,7 +32,7 @@ import {
 	isTabCreateFailed,
 	isTabCreated,
 	isTracksBatchEvent,
-} from '@/common/model/collection-event';
+} from './event';
 
 const LIKES_URL = 'https://soundcloud.com/you/likes';
 
@@ -180,25 +178,6 @@ export function transition(
 	}
 
 	return { state: current, commands: [] };
-}
-
-export function collectionStateToGetStateResponse(
-	state: CollectionState,
-): GetStateResponse {
-	const status = isIdle(state)
-		? 'idle'
-		: isCollectingRequested(state) || isCollecting(state)
-			? 'collecting'
-			: isDone(state)
-				? 'done'
-				: 'error';
-	const trackCount = hasTracks(state) ? state.tracks.length : 0;
-	const errorMessage = isErrorState(state) ? state.message : undefined;
-	return {
-		status,
-		trackCount,
-		...(errorMessage !== undefined && { errorMessage }),
-	};
 }
 
 export const initialCollectionState: CollectionState = Idle();

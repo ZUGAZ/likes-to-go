@@ -1,16 +1,14 @@
 import { Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { hasTracks } from '@/common/model/collection-state';
 import {
+	collectionStateToGetStateResponse,
+	hasTracks,
+	initialCollectionState,
 	StartCollection,
 	TabCreated,
 	TracksBatch,
-} from '@/common/model/collection-event';
-import {
-	collectionStateToGetStateResponse,
-	initialCollectionState,
 	transition,
-} from '@/common/model/collection-transition';
+} from '@/common/model/collection';
 import { TrackSchema } from '@/common/model/track';
 
 function validTrack(

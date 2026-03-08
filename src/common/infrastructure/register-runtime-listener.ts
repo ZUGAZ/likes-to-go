@@ -1,6 +1,8 @@
 import { Either } from 'effect';
-import type { MessageResponse } from '@/common/model/get-state-response';
-import type { RequestMessage } from '@/common/model/request-message';
+import type {
+	MessageResponse,
+	RequestMessage,
+} from '@/common/model/request-message';
 import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
 
 /**

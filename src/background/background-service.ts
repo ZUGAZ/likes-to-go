@@ -1,38 +1,34 @@
-import type { GetStateResponse } from '@/common/model/get-state-response';
-import type { RequestMessage } from '@/common/model/request-message';
+import type {
+	GetStateResponse,
+	RequestMessage,
+} from '@/common/model/request-message';
 import {
 	getRequestMessageTagForLog,
 	isGetStateRequest,
 	isTracksBatch,
 	StartCollectionRequest,
 } from '@/common/model/request-message';
-import { requestMessageToCollectionEvent } from '@/common/model/request-message-to-event';
-import type { CollectionState } from '@/common/model/collection-state';
 import {
+	type CollectionCommand,
+	type CollectionEvent,
+	type CollectionState,
+	collectionStateToGetStateResponse,
+	DownloadFailed,
+	getCollectionEventTag,
 	getCollectionStateTag,
 	hasTracks,
-} from '@/common/model/collection-state';
-import type { CollectionEvent } from '@/common/model/collection-event';
-import {
-	getCollectionEventTag,
-	TabCreated,
-	TabCreateFailed,
-	TabComplete,
-	SendToTabFailed,
-	DownloadFailed,
-} from '@/common/model/collection-event';
-import type { CollectionCommand } from '@/common/model/collection-command';
-import {
+	initialCollectionState,
 	isCloseTab,
 	isCreateTab,
 	isDownloadExportCommand,
 	isSendStartToTab,
-} from '@/common/model/collection-command';
-import {
-	collectionStateToGetStateResponse,
-	initialCollectionState,
+	requestMessageToCollectionEvent,
+	SendToTabFailed,
+	TabComplete,
+	TabCreateFailed,
+	TabCreated,
 	transition,
-} from '@/common/model/collection-transition';
+} from '@/common/model/collection';
 import { buildExportPayload } from '@/common/model/exporter';
 import {
 	registerRuntimeListener,
