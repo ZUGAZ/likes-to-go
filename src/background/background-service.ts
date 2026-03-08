@@ -9,6 +9,17 @@ import {
 	type CollectionCommand,
 	type CollectionEvent,
 	type CollectionState,
+	StartCollection,
+	TracksBatch,
+	CollectionComplete,
+	CollectionError,
+	CancelCollection,
+	DownloadExport,
+	TabCreated,
+	TabCreateFailed,
+	TabComplete,
+	SendToTabFailed,
+	DownloadFailed,
 } from '@/common/model/collection-state';
 import { buildExportPayload } from '@/common/model/exporter';
 import {
@@ -25,17 +36,17 @@ const stateRef: { current: CollectionState } = {
 function messageToEvent(message: RequestMessage): CollectionEvent | null {
 	switch (message._tag) {
 		case 'StartCollection':
-			return { _tag: 'StartCollection' };
+			return StartCollection();
 		case 'TracksBatch':
-			return { _tag: 'TracksBatch', tracks: message.tracks };
+			return TracksBatch({ tracks: message.tracks });
 		case 'CollectionComplete':
-			return { _tag: 'CollectionComplete' };
+			return CollectionComplete();
 		case 'CollectionError':
-			return { _tag: 'CollectionError', message: message.message };
+			return CollectionError({ message: message.message });
 		case 'CancelCollection':
-			return { _tag: 'CancelCollection' };
+			return CancelCollection();
 		case 'DownloadExport':
-			return { _tag: 'DownloadExport' };
+			return DownloadExport();
 		case 'GetState':
 			return null;
 	}
@@ -55,16 +66,15 @@ async function runCommand(
 				});
 				const tabId = tab.id;
 				if (tabId === undefined) {
-					await dispatch({
-						_tag: 'TabCreateFailed',
-						message: 'Failed to create tab',
-					});
+					await dispatch(
+						TabCreateFailed({ message: 'Failed to create tab' }),
+					);
 				} else {
-					await dispatch({ _tag: 'TabCreated', tabId });
+					await dispatch(TabCreated({ tabId }));
 				}
 			} catch (err: unknown) {
 				const message = err instanceof Error ? err.message : String(err);
-				await dispatch({ _tag: 'TabCreateFailed', message });
+				await dispatch(TabCreateFailed({ message }));
 			}
 			break;
 		}
@@ -73,10 +83,10 @@ async function runCommand(
 			break;
 		case 'SendStartToTab':
 			console.log('[likes-to-go] background SendStartToTab', cmd.tabId);
-			sendToTab(cmd.tabId, { _tag: 'StartCollection' }).catch(
+			sendToTab(cmd.tabId, StartCollection()).catch(
 				async (err: unknown) => {
 					const message = err instanceof Error ? err.message : String(err);
-					await dispatch({ _tag: 'SendToTabFailed', message });
+					await dispatch(SendToTabFailed({ message }));
 				},
 			);
 			break;
@@ -88,7 +98,7 @@ async function runCommand(
 			downloadJson(JSON.stringify(payload)).catch(async (err: unknown) => {
 				const message = err instanceof Error ? err.message : String(err);
 				console.error('[likes-to-go] background download failed', message);
-				await dispatch({ _tag: 'DownloadFailed', message });
+				await dispatch(DownloadFailed({ message }));
 			});
 			break;
 		}
@@ -143,7 +153,7 @@ async function handleMessage(
 }
 
 function handleTabComplete(tabId: number): void {
-	void dispatch({ _tag: 'TabComplete', tabId });
+	void dispatch(TabComplete({ tabId }));
 }
 
 export function initBackgroundService(): void {
