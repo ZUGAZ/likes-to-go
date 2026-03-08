@@ -63,7 +63,9 @@ describe('TrackSchema', () => {
 		expect(decoded.title).toBe('Full');
 		expect(decoded.genre).toBe('Electronic');
 		expect(decoded.tags).toEqual(['ambient', 'chill']);
-		expect(decoded.artwork_url).toBe('https://i1.sndcdn.com/artworks-xxx-large.jpg');
+		expect(decoded.artwork_url).toBe(
+			'https://i1.sndcdn.com/artworks-xxx-large.jpg',
+		);
 		expect(decoded.liked_at).toBe('2026-01-15T08:30:00Z');
 		expect(decoded.playback_count).toBe(12500);
 		expect(decoded.likes_count).toBe(890);

@@ -12,7 +12,9 @@ import type {
 } from '@/content/model/collect-batches';
 import {
 	collectionPipeline,
+	Completed,
 	type CollectionOutcome,
+	OutcomeError,
 } from '@/content/model/collection-pipeline';
 import { Effect, Exit, Fiber, Layer, TestClock, TestContext } from 'effect';
 import { describe, expect, it } from 'vitest';
@@ -158,7 +160,7 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual({ _tag: 'Completed' });
+		expect(value).toEqual(Completed());
 		expect(calls).toContain('TracksBatch:2');
 		expect(calls).toContain('CollectionComplete');
 	});
@@ -176,7 +178,7 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual({ _tag: 'Completed' });
+		expect(value).toEqual(Completed());
 		const batchCalls = calls.filter((c) => c.startsWith('TracksBatch'));
 		expect(batchCalls).toHaveLength(0);
 		expect(calls).toContain('CollectionComplete');
@@ -220,7 +222,7 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual({ _tag: 'Error', message: 'channel closed' });
+		expect(value).toEqual(OutcomeError({ message: 'channel closed' }));
 		expect(calls).toContain('CollectionError:channel closed');
 	});
 
@@ -244,7 +246,7 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual({ _tag: 'Completed' });
+		expect(value).toEqual(Completed());
 		expect(calls).toContain('TracksBatch:1');
 		expect(calls).toContain('TracksBatch:2');
 		expect(calls).toContain('CollectionComplete');

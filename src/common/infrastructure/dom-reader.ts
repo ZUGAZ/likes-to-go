@@ -120,7 +120,10 @@ function getStats(card: Element): {
  * Parse a list of track card elements into raw tracks. Uses selectors only; baseUrl resolves relative hrefs.
  * Missing or malformed optional fields are omitted; one bad card does not stop collection.
  */
-export function getTracksFromCards(cards: readonly Element[], baseUrl: string): RawTrack[] {
+export function getTracksFromCards(
+	cards: readonly Element[],
+	baseUrl: string,
+): RawTrack[] {
 	const out: RawTrack[] = [];
 	for (const card of cards) {
 		const title = getText(card.querySelector(TRACK_TITLE));

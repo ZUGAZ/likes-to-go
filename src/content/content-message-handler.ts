@@ -1,3 +1,8 @@
+import {
+	CollectionErrorRequest,
+	isCancelCollection,
+	isStartCollection,
+} from '@/common/model/request-message';
 import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
 import { TRACK_LIST_CONTAINER } from '@/common/infrastructure/selectors';
 import { sendToBackground } from '@/common/infrastructure/send-to-background';
@@ -40,7 +45,7 @@ export function createContentMessageHandler(
 		if (Either.isLeft(parsed)) return false;
 		const msg = parsed.right;
 
-		if (msg._tag === 'StartCollection') {
+		if (isStartCollection(msg)) {
 			console.log('[likes-to-go] content StartCollection received');
 
 			interuptFiber();
@@ -48,10 +53,11 @@ export function createContentMessageHandler(
 			const root = document.querySelector(TRACK_LIST_CONTAINER);
 			if (root === null) {
 				console.log('[likes-to-go] content track list not found');
-				void sendToBackground({
-					_tag: 'CollectionError',
-					message: 'Track list not found on page',
-				}).then(() => sendResponse());
+				void sendToBackground(
+					CollectionErrorRequest({
+						message: 'Track list not found on page',
+					}),
+				).then(() => sendResponse());
 				return true;
 			}
 
@@ -75,7 +81,7 @@ export function createContentMessageHandler(
 			return true;
 		}
 
-		if (msg._tag === 'CancelCollection') {
+		if (isCancelCollection(msg)) {
 			interuptFiber();
 			sendResponse();
 			return false;

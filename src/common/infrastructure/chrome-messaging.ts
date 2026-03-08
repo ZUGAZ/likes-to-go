@@ -1,9 +1,9 @@
+export type { RequestMessage } from '@/common/model/request-message';
 export type {
 	CollectionStatus,
 	GetStateResponse,
 	MessageResponse,
-	RequestMessage,
-} from '@/common/model/request-message';
+} from '@/common/model/get-state-response';
 export { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
 export { registerRuntimeListener } from '@/common/infrastructure/register-runtime-listener';
 export { sendToBackground } from '@/common/infrastructure/send-to-background';

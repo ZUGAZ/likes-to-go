@@ -1,20 +1,20 @@
-import { Schema } from 'effect';
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
+import { Data, Schema } from 'effect';
 
 // --- Request message schemas (discriminated union) ---
 
-const StartCollectionSchema = taggedStruct('StartCollection');
-const TracksBatchSchema = taggedStruct('TracksBatch', {
+export const StartCollectionSchema = taggedStruct('StartCollection');
+export const TracksBatchSchema = taggedStruct('TracksBatch', {
 	tracks: Schema.Array(TrackSchema),
 });
-const CollectionCompleteSchema = taggedStruct('CollectionComplete');
-const CollectionErrorSchema = taggedStruct('CollectionError', {
+export const CollectionCompleteSchema = taggedStruct('CollectionComplete');
+export const CollectionErrorSchema = taggedStruct('CollectionError', {
 	message: Schema.String,
 });
-const CancelCollectionSchema = taggedStruct('CancelCollection');
-const DownloadExportSchema = taggedStruct('DownloadExport');
-const GetStateSchema = taggedStruct('GetState');
+export const CancelCollectionSchema = taggedStruct('CancelCollection');
+export const DownloadExportSchema = taggedStruct('DownloadExport');
+export const GetStateSchema = taggedStruct('GetState');
 
 export const RequestMessageSchema = Schema.Union(
 	StartCollectionSchema,
@@ -28,22 +28,50 @@ export const RequestMessageSchema = Schema.Union(
 
 export type RequestMessage = Schema.Schema.Type<typeof RequestMessageSchema>;
 
-// --- Response type for GetState (background → popup) ---
+// --- Request constructors (Data.tagged) ---
 
-const COLLECTION_STATUSES = ['idle', 'collecting', 'done', 'error'] as const;
+type StartCollectionRequest = Schema.Schema.Type<typeof StartCollectionSchema>;
+export const StartCollectionRequest =
+	Data.tagged<StartCollectionRequest>('StartCollection');
 
-export type CollectionStatus = (typeof COLLECTION_STATUSES)[number];
+type TracksBatchRequest = Schema.Schema.Type<typeof TracksBatchSchema>;
+export const TracksBatchRequest =
+	Data.tagged<TracksBatchRequest>('TracksBatch');
 
-const CollectionStatusSchema = Schema.Literal(...COLLECTION_STATUSES);
-
-export const GetStateResponseSchema = Schema.Struct({
-	status: CollectionStatusSchema,
-	trackCount: Schema.Number,
-	errorMessage: Schema.optional(Schema.String),
-});
-
-export type GetStateResponse = Schema.Schema.Type<
-	typeof GetStateResponseSchema
+type CollectionCompleteRequest = Schema.Schema.Type<
+	typeof CollectionCompleteSchema
 >;
+export const CollectionCompleteRequest =
+	Data.tagged<CollectionCompleteRequest>('CollectionComplete');
 
-export type MessageResponse = GetStateResponse | undefined;
+type CollectionErrorRequest = Schema.Schema.Type<typeof CollectionErrorSchema>;
+export const CollectionErrorRequest =
+	Data.tagged<CollectionErrorRequest>('CollectionError');
+
+type CancelCollectionRequest = Schema.Schema.Type<
+	typeof CancelCollectionSchema
+>;
+export const CancelCollectionRequest =
+	Data.tagged<CancelCollectionRequest>('CancelCollection');
+
+type DownloadExportRequest = Schema.Schema.Type<typeof DownloadExportSchema>;
+export const DownloadExportRequest =
+	Data.tagged<DownloadExportRequest>('DownloadExport');
+
+type GetStateRequest = Schema.Schema.Type<typeof GetStateSchema>;
+export const GetStateRequest = Data.tagged<GetStateRequest>('GetState');
+
+// --- Type guards (Schema.is) ---
+
+export const isGetStateRequest = Schema.is(GetStateSchema);
+export const isStartCollection = Schema.is(StartCollectionSchema);
+export const isTracksBatch = Schema.is(TracksBatchSchema);
+export const isCollectionComplete = Schema.is(CollectionCompleteSchema);
+export const isCollectionError = Schema.is(CollectionErrorSchema);
+export const isCancelCollection = Schema.is(CancelCollectionSchema);
+export const isDownloadExport = Schema.is(DownloadExportSchema);
+
+/** Returns the message tag string for logging; no _tag at call site. */
+export function getRequestMessageTagForLog(message: RequestMessage): string {
+	return message._tag;
+}

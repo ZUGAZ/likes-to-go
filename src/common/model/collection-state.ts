@@ -1,239 +1,66 @@
-import { Data } from 'effect';
-import type { GetStateResponse } from '@/common/model/request-message';
-import type { Track } from '@/common/model/track';
+import { Data, Schema } from 'effect';
+import { taggedStruct } from '@/common/model/tagged-struct';
+import { TrackSchema } from '@/common/model/track';
 
-const LIKES_URL = 'https://soundcloud.com/you/likes';
+const IdleSchema = taggedStruct('Idle');
+const CollectingRequestedSchema = taggedStruct('CollectingRequested');
+const CollectingStateSchema = taggedStruct('Collecting', {
+	tabId: Schema.Number,
+	tracks: Schema.Array(TrackSchema),
+});
+const DoneStateSchema = taggedStruct('Done', {
+	tracks: Schema.Array(TrackSchema),
+});
+const ErrorStateSchema = taggedStruct('Error', {
+	message: Schema.String,
+});
 
-// --- State machine (discriminated union) ---
+export const CollectionStateSchema = Schema.Union(
+	IdleSchema,
+	CollectingRequestedSchema,
+	CollectingStateSchema,
+	DoneStateSchema,
+	ErrorStateSchema,
+);
 
-export type CollectionState =
-	| { _tag: 'Idle' }
-	| { _tag: 'CollectingRequested' }
-	| { _tag: 'Collecting'; tabId: number; tracks: readonly Track[] }
-	| { _tag: 'Done'; tracks: readonly Track[] }
-	| { _tag: 'Error'; message: string };
+export type CollectionState = Schema.Schema.Type<typeof CollectionStateSchema>;
 
-// --- Events (input to transitions) ---
+type Idle = Schema.Schema.Type<typeof IdleSchema>;
+export const Idle = Data.tagged<Idle>('Idle');
 
-export type CollectionEvent =
-	| { _tag: 'StartCollection' }
-	| { _tag: 'TabCreated'; tabId: number }
-	| { _tag: 'TabCreateFailed'; message: string }
-	| { _tag: 'TracksBatch'; tracks: readonly Track[] }
-	| { _tag: 'CollectionComplete' }
-	| { _tag: 'CollectionError'; message: string }
-	| { _tag: 'CancelCollection' }
-	| { _tag: 'DownloadExport' }
-	| { _tag: 'TabComplete'; tabId: number }
-	| { _tag: 'SendToTabFailed'; message: string }
-	| { _tag: 'DownloadFailed'; message: string };
+type CollectingRequested = Schema.Schema.Type<typeof CollectingRequestedSchema>;
+export const CollectingRequested = Data.tagged<CollectingRequested>(
+	'CollectingRequested',
+);
 
-// --- Commands (side effects for the orchestrator to run) ---
+type Collecting = Schema.Schema.Type<typeof CollectingStateSchema>;
+export const Collecting = Data.tagged<Collecting>('Collecting');
 
-export type CollectionCommand =
-	| { _tag: 'CreateTab'; url: string }
-	| { _tag: 'CloseTab'; tabId: number }
-	| { _tag: 'SendStartToTab'; tabId: number }
-	| { _tag: 'DownloadExport'; tracks: readonly Track[] };
+type Done = Schema.Schema.Type<typeof DoneStateSchema>;
+export const Done = Data.tagged<Done>('Done');
 
-// --- Constructors (Data.taggedEnum) ---
+type ErrorState = Schema.Schema.Type<typeof ErrorStateSchema>;
+export const ErrorState = Data.tagged<ErrorState>('Error');
 
-const CollectionEventC = Data.taggedEnum<CollectionEvent>();
-export const {
-	StartCollection,
-	TracksBatch,
-	CollectionComplete,
-	CollectionError,
-	CancelCollection,
-	DownloadExport,
-	TabCreated,
-	TabCreateFailed,
-	TabComplete,
-	SendToTabFailed,
-	DownloadFailed,
-} = CollectionEventC;
+export const isIdle = Schema.is(IdleSchema);
+export const isCollectingRequested = Schema.is(CollectingRequestedSchema);
+export const isCollecting = Schema.is(CollectingStateSchema);
+export const isDone = Schema.is(DoneStateSchema);
+export const isErrorState = Schema.is(ErrorStateSchema);
 
-const CollectionCommandC = Data.taggedEnum<CollectionCommand>();
-const {
-	CreateTab,
-	CloseTab,
-	SendStartToTab,
-	DownloadExport: DownloadExportCommand,
-} = CollectionCommandC;
-
-const CollectionStateC = Data.taggedEnum<CollectionState>();
-const { Idle, CollectingRequested, Collecting, Done, Error: ErrorState } =
-	CollectionStateC;
-
-export interface TransitionResult {
-	state: CollectionState;
-	commands: readonly CollectionCommand[];
-}
-
-// --- Pure helpers (no mutation) ---
-
-function appendTracksDeduped(
-	current: readonly Track[],
-	newTracks: readonly Track[],
-): Track[] {
-	const urlSet = new Set(current.map((t) => t.url.toString()));
-	const out: Track[] = [...current]; // not optimal, can be long list of tracks
-	for (const t of newTracks) {
-		const urlStr = t.url.toString();
-		if (!urlSet.has(urlStr)) {
-			urlSet.add(urlStr);
-			out.push(t);
-		}
-	}
-	return out;
-}
-
-// --- Single pure transition (state + event → new state + commands) ---
-
-export function transition(
-	current: CollectionState,
-	event: CollectionEvent,
-): TransitionResult {
-	switch (current._tag) {
-		case 'Idle': {
-			if (event._tag === 'StartCollection') {
-				return {
-					state: CollectingRequested(),
-					commands: [CreateTab({ url: LIKES_URL })],
-				};
-			}
-			if (event._tag === 'DownloadFailed') {
-				return {
-					state: ErrorState({ message: event.message }),
-					commands: [],
-				};
-			}
-			break;
-		}
-		case 'CollectingRequested': {
-			if (event._tag === 'TabCreated') {
-				return {
-					state: Collecting({ tabId: event.tabId, tracks: [] }),
-					commands: [],
-				};
-			}
-			if (event._tag === 'TabCreateFailed') {
-				return {
-					state: ErrorState({ message: event.message }),
-					commands: [],
-				};
-			}
-			if (event._tag === 'CancelCollection') {
-				return { state: Idle(), commands: [] };
-			}
-			break;
-		}
-		case 'Collecting': {
-			if (event._tag === 'TracksBatch') {
-				return {
-					state: Collecting({
-						tabId: current.tabId,
-						tracks: appendTracksDeduped(current.tracks, event.tracks),
-					}),
-					commands: [],
-				};
-			}
-			if (event._tag === 'CollectionComplete') {
-				return {
-					state: Done({ tracks: current.tracks }),
-					commands: [],
-				};
-			}
-			if (event._tag === 'CollectionError') {
-				return {
-					state: ErrorState({ message: event.message }),
-					commands: [CloseTab({ tabId: current.tabId })],
-				};
-			}
-			if (event._tag === 'CancelCollection') {
-				return {
-					state: Idle(),
-					commands: [CloseTab({ tabId: current.tabId })],
-				};
-			}
-			if (event._tag === 'TabComplete' && event.tabId === current.tabId) {
-				return {
-					state: current,
-					commands: [SendStartToTab({ tabId: current.tabId })],
-				};
-			}
-			if (event._tag === 'SendToTabFailed') {
-				return {
-					state: ErrorState({ message: event.message }),
-					commands: [CloseTab({ tabId: current.tabId })],
-				};
-			}
-			if (event._tag === 'DownloadExport') {
-				return {
-					state: Idle(),
-					commands: [DownloadExportCommand({ tracks: current.tracks })],
-				};
-			}
-			break;
-		}
-		case 'Done': {
-			if (event._tag === 'DownloadExport') {
-				return {
-					state: Idle(),
-					commands: [DownloadExportCommand({ tracks: current.tracks })],
-				};
-			}
-			if (event._tag === 'CancelCollection') {
-				return { state: Idle(), commands: [] };
-			}
-			break;
-		}
-		case 'Error': {
-			if (event._tag === 'DownloadFailed') {
-				return {
-					state: ErrorState({ message: event.message }),
-					commands: [],
-				};
-			}
-			if (event._tag === 'CancelCollection') {
-				return { state: Idle(), commands: [] };
-			}
-			if (event._tag === 'StartCollection') {
-				return {
-					state: CollectingRequested(),
-					commands: [CreateTab({ url: LIKES_URL })],
-				};
-			}
-			break;
-		}
-	}
-	// No transition for this (state, event) pair: keep state, no commands
-	return { state: current, commands: [] };
-}
-
-// --- Map internal state to GetStateResponse (for popup) ---
-
-export function collectionStateToGetStateResponse(
+export function hasTracks(
 	state: CollectionState,
-): GetStateResponse {
-	const status =
-		state._tag === 'Idle'
-			? 'idle'
-			: state._tag === 'CollectingRequested' || state._tag === 'Collecting'
-				? 'collecting'
-				: state._tag === 'Done'
-					? 'done'
-					: 'error';
-	const trackCount =
-		state._tag === 'Collecting' || state._tag === 'Done'
-			? state.tracks.length
-			: 0;
-	const errorMessage = state._tag === 'Error' ? state.message : undefined;
-	return {
-		status,
-		trackCount,
-		...(errorMessage !== undefined && { errorMessage }),
-	};
+): state is
+	| Schema.Schema.Type<typeof CollectingStateSchema>
+	| Schema.Schema.Type<typeof DoneStateSchema> {
+	return isCollecting(state) || isDone(state);
 }
 
-export const initialCollectionState: CollectionState = Idle();
+export function getCollectionStateTag(state: CollectionState): string {
+	if (isIdle(state)) return 'Idle';
+	if (isCollectingRequested(state)) return 'CollectingRequested';
+	if (isCollecting(state)) return 'Collecting';
+	if (isDone(state)) return 'Done';
+	if (isErrorState(state)) return 'Error';
+	return 'Unknown';
+}

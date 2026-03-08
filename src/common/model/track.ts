@@ -26,7 +26,9 @@ export type Track = Schema.Schema.Type<typeof TrackSchema>;
  * Decode unknown input to Track. Invalid data produces InvalidTrack (typed error), no throw.
  * Returns Either<Track, InvalidTrack> (Right = success, Left = InvalidTrack).
  */
-export function decodeTrack(input: unknown): Either.Either<Track, InvalidTrack> {
+export function decodeTrack(
+	input: unknown,
+): Either.Either<Track, InvalidTrack> {
 	return Either.mapLeft(
 		Schema.decodeUnknownEither(TrackSchema)(input),
 		(parseError) => new InvalidTrack({ reason: parseError.toString() }),

@@ -1,13 +1,18 @@
 import {
-	applyGetStateResponse,
-	setToInitial,
-	setToProcessing,
-} from '@/popup/popup-state';
-import {
 	decodeGetStateResponse,
 	getState,
 	sendToBackground,
 } from '@/common/infrastructure/chrome-messaging';
+import {
+	CancelCollectionRequest,
+	DownloadExportRequest,
+	StartCollectionRequest,
+} from '@/common/model/request-message';
+import {
+	applyGetStateResponse,
+	setToInitial,
+	setToProcessing,
+} from '@/popup/popup-state';
 
 const POLL_INTERVAL_MS = 500;
 
@@ -38,20 +43,20 @@ function startPolling(): void {
 
 export async function startCollection(): Promise<void> {
 	console.log('[likes-to-go] popup startCollection → sending StartCollection');
-	await sendToBackground({ _tag: 'StartCollection' });
+	await sendToBackground(StartCollectionRequest());
 	setToProcessing();
 	startPolling();
 }
 
 export async function cancelCollection(): Promise<void> {
 	stopPolling();
-	await sendToBackground({ _tag: 'CancelCollection' });
+	await sendToBackground(CancelCollectionRequest());
 	setToInitial();
 }
 
 export async function download(): Promise<void> {
 	console.log('[likes-to-go] popup download → sending DownloadExport');
-	const raw = await sendToBackground({ _tag: 'DownloadExport' });
+	const raw = await sendToBackground(DownloadExportRequest());
 	try {
 		const res = await decodeGetStateResponse(raw);
 		applyGetStateResponse(res.status, res.trackCount, res.errorMessage);

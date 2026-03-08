@@ -1,6 +1,7 @@
 import { sendToBackground } from '@/common/infrastructure/send-to-background';
-import type { GetStateResponse } from '@/common/model/request-message';
-import { GetStateResponseSchema } from '@/common/model/request-message';
+import type { GetStateResponse } from '@/common/model/get-state-response';
+import { GetStateResponseSchema } from '@/common/model/get-state-response';
+import { GetStateRequest } from '@/common/model/request-message';
 import { Schema } from 'effect';
 
 /**
@@ -16,5 +17,5 @@ export function decodeGetStateResponse(
  * Request current collection state from the background. Validates response at boundary.
  */
 export function getState(): Promise<GetStateResponse> {
-	return sendToBackground({ _tag: 'GetState' }).then(decodeGetStateResponse);
+	return sendToBackground(GetStateRequest()).then(decodeGetStateResponse);
 }

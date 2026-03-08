@@ -1,10 +1,16 @@
 import { Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
+import { hasTracks } from '@/common/model/collection-state';
+import {
+	StartCollection,
+	TabCreated,
+	TracksBatch,
+} from '@/common/model/collection-event';
 import {
 	collectionStateToGetStateResponse,
 	initialCollectionState,
 	transition,
-} from '@/common/model/collection-state';
+} from '@/common/model/collection-transition';
 import { TrackSchema } from '@/common/model/track';
 
 function validTrack(
@@ -19,28 +25,30 @@ function validTrack(
 	});
 }
 
-describe('collection-state', () => {
+describe('collection-transition', () => {
 	describe('progress count = validated tracks only', () => {
 		it('GetStateResponse trackCount equals state.tracks.length when Collecting', () => {
 			let state = initialCollectionState;
-			const r1 = transition(state, { _tag: 'StartCollection' });
+			const r1 = transition(state, StartCollection());
 			state = r1.state;
-			state = transition(state, { _tag: 'TabCreated', tabId: 1 }).state;
+			state = transition(state, TabCreated({ tabId: 1 })).state;
 			const tracks = [
 				validTrack({ title: 'A', url: 'https://soundcloud.com/a/1' }),
 				validTrack({ title: 'B', url: 'https://soundcloud.com/b/2' }),
 				validTrack({ title: 'C', url: 'https://soundcloud.com/c/3' }),
 			];
-			state = transition(state, { _tag: 'TracksBatch', tracks }).state;
+			state = transition(state, TracksBatch({ tracks })).state;
 
 			const response = collectionStateToGetStateResponse(state);
 			expect(response.status).toBe('collecting');
 			expect(response.trackCount).toBe(3);
-			expect(state._tag === 'Collecting' && state.tracks.length).toBe(3);
+			expect(hasTracks(state) && state.tracks.length).toBe(3);
 		});
 
 		it('GetStateResponse trackCount is 0 when Idle', () => {
-			const response = collectionStateToGetStateResponse(initialCollectionState);
+			const response = collectionStateToGetStateResponse(
+				initialCollectionState,
+			);
 			expect(response.trackCount).toBe(0);
 		});
 	});

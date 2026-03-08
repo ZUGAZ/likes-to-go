@@ -1,5 +1,8 @@
-import { Effect } from 'effect';
-import { initialScanState, type CollectionScanState } from '@/content/model/collect-batches';
+import { Data, Effect, Schema } from 'effect';
+import {
+	initialScanState,
+	type CollectionScanState,
+} from '@/content/model/collect-batches';
 import { NO_NEW_TRACKS_PASSES, WAIT_FOR_NODES_MS } from '@/content/constants';
 import {
 	BackgroundSenderTag,
@@ -7,11 +10,30 @@ import {
 	ScrollerTag,
 	type SendError,
 } from '@/content/infrastructure/collection-services';
+import { taggedStruct } from '@/common/model/tagged-struct';
 
-export type CollectionOutcome =
-	| { _tag: 'Completed' }
-	| { _tag: 'Cancelled' }
-	| { _tag: 'Error'; message: string };
+const CompletedSchema = taggedStruct('Completed');
+const CancelledSchema = taggedStruct('Cancelled');
+const OutcomeErrorSchema = taggedStruct('Error', {
+	message: Schema.String,
+});
+
+export const CollectionOutcomeSchema = Schema.Union(
+	CompletedSchema,
+	CancelledSchema,
+	OutcomeErrorSchema,
+);
+
+export type CollectionOutcome = Schema.Schema.Type<typeof CollectionOutcomeSchema>;
+
+type Completed = Schema.Schema.Type<typeof CompletedSchema>;
+export const Completed = Data.tagged<Completed>('Completed');
+
+type Cancelled = Schema.Schema.Type<typeof CancelledSchema>;
+export const Cancelled = Data.tagged<Cancelled>('Cancelled');
+
+type OutcomeError = Schema.Schema.Type<typeof OutcomeErrorSchema>;
+export const OutcomeError = Data.tagged<OutcomeError>('Error');
 
 interface LoopState {
 	readonly scanState: CollectionScanState;
@@ -98,13 +120,13 @@ export const collectionPipeline: Effect.Effect<
 	console.log('[likes-to-go] content sending CollectionComplete');
 	yield* sender.sendComplete();
 
-	return { _tag: 'Completed' } as const;
+	return Completed();
 }).pipe(
 	Effect.catchTag('SendError', (err) =>
 		Effect.gen(function* () {
 			const sender = yield* BackgroundSenderTag;
 			yield* sender.sendError(err.reason).pipe(Effect.ignore);
-			return { _tag: 'Error', message: err.reason } as const;
+			return OutcomeError({ message: err.reason });
 		}),
 	),
 );

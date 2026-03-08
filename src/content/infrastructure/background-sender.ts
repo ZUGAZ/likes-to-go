@@ -1,5 +1,10 @@
 import { Context, Data, Effect, Layer } from 'effect';
 import { sendToBackground } from '@/common/infrastructure/send-to-background';
+import {
+	CollectionCompleteRequest,
+	CollectionErrorRequest,
+	TracksBatchRequest,
+} from '@/common/model/request-message';
 import type { Track } from '@/common/model/track';
 
 export class SendError extends Data.TaggedError('SendError')<{
@@ -32,11 +37,8 @@ function wrapSend(promise: Promise<unknown>): Effect.Effect<void, SendError> {
 export const BackgroundSenderLive: Layer.Layer<BackgroundSenderTag> =
 	Layer.succeed(BackgroundSenderTag, {
 		sendBatch: (tracks) =>
-			wrapSend(
-				sendToBackground({ _tag: 'TracksBatch', tracks: [...tracks] }),
-			),
-		sendComplete: () =>
-			wrapSend(sendToBackground({ _tag: 'CollectionComplete' })),
+			wrapSend(sendToBackground(TracksBatchRequest({ tracks: [...tracks] }))),
+		sendComplete: () => wrapSend(sendToBackground(CollectionCompleteRequest())),
 		sendError: (message) =>
-			wrapSend(sendToBackground({ _tag: 'CollectionError', message })),
+			wrapSend(sendToBackground(CollectionErrorRequest({ message }))),
 	});

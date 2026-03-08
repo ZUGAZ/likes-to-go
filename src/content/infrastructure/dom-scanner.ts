@@ -7,9 +7,7 @@ import {
 import { LIKES_PAGE_BASE_URL } from '@/content/constants';
 
 export interface DomScanner {
-	readonly scanBatch: (
-		state: CollectionScanState,
-	) => Effect.Effect<{
+	readonly scanBatch: (state: CollectionScanState) => Effect.Effect<{
 		batch: CollectionBatch;
 		nextState: CollectionScanState;
 	}>;
