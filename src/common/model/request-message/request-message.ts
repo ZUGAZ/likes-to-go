@@ -70,8 +70,3 @@ export const isCollectionComplete = Schema.is(CollectionCompleteSchema);
 export const isCollectionError = Schema.is(CollectionErrorSchema);
 export const isCancelCollection = Schema.is(CancelCollectionSchema);
 export const isDownloadExport = Schema.is(DownloadExportSchema);
-
-/** Returns the message tag string for logging; no _tag at call site. */
-export function getRequestMessageTagForLog(message: RequestMessage): string {
-	return message._tag;
-}

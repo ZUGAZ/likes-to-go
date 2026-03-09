@@ -4,7 +4,6 @@ export {
 	CollectionErrorRequest,
 	DownloadExportRequest,
 	GetStateRequest,
-	getRequestMessageTagForLog,
 	isCancelCollection,
 	isCollectionComplete,
 	isCollectionError,

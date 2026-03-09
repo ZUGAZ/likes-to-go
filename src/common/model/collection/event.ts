@@ -40,41 +40,49 @@ export const CollectionEventSchema = Schema.Union(
 
 export type CollectionEvent = Schema.Schema.Type<typeof CollectionEventSchema>;
 
-type StartCollection = Schema.Schema.Type<typeof StartCollectionEventSchema>;
+export type StartCollection = Schema.Schema.Type<
+	typeof StartCollectionEventSchema
+>;
 export const StartCollection = Data.tagged<StartCollection>('StartCollection');
 
-type TabCreated = Schema.Schema.Type<typeof TabCreatedSchema>;
+export type TabCreated = Schema.Schema.Type<typeof TabCreatedSchema>;
 export const TabCreated = Data.tagged<TabCreated>('TabCreated');
 
-type TabCreateFailed = Schema.Schema.Type<typeof TabCreateFailedSchema>;
+export type TabCreateFailed = Schema.Schema.Type<typeof TabCreateFailedSchema>;
 export const TabCreateFailed = Data.tagged<TabCreateFailed>('TabCreateFailed');
 
-type TracksBatch = Schema.Schema.Type<typeof TracksBatchEventSchema>;
+export type TracksBatch = Schema.Schema.Type<typeof TracksBatchEventSchema>;
 export const TracksBatch = Data.tagged<TracksBatch>('TracksBatch');
 
-type CollectionComplete = Schema.Schema.Type<
+export type CollectionComplete = Schema.Schema.Type<
 	typeof CollectionCompleteEventSchema
 >;
 export const CollectionComplete =
 	Data.tagged<CollectionComplete>('CollectionComplete');
 
-type CollectionError = Schema.Schema.Type<typeof CollectionErrorEventSchema>;
+export type CollectionError = Schema.Schema.Type<
+	typeof CollectionErrorEventSchema
+>;
 export const CollectionError = Data.tagged<CollectionError>('CollectionError');
 
-type CancelCollection = Schema.Schema.Type<typeof CancelCollectionEventSchema>;
+export type CancelCollection = Schema.Schema.Type<
+	typeof CancelCollectionEventSchema
+>;
 export const CancelCollection =
 	Data.tagged<CancelCollection>('CancelCollection');
 
-type DownloadExport = Schema.Schema.Type<typeof DownloadExportEventSchema>;
+export type DownloadExport = Schema.Schema.Type<
+	typeof DownloadExportEventSchema
+>;
 export const DownloadExport = Data.tagged<DownloadExport>('DownloadExport');
 
-type TabComplete = Schema.Schema.Type<typeof TabCompleteSchema>;
+export type TabComplete = Schema.Schema.Type<typeof TabCompleteSchema>;
 export const TabComplete = Data.tagged<TabComplete>('TabComplete');
 
-type SendToTabFailed = Schema.Schema.Type<typeof SendToTabFailedSchema>;
+export type SendToTabFailed = Schema.Schema.Type<typeof SendToTabFailedSchema>;
 export const SendToTabFailed = Data.tagged<SendToTabFailed>('SendToTabFailed');
 
-type DownloadFailed = Schema.Schema.Type<typeof DownloadFailedSchema>;
+export type DownloadFailed = Schema.Schema.Type<typeof DownloadFailedSchema>;
 export const DownloadFailed = Data.tagged<DownloadFailed>('DownloadFailed');
 
 export const isStartCollectionEvent = Schema.is(StartCollectionEventSchema);

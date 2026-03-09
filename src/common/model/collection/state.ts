@@ -1,6 +1,6 @@
-import { Data, Schema } from 'effect';
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
+import { Data, Schema } from 'effect';
 
 const IdleSchema = taggedStruct('Idle');
 const CollectingRequestedSchema = taggedStruct('CollectingRequested');
@@ -54,13 +54,4 @@ export function hasTracks(
 	| Schema.Schema.Type<typeof CollectingStateSchema>
 	| Schema.Schema.Type<typeof DoneStateSchema> {
 	return isCollecting(state) || isDone(state);
-}
-
-export function getCollectionStateTag(state: CollectionState): string {
-	if (isIdle(state)) return 'Idle';
-	if (isCollectingRequested(state)) return 'CollectingRequested';
-	if (isCollecting(state)) return 'Collecting';
-	if (isDone(state)) return 'Done';
-	if (isErrorState(state)) return 'Error';
-	return 'Unknown';
 }
