@@ -1,7 +1,7 @@
-import * as fc from 'fast-check';
-import { describe, expect, it } from 'vitest';
 import { buildExportPayload } from '@/common/model/exporter';
 import type { Track } from '@/common/model/track';
+import * as fc from 'fast-check';
+import { describe, expect, it } from 'vitest';
 
 function validTrack(overrides?: Partial<Track>): Track {
 	return {
