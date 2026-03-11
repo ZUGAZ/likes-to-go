@@ -1,10 +1,13 @@
-import { Data, Schema } from 'effect';
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
+import { Data, Schema } from 'effect';
 
 const CreateTabSchema = taggedStruct('CreateTab', { url: Schema.String });
 const CloseTabSchema = taggedStruct('CloseTab', { tabId: Schema.Number });
 const SendStartToTabSchema = taggedStruct('SendStartToTab', {
+	tabId: Schema.Number,
+});
+const SendCancelToTabSchema = taggedStruct('SendCancelToTab', {
 	tabId: Schema.Number,
 });
 const DownloadExportCommandSchema = taggedStruct('DownloadExport', {
@@ -15,6 +18,7 @@ export const CollectionCommandSchema = Schema.Union(
 	CreateTabSchema,
 	CloseTabSchema,
 	SendStartToTabSchema,
+	SendCancelToTabSchema,
 	DownloadExportCommandSchema,
 );
 
@@ -31,6 +35,9 @@ export const CloseTab = Data.tagged<CloseTab>('CloseTab');
 type SendStartToTab = Schema.Schema.Type<typeof SendStartToTabSchema>;
 export const SendStartToTab = Data.tagged<SendStartToTab>('SendStartToTab');
 
+type SendCancelToTab = Schema.Schema.Type<typeof SendCancelToTabSchema>;
+export const SendCancelToTab = Data.tagged<SendCancelToTab>('SendCancelToTab');
+
 type DownloadExportCommand = Schema.Schema.Type<
 	typeof DownloadExportCommandSchema
 >;
@@ -40,4 +47,5 @@ export const DownloadExportCommand =
 export const isCreateTab = Schema.is(CreateTabSchema);
 export const isCloseTab = Schema.is(CloseTabSchema);
 export const isSendStartToTab = Schema.is(SendStartToTabSchema);
+export const isSendCancelToTab = Schema.is(SendCancelToTabSchema);
 export const isDownloadExportCommand = Schema.is(DownloadExportCommandSchema);

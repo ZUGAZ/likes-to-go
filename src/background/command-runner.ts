@@ -4,6 +4,7 @@ import {
 	isCreateTab,
 	isCloseTab,
 	isDownloadExportCommand,
+	isSendCancelToTab,
 	isSendStartToTab,
 } from '@/common/model/collection';
 import {
@@ -14,6 +15,7 @@ import {
 	runCreateTab,
 	runCloseTab,
 	runDownloadExport,
+	runSendCancelToTab,
 	runSendStartToTab,
 } from '@/background/commands';
 
@@ -49,6 +51,14 @@ export function runCommand(
 
 		if (isCloseTab(cmd)) {
 			yield* runCloseTab(cmd.tabId);
+			return;
+		}
+
+		if (isSendCancelToTab(cmd)) {
+			console.log('[likes-to-go] background SendCancelToTab', cmd.tabId);
+			yield* runSendCancelToTab(cmd.tabId).pipe(
+				Effect.catchAll(dispatchEffect),
+			);
 			return;
 		}
 

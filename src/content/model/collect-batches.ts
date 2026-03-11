@@ -14,11 +14,13 @@ export interface CollectionBatch {
 export interface CollectionScanState {
 	readonly previousCount: number;
 	readonly totalRawLength: number;
+	readonly batchIndex: number;
 }
 
 const INITIAL_SCAN_STATE: CollectionScanState = {
 	previousCount: 0,
 	totalRawLength: 0,
+	batchIndex: 0,
 };
 
 /** Initial state for the first call to collectBatch. */
@@ -36,22 +38,38 @@ export function collectBatch(
 	state: CollectionScanState,
 ): { batch: CollectionBatch; nextState: CollectionScanState } {
 	const selector = trackCardsFromIndex(state.previousCount);
+	console.log(
+		'[likes-to-go] content collecting batch',
+		selector,
+		state.previousCount,
+	);
 	const cards = root.querySelectorAll(selector);
+	const debugColors = ['red', 'blue', 'green', 'lime', 'magenta'];
+	const color = debugColors[state.batchIndex % debugColors.length];
+	cards.forEach((card) => {
+		if (card instanceof HTMLElement) {
+			// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+			card.style.border = `2px solid ${color}`;
+		}
+	});
 	const raw = getTracksFromCards(Array.from(cards), baseUrl);
 	const tracks = decodeTracksFromRaw(raw);
-	const totalCardCount = state.previousCount + cards.length;
-	const noNewCards = cards.length === 0;
-	const totalRawLength = state.totalRawLength + raw.length;
+	console.log('[likes-to-go] content cards', cards, tracks, raw);
+	const totalCardCount = state.previousCount + tracks.length;
+	const noNewCards = tracks.length === 0;
+	const rawLength = raw.length;
+	const totalRawLength = state.totalRawLength + rawLength;
 
 	const batch: CollectionBatch = {
 		tracks,
-		rawLength: totalRawLength,
+		rawLength,
 		totalCardCount,
 		noNewCards,
 	};
 	const nextState: CollectionScanState = {
 		previousCount: totalCardCount,
 		totalRawLength,
+		batchIndex: state.batchIndex + 1,
 	};
 	return { batch, nextState };
 }

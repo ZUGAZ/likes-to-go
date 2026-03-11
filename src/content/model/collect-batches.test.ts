@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import {
 	collectBatch,
 	initialScanState,
 	type CollectionScanState,
 } from '@/content/model/collect-batches';
+import { describe, expect, it } from 'vitest';
 
 const baseUrl = 'https://soundcloud.com';
 
@@ -89,11 +89,15 @@ describe('collectBatch', () => {
 
 	it('second pass with same state returns no new cards and idempotent counts', () => {
 		const root = createListRoot(twoCardsHtml);
-		const state: CollectionScanState = { previousCount: 2, totalRawLength: 2 };
+		const state: CollectionScanState = {
+			previousCount: 2,
+			totalRawLength: 2,
+			batchIndex: 0,
+		};
 		const { batch, nextState } = collectBatch(root, baseUrl, state);
 
 		expect(batch.tracks).toHaveLength(0);
-		expect(batch.rawLength).toBe(2);
+		expect(batch.rawLength).toBe(0);
 		expect(batch.totalCardCount).toBe(2);
 		expect(batch.noNewCards).toBe(true);
 		expect(nextState.previousCount).toBe(2);

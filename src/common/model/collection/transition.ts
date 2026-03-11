@@ -15,6 +15,7 @@ import {
 	CloseTab,
 	CreateTab,
 	DownloadExportCommand,
+	SendCancelToTab,
 	SendStartToTab,
 } from './command';
 import type { CollectionCommand } from './command';
@@ -121,7 +122,10 @@ export function transition(
 		if (isCancelCollectionEvent(event)) {
 			return {
 				state: Idle(),
-				commands: [CloseTab({ tabId: current.tabId })],
+				commands: [
+					SendCancelToTab({ tabId: current.tabId }),
+					CloseTab({ tabId: current.tabId }),
+				],
 			};
 		}
 		if (isTabComplete(event) && event.tabId === current.tabId) {

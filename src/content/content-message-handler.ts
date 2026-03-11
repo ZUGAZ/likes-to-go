@@ -1,16 +1,16 @@
+import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
+import { TRACK_LIST_CONTAINER } from '@/common/infrastructure/selectors';
+import { sendToBackground } from '@/common/infrastructure/send-to-background';
 import {
 	CollectionErrorRequest,
 	isCancelCollection,
 	isStartCollection,
 } from '@/common/model/request-message';
-import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
-import { TRACK_LIST_CONTAINER } from '@/common/infrastructure/selectors';
-import { sendToBackground } from '@/common/infrastructure/send-to-background';
+import { makeCollectionLive } from '@/content/infrastructure/collection-services';
 import {
 	collectionPipeline,
 	type CollectionOutcome,
 } from '@/content/model/collection-pipeline';
-import { makeCollectionLive } from '@/content/infrastructure/collection-services';
 import { Effect, Either, Exit, Fiber } from 'effect';
 
 export interface ContentScriptCtx {
@@ -82,6 +82,7 @@ export function createContentMessageHandler(
 		}
 
 		if (isCancelCollection(msg)) {
+			console.log('[likes-to-go] content CancelCollection received');
 			interuptFiber();
 			sendResponse();
 			return false;

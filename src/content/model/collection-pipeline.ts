@@ -1,8 +1,4 @@
-import { Data, Effect, Schema } from 'effect';
-import {
-	initialScanState,
-	type CollectionScanState,
-} from '@/content/model/collect-batches';
+import { taggedStruct } from '@/common/model/tagged-struct';
 import { NO_NEW_TRACKS_PASSES, WAIT_FOR_NODES_MS } from '@/content/constants';
 import {
 	BackgroundSenderTag,
@@ -10,7 +6,11 @@ import {
 	ScrollerTag,
 	type SendError,
 } from '@/content/infrastructure/collection-services';
-import { taggedStruct } from '@/common/model/tagged-struct';
+import {
+	initialScanState,
+	type CollectionScanState,
+} from '@/content/model/collect-batches';
+import { Data, Effect, Schema } from 'effect';
 
 const CompletedSchema = taggedStruct('Completed');
 const CancelledSchema = taggedStruct('Cancelled');
@@ -70,7 +70,7 @@ function loopStep(
 
 		if (batch.rawLength > batch.tracks.length) {
 			console.log(
-				'[likes-to-go] content skipped invalid cards',
+				'[likes-to-go] 💥💥💥 content skipped invalid cards',
 				batch.rawLength - batch.tracks.length,
 				'raw:',
 				batch.rawLength,
