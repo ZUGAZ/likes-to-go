@@ -1,39 +1,37 @@
 import type { Track } from '@/common/model/track';
+import type { CollectionCommand } from '@/common/model/collection/command';
+import type { CollectionEvent } from '@/common/model/collection/event';
+import type { CollectionState } from '@/common/model/collection/state';
 import {
 	Collecting,
-	CollectingRequested,
-	Done,
-	ErrorState,
-	Idle,
 	isCollecting,
+} from '@/common/model/collection/states/collecting';
+import {
+	CollectingRequested,
 	isCollectingRequested,
-	isDone,
+} from '@/common/model/collection/states/collecting-requested';
+import { Done, isDone } from '@/common/model/collection/states/done';
+import {
+	ErrorState,
 	isErrorState,
-	isIdle,
-} from './state';
-import {
-	CloseTab,
-	CreateTab,
-	DownloadExportCommand,
-	SendCancelToTab,
-	SendStartToTab,
-} from './command';
-import type { CollectionCommand } from './command';
-import type { CollectionEvent } from './event';
-import type { CollectionState } from './state';
-import {
-	isCancelCollectionEvent,
-	isCollectionCompleteEvent,
-	isCollectionErrorEvent,
-	isDownloadExportEvent,
-	isDownloadFailedEvent,
-	isSendToTabFailed,
-	isStartCollectionEvent,
-	isTabComplete,
-	isTabCreateFailed,
-	isTabCreated,
-	isTracksBatchEvent,
-} from './event';
+} from '@/common/model/collection/states/error-state';
+import { Idle, isIdle } from '@/common/model/collection/states/idle';
+import { CloseTab } from '@/common/model/collection/commands/close-tab';
+import { CreateTab } from '@/common/model/collection/commands/create-tab';
+import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
+import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
+import { SendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
+import { isCancelCollectionEvent } from '@/common/model/collection/events/cancel-collection';
+import { isCollectionCompleteEvent } from '@/common/model/collection/events/collection-complete';
+import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
+import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
+import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
+import { isSendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
+import { isStartCollectionEvent } from '@/common/model/collection/events/start-collection';
+import { isTabComplete } from '@/common/model/collection/events/tab-complete';
+import { isTabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
+import { isTabCreated } from '@/common/model/collection/events/tab-created';
+import { isTracksBatchEvent } from '@/common/model/collection/events/tracks-batch';
 
 const LIKES_URL = 'https://soundcloud.com/you/likes';
 

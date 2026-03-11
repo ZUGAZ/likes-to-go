@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { buildExportPayload } from '@/common/model/exporter';
 import { downloadJson } from '@/common/infrastructure/chrome-downloads';
 import { runDownloadExport } from '@/background/commands/run-download-export';
-import { DownloadFailed } from '@/common/model/collection';
+import { DownloadFailed } from '@/common/model/collection/events/download-failed';
 
 vi.mock('@/common/model/exporter', () => ({
 	buildExportPayload: vi.fn(() => ({ mock: 'payload' })),

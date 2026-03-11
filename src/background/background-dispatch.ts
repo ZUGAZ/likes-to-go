@@ -1,16 +1,11 @@
 import { CommandRunnerTag } from '@/background/command-runner';
 import { StateRefTag } from '@/background/state-ref';
-import type {
-	CollectionCommand,
-	CollectionEvent,
-} from '@/common/model/collection';
-import {
-	collectionStateToGetStateResponse,
-	getCollectionEventTag,
-	hasTracks,
-	requestMessageToCollectionEvent,
-	transition,
-} from '@/common/model/collection';
+import type { CollectionCommand } from '@/common/model/collection/command';
+import type { CollectionEvent } from '@/common/model/collection/event';
+import { hasTracks } from '@/common/model/collection/state';
+import { collectionStateToGetStateResponse } from '@/common/model/collection/state-to-response';
+import { requestMessageToCollectionEvent } from '@/common/model/collection/request-message-to-event';
+import { transition } from '@/common/model/collection/transition';
 import type {
 	GetStateResponse,
 	RequestMessage,
@@ -46,7 +41,7 @@ export function dispatchEffect(
 			: undefined;
 		console.log(
 			'[likes-to-go] background dispatch',
-			getCollectionEventTag(event),
+			event._tag,
 			'→ state',
 			stateTag,
 			tracksLen !== undefined ? { tracks: tracksLen } : '',

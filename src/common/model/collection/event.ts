@@ -1,28 +1,16 @@
-import { Data, Schema } from 'effect';
-import { taggedStruct } from '@/common/model/tagged-struct';
-import { TrackSchema } from '@/common/model/track';
+import { Schema } from 'effect';
 
-const StartCollectionEventSchema = taggedStruct('StartCollection');
-const TabCreatedSchema = taggedStruct('TabCreated', { tabId: Schema.Number });
-const TabCreateFailedSchema = taggedStruct('TabCreateFailed', {
-	message: Schema.String,
-});
-const TracksBatchEventSchema = taggedStruct('TracksBatch', {
-	tracks: Schema.Array(TrackSchema),
-});
-const CollectionCompleteEventSchema = taggedStruct('CollectionComplete');
-const CollectionErrorEventSchema = taggedStruct('CollectionError', {
-	message: Schema.String,
-});
-const CancelCollectionEventSchema = taggedStruct('CancelCollection');
-const DownloadExportEventSchema = taggedStruct('DownloadExport');
-const TabCompleteSchema = taggedStruct('TabComplete', { tabId: Schema.Number });
-const SendToTabFailedSchema = taggedStruct('SendToTabFailed', {
-	message: Schema.String,
-});
-const DownloadFailedSchema = taggedStruct('DownloadFailed', {
-	message: Schema.String,
-});
+import { StartCollectionEventSchema } from '@/common/model/collection/events/start-collection';
+import { TabCreatedSchema } from '@/common/model/collection/events/tab-created';
+import { TabCreateFailedSchema } from '@/common/model/collection/events/tab-create-failed';
+import { TracksBatchEventSchema } from '@/common/model/collection/events/tracks-batch';
+import { CollectionCompleteEventSchema } from '@/common/model/collection/events/collection-complete';
+import { CollectionErrorEventSchema } from '@/common/model/collection/events/collection-error';
+import { CancelCollectionEventSchema } from '@/common/model/collection/events/cancel-collection';
+import { DownloadExportEventSchema } from '@/common/model/collection/events/download-export-event';
+import { TabCompleteSchema } from '@/common/model/collection/events/tab-complete';
+import { SendToTabFailedSchema } from '@/common/model/collection/events/send-to-tab-failed';
+import { DownloadFailedSchema } from '@/common/model/collection/events/download-failed';
 
 export const CollectionEventSchema = Schema.Union(
 	StartCollectionEventSchema,
@@ -39,77 +27,3 @@ export const CollectionEventSchema = Schema.Union(
 );
 
 export type CollectionEvent = Schema.Schema.Type<typeof CollectionEventSchema>;
-
-export type StartCollection = Schema.Schema.Type<
-	typeof StartCollectionEventSchema
->;
-export const StartCollection = Data.tagged<StartCollection>('StartCollection');
-
-export type TabCreated = Schema.Schema.Type<typeof TabCreatedSchema>;
-export const TabCreated = Data.tagged<TabCreated>('TabCreated');
-
-export type TabCreateFailed = Schema.Schema.Type<typeof TabCreateFailedSchema>;
-export const TabCreateFailed = Data.tagged<TabCreateFailed>('TabCreateFailed');
-
-export type TracksBatch = Schema.Schema.Type<typeof TracksBatchEventSchema>;
-export const TracksBatch = Data.tagged<TracksBatch>('TracksBatch');
-
-export type CollectionComplete = Schema.Schema.Type<
-	typeof CollectionCompleteEventSchema
->;
-export const CollectionComplete =
-	Data.tagged<CollectionComplete>('CollectionComplete');
-
-export type CollectionError = Schema.Schema.Type<
-	typeof CollectionErrorEventSchema
->;
-export const CollectionError = Data.tagged<CollectionError>('CollectionError');
-
-export type CancelCollection = Schema.Schema.Type<
-	typeof CancelCollectionEventSchema
->;
-export const CancelCollection =
-	Data.tagged<CancelCollection>('CancelCollection');
-
-export type DownloadExport = Schema.Schema.Type<
-	typeof DownloadExportEventSchema
->;
-export const DownloadExport = Data.tagged<DownloadExport>('DownloadExport');
-
-export type TabComplete = Schema.Schema.Type<typeof TabCompleteSchema>;
-export const TabComplete = Data.tagged<TabComplete>('TabComplete');
-
-export type SendToTabFailed = Schema.Schema.Type<typeof SendToTabFailedSchema>;
-export const SendToTabFailed = Data.tagged<SendToTabFailed>('SendToTabFailed');
-
-export type DownloadFailed = Schema.Schema.Type<typeof DownloadFailedSchema>;
-export const DownloadFailed = Data.tagged<DownloadFailed>('DownloadFailed');
-
-export const isStartCollectionEvent = Schema.is(StartCollectionEventSchema);
-export const isTabCreated = Schema.is(TabCreatedSchema);
-export const isTabCreateFailed = Schema.is(TabCreateFailedSchema);
-export const isTracksBatchEvent = Schema.is(TracksBatchEventSchema);
-export const isCollectionCompleteEvent = Schema.is(
-	CollectionCompleteEventSchema,
-);
-export const isCollectionErrorEvent = Schema.is(CollectionErrorEventSchema);
-export const isCancelCollectionEvent = Schema.is(CancelCollectionEventSchema);
-export const isDownloadExportEvent = Schema.is(DownloadExportEventSchema);
-export const isTabComplete = Schema.is(TabCompleteSchema);
-export const isSendToTabFailed = Schema.is(SendToTabFailedSchema);
-export const isDownloadFailedEvent = Schema.is(DownloadFailedSchema);
-
-export function getCollectionEventTag(event: CollectionEvent): string {
-	if (isStartCollectionEvent(event)) return 'StartCollection';
-	if (isTabCreated(event)) return 'TabCreated';
-	if (isTabCreateFailed(event)) return 'TabCreateFailed';
-	if (isTracksBatchEvent(event)) return 'TracksBatch';
-	if (isCollectionCompleteEvent(event)) return 'CollectionComplete';
-	if (isCollectionErrorEvent(event)) return 'CollectionError';
-	if (isCancelCollectionEvent(event)) return 'CancelCollection';
-	if (isDownloadExportEvent(event)) return 'DownloadExport';
-	if (isTabComplete(event)) return 'TabComplete';
-	if (isSendToTabFailed(event)) return 'SendToTabFailed';
-	if (isDownloadFailedEvent(event)) return 'DownloadFailed';
-	return 'Unknown';
-}

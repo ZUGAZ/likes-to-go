@@ -1,4 +1,5 @@
-import { TabCreated, TabCreateFailed } from '@/common/model/collection';
+import { TabCreated } from '@/common/model/collection/events/tab-created';
+import { TabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
 import { Effect, flow, Option } from 'effect';
 import { get } from 'effect/Struct';
 

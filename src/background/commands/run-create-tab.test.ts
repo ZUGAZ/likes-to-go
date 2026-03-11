@@ -1,7 +1,8 @@
 import { Effect } from 'effect';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runCreateTab } from '@/background/commands/run-create-tab';
-import { TabCreated, TabCreateFailed } from '@/common/model/collection';
+import { TabCreated } from '@/common/model/collection/events/tab-created';
+import { TabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
 
 declare const chrome: typeof globalThis.chrome;
 

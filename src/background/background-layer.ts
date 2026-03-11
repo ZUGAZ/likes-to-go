@@ -1,5 +1,5 @@
 import { Layer, Ref } from 'effect';
-import { initialCollectionState } from '@/common/model/collection';
+import { initialCollectionState } from '@/common/model/collection/transition';
 import { CommandRunnerTag, runCommand } from '@/background/command-runner';
 import { StateRefTag } from '@/background/state-ref';
 

@@ -1,12 +1,10 @@
 import { Context, Effect } from 'effect';
-import type { CollectionCommand } from '@/common/model/collection';
-import {
-	isCreateTab,
-	isCloseTab,
-	isDownloadExportCommand,
-	isSendCancelToTab,
-	isSendStartToTab,
-} from '@/common/model/collection';
+import type { CollectionCommand } from '@/common/model/collection/command';
+import { isCreateTab } from '@/common/model/collection/commands/create-tab';
+import { isCloseTab } from '@/common/model/collection/commands/close-tab';
+import { isDownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
+import { isSendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
+import { isSendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import {
 	dispatchEffect,
 	type BackgroundEnv,

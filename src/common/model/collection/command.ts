@@ -1,18 +1,10 @@
-import { taggedStruct } from '@/common/model/tagged-struct';
-import { TrackSchema } from '@/common/model/track';
-import { Data, Schema } from 'effect';
+import { Schema } from 'effect';
 
-const CreateTabSchema = taggedStruct('CreateTab', { url: Schema.String });
-const CloseTabSchema = taggedStruct('CloseTab', { tabId: Schema.Number });
-const SendStartToTabSchema = taggedStruct('SendStartToTab', {
-	tabId: Schema.Number,
-});
-const SendCancelToTabSchema = taggedStruct('SendCancelToTab', {
-	tabId: Schema.Number,
-});
-const DownloadExportCommandSchema = taggedStruct('DownloadExport', {
-	tracks: Schema.Array(TrackSchema),
-});
+import { CreateTabSchema } from '@/common/model/collection/commands/create-tab';
+import { CloseTabSchema } from '@/common/model/collection/commands/close-tab';
+import { SendStartToTabSchema } from '@/common/model/collection/commands/send-start-to-tab';
+import { SendCancelToTabSchema } from '@/common/model/collection/commands/send-cancel-to-tab';
+import { DownloadExportCommandSchema } from '@/common/model/collection/commands/download-export-command';
 
 export const CollectionCommandSchema = Schema.Union(
 	CreateTabSchema,
@@ -25,27 +17,3 @@ export const CollectionCommandSchema = Schema.Union(
 export type CollectionCommand = Schema.Schema.Type<
 	typeof CollectionCommandSchema
 >;
-
-type CreateTab = Schema.Schema.Type<typeof CreateTabSchema>;
-export const CreateTab = Data.tagged<CreateTab>('CreateTab');
-
-type CloseTab = Schema.Schema.Type<typeof CloseTabSchema>;
-export const CloseTab = Data.tagged<CloseTab>('CloseTab');
-
-type SendStartToTab = Schema.Schema.Type<typeof SendStartToTabSchema>;
-export const SendStartToTab = Data.tagged<SendStartToTab>('SendStartToTab');
-
-type SendCancelToTab = Schema.Schema.Type<typeof SendCancelToTabSchema>;
-export const SendCancelToTab = Data.tagged<SendCancelToTab>('SendCancelToTab');
-
-type DownloadExportCommand = Schema.Schema.Type<
-	typeof DownloadExportCommandSchema
->;
-export const DownloadExportCommand =
-	Data.tagged<DownloadExportCommand>('DownloadExport');
-
-export const isCreateTab = Schema.is(CreateTabSchema);
-export const isCloseTab = Schema.is(CloseTabSchema);
-export const isSendStartToTab = Schema.is(SendStartToTabSchema);
-export const isSendCancelToTab = Schema.is(SendCancelToTabSchema);
-export const isDownloadExportCommand = Schema.is(DownloadExportCommandSchema);

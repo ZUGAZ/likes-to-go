@@ -8,15 +8,13 @@ import {
 	isStartCollection,
 	isTracksBatch,
 } from '@/common/model/request-message';
-import {
-	CancelCollection,
-	CollectionComplete,
-	CollectionError,
-	DownloadExport,
-	type CollectionEvent,
-	StartCollection,
-	TracksBatch,
-} from './event';
+import type { CollectionEvent } from '@/common/model/collection/event';
+import { CancelCollection } from '@/common/model/collection/events/cancel-collection';
+import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
+import { CollectionError } from '@/common/model/collection/events/collection-error';
+import { DownloadExport } from '@/common/model/collection/events/download-export-event';
+import { StartCollection } from '@/common/model/collection/events/start-collection';
+import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 
 /**
  * Maps a validated RequestMessage to the corresponding CollectionEvent, or null for GetState.

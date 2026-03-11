@@ -4,11 +4,11 @@ import {
 	collectionStateToGetStateResponse,
 	hasTracks,
 	initialCollectionState,
-	StartCollection,
-	TabCreated,
-	TracksBatch,
 	transition,
 } from '@/common/model/collection';
+import { StartCollection } from '@/common/model/collection/events/start-collection';
+import { TabCreated } from '@/common/model/collection/events/tab-created';
+import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import { TrackSchema } from '@/common/model/track';
 
 function validTrack(

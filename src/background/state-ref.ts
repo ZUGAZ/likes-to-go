@@ -1,5 +1,5 @@
 import { Context, Ref } from 'effect';
-import type { CollectionState } from '@/common/model/collection';
+import type { CollectionState } from '@/common/model/collection/state';
 
 /**
  * Service tag for the background's collection state ref.

@@ -1,5 +1,5 @@
 import { Runtime } from 'effect';
-import { TabComplete } from '@/common/model/collection';
+import { TabComplete } from '@/common/model/collection/events/tab-complete';
 import { dispatchEffect } from '@/background/background-dispatch';
 import type { BackgroundEnv } from '@/background/runtime/background-env';
 

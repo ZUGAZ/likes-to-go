@@ -1,5 +1,6 @@
 import { downloadJson } from '@/common/infrastructure/chrome-downloads';
-import { DownloadExport, DownloadFailed } from '@/common/model/collection';
+import { DownloadExport } from '@/common/model/collection/events/download-export-event';
+import { DownloadFailed } from '@/common/model/collection/events/download-failed';
 import { buildExportPayload } from '@/common/model/exporter';
 import type { Track } from '@/common/model/track';
 import { Effect } from 'effect';

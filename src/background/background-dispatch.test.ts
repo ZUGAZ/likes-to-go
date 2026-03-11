@@ -5,12 +5,10 @@ import {
 	dispatchEffect,
 	handleMessageEffect,
 } from '@/background/background-dispatch';
-import {
-	initialCollectionState,
-	isCollecting,
-	StartCollection,
-	TabCreated,
-} from '@/common/model/collection';
+import { initialCollectionState } from '@/common/model/collection/transition';
+import { isCollecting } from '@/common/model/collection/states/collecting';
+import { StartCollection } from '@/common/model/collection/events/start-collection';
+import { TabCreated } from '@/common/model/collection/events/tab-created';
 import {
 	GetStateRequest,
 	StartCollectionRequest,
@@ -31,8 +29,7 @@ function makeStubCommandRunner(
 
 describe('background dispatch', () => {
 	it('dispatchEffect(StartCollection) transitions to CollectingRequested and runs CreateTab; re-dispatch TabCreated yields Collecting', async () => {
-		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> =
-			[];
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
 		const stateRefLayer = Layer.effect(
 			StateRefTag,
 			Ref.make(initialCollectionState),
@@ -42,7 +39,7 @@ describe('background dispatch', () => {
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
-		yield* dispatchEffect(TabCreated({ tabId: 42 }));
+			yield* dispatchEffect(TabCreated({ tabId: 42 }));
 			const ref = yield* StateRefTag;
 			return yield* Ref.get(ref);
 		}).pipe(Effect.provide(testLayer));
@@ -62,8 +59,7 @@ describe('background dispatch', () => {
 	});
 
 	it('handleMessageEffect(GetStateRequest) returns idle state when ref is Idle', async () => {
-		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> =
-			[];
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
 		const stateRefLayer = Layer.effect(
 			StateRefTag,
 			Ref.make(initialCollectionState),
@@ -92,8 +88,7 @@ describe('background dispatch', () => {
 	});
 
 	it('handleMessageEffect(StartCollectionRequest) dispatches and returns state after runner yields TabCreated', async () => {
-		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> =
-			[];
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
 		const stateRefLayer = Layer.effect(
 			StateRefTag,
 			Ref.make(initialCollectionState),
