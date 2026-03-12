@@ -38,11 +38,6 @@ export function collectBatch(
 	state: CollectionScanState,
 ): { batch: CollectionBatch; nextState: CollectionScanState } {
 	const selector = trackCardsFromIndex(state.previousCount);
-	console.log(
-		'[likes-to-go] content collecting batch',
-		selector,
-		state.previousCount,
-	);
 	const cards = root.querySelectorAll(selector);
 	const debugColors = ['red', 'blue', 'green', 'lime', 'magenta'];
 	const color = debugColors[state.batchIndex % debugColors.length];
@@ -54,7 +49,6 @@ export function collectBatch(
 	});
 	const raw = getTracksFromCards(Array.from(cards), baseUrl);
 	const tracks = decodeTracksFromRaw(raw);
-	console.log('[likes-to-go] content cards', cards, tracks, raw);
 	const totalCardCount = state.previousCount + tracks.length;
 	const noNewCards = tracks.length === 0;
 	const rawLength = raw.length;

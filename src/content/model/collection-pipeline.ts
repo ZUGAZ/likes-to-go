@@ -69,8 +69,8 @@ function loopStep(
 			: 0;
 
 		if (batch.rawLength > batch.tracks.length) {
-			console.log(
-				'[likes-to-go] 💥💥💥 content skipped invalid cards',
+			yield* Effect.log(
+				'skipped invalid cards',
 				batch.rawLength - batch.tracks.length,
 				'raw:',
 				batch.rawLength,
@@ -80,10 +80,7 @@ function loopStep(
 		}
 
 		if (batch.tracks.length > 0) {
-			console.log(
-				'[likes-to-go] content sending TracksBatch',
-				batch.tracks.length,
-			);
+			yield* Effect.log('sending TracksBatch', batch.tracks.length);
 			yield* sender.sendBatch(batch.tracks);
 		}
 
@@ -95,7 +92,7 @@ function loopStep(
 		yield* Effect.sleep(WAIT_FOR_NODES_MS);
 
 		return { scanState: nextState, passesWithNoNewTracks };
-	});
+	}).pipe(Effect.withLogSpan('loopStep'));
 }
 
 /**
@@ -119,11 +116,12 @@ export const collectionPipeline: Effect.Effect<
 		body: loopStep,
 	});
 
-	console.log('[likes-to-go] content sending CollectionComplete');
+	yield* Effect.log('sending CollectionComplete');
 	yield* sender.sendComplete();
 
 	return Completed();
 }).pipe(
+	Effect.withLogSpan('collectionPipeline'),
 	Effect.catchTag('SendError', (err) =>
 		Effect.gen(function* () {
 			const sender = yield* BackgroundSenderTag;

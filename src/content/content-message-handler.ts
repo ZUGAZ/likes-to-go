@@ -11,7 +11,8 @@ import {
 	collectionPipeline,
 	type CollectionOutcome,
 } from '@/content/model/collection-pipeline';
-import { Effect, Either, Exit, Fiber } from 'effect';
+import type { ContentEnv } from '@/content/runtime/content-env';
+import { Effect, Either, Exit, Fiber, Runtime } from 'effect';
 
 export interface ContentScriptCtx {
 	readonly isValid: boolean;
@@ -19,6 +20,7 @@ export interface ContentScriptCtx {
 }
 
 export function createContentMessageHandler(
+	runtime: Runtime.Runtime<ContentEnv>,
 	ctx: ContentScriptCtx,
 ): (
 	message: unknown,
@@ -29,7 +31,7 @@ export function createContentMessageHandler(
 
 	const interuptFiber = () => {
 		if (fiber !== null) {
-			Effect.runFork(Fiber.interrupt(fiber));
+			Runtime.runFork(runtime)(Fiber.interrupt(fiber));
 			fiber = null;
 		}
 	};
@@ -46,18 +48,25 @@ export function createContentMessageHandler(
 		const msg = parsed.right;
 
 		if (isStartCollection(msg)) {
-			console.log('[likes-to-go] content StartCollection received');
+			const logStart = Effect.log('StartCollection received');
 
 			interuptFiber();
 
 			const root = document.querySelector(TRACK_LIST_CONTAINER);
 			if (root === null) {
-				console.log('[likes-to-go] content track list not found');
-				void sendToBackground(
-					CollectionErrorRequest({
-						message: 'Track list not found on page',
-					}),
-				).then(() => sendResponse());
+				const program = Effect.log('content track list not found').pipe(
+					Effect.zipRight(
+						Effect.promise(() =>
+							sendToBackground(
+								CollectionErrorRequest({
+									message: 'Track list not found on page',
+								}),
+							),
+						),
+					),
+				);
+
+				void Runtime.runPromise(runtime)(program).then(() => sendResponse());
 				return true;
 			}
 
@@ -65,15 +74,18 @@ export function createContentMessageHandler(
 				Effect.provide(makeCollectionLive(root)),
 			);
 
-			fiber = Effect.runFork(pipeline);
+			fiber = Runtime.runFork(runtime)(
+				logStart.pipe(Effect.zipRight(pipeline)),
+			);
 
-			void Effect.runPromise(
+			void Runtime.runPromise(runtime)(
 				Fiber.await(fiber).pipe(
 					Effect.tap((exit) => {
 						fiber = null;
 						if (Exit.isInterrupted(exit)) {
-							console.log('[likes-to-go] content collection interrupted');
+							return Effect.log('content collection interrupted');
 						}
+						return Effect.void;
 					}),
 				),
 			).then(() => sendResponse());
@@ -82,7 +94,9 @@ export function createContentMessageHandler(
 		}
 
 		if (isCancelCollection(msg)) {
-			console.log('[likes-to-go] content CancelCollection received');
+			void Runtime.runPromise(runtime)(
+				Effect.log('content CancelCollection received'),
+			);
 			interuptFiber();
 			sendResponse();
 			return false;

@@ -11,10 +11,10 @@ import type {
 	CollectionScanState,
 } from '@/content/model/collect-batches';
 import {
-	collectionPipeline,
 	Completed,
-	type CollectionOutcome,
 	OutcomeError,
+	collectionPipeline,
+	type CollectionOutcome,
 } from '@/content/model/collection-pipeline';
 import { Effect, Exit, Fiber, Layer, TestClock, TestContext } from 'effect';
 import { describe, expect, it } from 'vitest';
@@ -55,6 +55,7 @@ function makeDomScannerStub(batches: readonly CollectionBatch[]) {
 				const nextState: CollectionScanState = {
 					previousCount: batch.totalCardCount,
 					totalRawLength: state.totalRawLength + batch.rawLength,
+					batchIndex: state.batchIndex + 1,
 				};
 				return { batch, nextState };
 			}),
