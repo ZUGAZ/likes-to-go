@@ -1,21 +1,21 @@
-import { Context, Effect } from 'effect';
-import type { CollectionCommand } from '@/common/model/collection/command';
-import { isCreateTab } from '@/common/model/collection/commands/create-tab';
-import { isCloseTab } from '@/common/model/collection/commands/close-tab';
-import { isDownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
-import { isSendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
-import { isSendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import {
 	dispatchEffect,
 	type BackgroundEnv,
 } from '@/background/background-dispatch';
 import {
-	runCreateTab,
 	runCloseTab,
+	runCreateTab,
 	runDownloadExport,
 	runSendCancelToTab,
 	runSendStartToTab,
 } from '@/background/commands';
+import type { CollectionCommand } from '@/common/model/collection/command';
+import { isCloseTab } from '@/common/model/collection/commands/close-tab';
+import { isCreateTab } from '@/common/model/collection/commands/create-tab';
+import { isDownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
+import { isSendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
+import { isSendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
+import { Context, Effect } from 'effect';
 
 /**
  * CommandRunner runs collection commands (Chrome tabs, sendToTab, download).
@@ -36,49 +36,30 @@ export function runCommand(
 	cmd: CollectionCommand,
 ): Effect.Effect<void, never, BackgroundEnv> {
 	return Effect.gen(function* () {
+		yield* Effect.log('running command', cmd._tag);
+
 		if (isCreateTab(cmd)) {
-			console.log('[likes-to-go] background CreateTab', cmd.url);
 			yield* runCreateTab(cmd.url).pipe(
 				Effect.matchEffect({
 					onFailure: dispatchEffect,
 					onSuccess: dispatchEffect,
 				}),
 			);
-			return;
-		}
-
-		if (isCloseTab(cmd)) {
+		} else if (isCloseTab(cmd)) {
 			yield* runCloseTab(cmd.tabId);
-			return;
-		}
-
-		if (isSendCancelToTab(cmd)) {
-			console.log('[likes-to-go] background SendCancelToTab', cmd.tabId);
+		} else if (isSendCancelToTab(cmd)) {
 			yield* runSendCancelToTab(cmd.tabId).pipe(
 				Effect.catchAll(dispatchEffect),
 			);
-			return;
-		}
-
-		if (isSendStartToTab(cmd)) {
-			console.log('[likes-to-go] background SendStartToTab', cmd.tabId);
+		} else if (isSendStartToTab(cmd)) {
 			yield* runSendStartToTab(cmd.tabId).pipe(Effect.catchAll(dispatchEffect));
-			return;
-		}
-
-		if (isDownloadExportCommand(cmd)) {
-			console.log('[likes-to-go] background DownloadExport', {
-				tracks: cmd.tracks.length,
-			});
+		} else if (isDownloadExportCommand(cmd)) {
 			yield* runDownloadExport(cmd.tracks).pipe(
 				Effect.matchEffect({
 					onFailure: dispatchEffect,
 					onSuccess: dispatchEffect,
 				}),
 			);
-			return;
 		}
-
-		return;
-	});
+	}).pipe(Effect.withLogSpan('runCommand'));
 }

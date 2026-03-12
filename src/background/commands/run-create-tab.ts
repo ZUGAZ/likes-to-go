@@ -1,5 +1,5 @@
-import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
+import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { Effect, flow, Option } from 'effect';
 import { get } from 'effect/Struct';
 
@@ -18,21 +18,25 @@ export function runCreateTab(
 			}),
 	});
 
-	return createTabEffect.pipe(
-		Effect.flatMap(
-			flow(
-				get('id'),
-				Option.fromNullable,
-				Option.match({
-					onNone: () =>
-						Effect.fail(
-							TabCreateFailed({
-								message: 'Failed to create tab',
-							}),
-						),
-					onSome: (tabId) => Effect.succeed(TabCreated({ tabId })),
-				}),
+	return Effect.gen(function* () {
+		yield* Effect.log('background CreateTab', url);
+
+		return yield* createTabEffect.pipe(
+			Effect.flatMap(
+				flow(
+					get('id'),
+					Option.fromNullable,
+					Option.match({
+						onNone: () =>
+							Effect.fail(
+								TabCreateFailed({
+									message: 'Failed to create tab',
+								}),
+							),
+						onSome: (tabId) => Effect.succeed(TabCreated({ tabId })),
+					}),
+				),
 			),
-		),
-	);
+		);
+	}).pipe(Effect.withLogSpan('runCreateTab'));
 }

@@ -1,7 +1,7 @@
-import { Effect } from 'effect';
-import { makeBackgroundRuntime } from '@/background/runtime/background-runtime';
 import { registerMessageListener } from '@/background/listeners/message-listener';
 import { registerTabUpdatedListener } from '@/background/listeners/tab-updated-listener';
+import { makeBackgroundRuntime } from '@/background/runtime/background-runtime';
+import { Effect } from 'effect';
 
 /**
  * Initializes the background service: builds the Effect runtime from BackgroundLive,
@@ -17,5 +17,6 @@ export function initBackgroundService(): void {
 			yield* Effect.never;
 		}),
 	);
+
 	void Effect.runPromise(program);
 }

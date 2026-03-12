@@ -1,4 +1,5 @@
 import { Layer, Ref } from 'effect';
+import { HeartLoggerLive } from '@/common/infrastructure/logger';
 import { initialCollectionState } from '@/common/model/collection/transition';
 import { CommandRunnerTag, runCommand } from '@/background/command-runner';
 import { StateRefTag } from '@/background/state-ref';
@@ -13,9 +14,5 @@ const CommandRunnerLive: Layer.Layer<CommandRunnerTag> = Layer.succeed(
 	{ run: runCommand },
 );
 
-/**
- * Production layer for the background service: state ref + command runner.
- * Built with sync-only acquisition so listener registration can run in the same tick.
- */
 export const BackgroundLive: Layer.Layer<StateRefTag | CommandRunnerTag> =
-	Layer.mergeAll(StateRefLive, CommandRunnerLive);
+	Layer.mergeAll(StateRefLive, CommandRunnerLive, HeartLoggerLive);

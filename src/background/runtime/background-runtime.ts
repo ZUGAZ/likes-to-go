@@ -7,5 +7,9 @@ export function makeBackgroundRuntime(): Effect.Effect<
 	never,
 	Scope.Scope
 > {
-	return Layer.toRuntime(BackgroundLive);
+	return Layer.toRuntime(BackgroundLive).pipe(
+		Effect.tap(() => Effect.log('runtime initialized')),
+		Effect.withLogSpan('background'),
+		Effect.withLogSpan('♥️'),
+	);
 }

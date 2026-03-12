@@ -8,7 +8,7 @@ import { Effect } from 'effect';
 export function runDownloadExport(
 	tracks: readonly Track[],
 ): Effect.Effect<DownloadExport, DownloadFailed> {
-	return Effect.tryPromise({
+	const downloadEffect = Effect.tryPromise({
 		try: async () => {
 			const payload = buildExportPayload({ tracks });
 			await downloadJson(JSON.stringify(payload));
@@ -19,4 +19,14 @@ export function runDownloadExport(
 				message: err instanceof Error ? err.message : String(err),
 			}),
 	});
+
+	return Effect.gen(function* () {
+		yield* Effect.log('background DownloadExport', {
+			tracks: tracks.length,
+		});
+
+		const result = yield* downloadEffect;
+
+		return result;
+	}).pipe(Effect.withLogSpan('runDownloadExport'));
 }

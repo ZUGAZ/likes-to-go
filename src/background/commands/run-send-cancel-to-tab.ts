@@ -6,7 +6,7 @@ import { Effect } from 'effect';
 export function runSendCancelToTab(
 	tabId: number,
 ): Effect.Effect<void, SendToTabFailed> {
-	return Effect.tryPromise({
+	const sendEffect = Effect.tryPromise({
 		try: async () => {
 			await sendToTab(tabId, CancelCollectionRequest());
 		},
@@ -15,4 +15,9 @@ export function runSendCancelToTab(
 				message: err instanceof Error ? err.message : String(err),
 			}),
 	});
+
+	return Effect.gen(function* () {
+		yield* Effect.log('background SendCancelToTab', tabId);
+		yield* sendEffect;
+	}).pipe(Effect.withLogSpan('runSendCancelToTab'));
 }

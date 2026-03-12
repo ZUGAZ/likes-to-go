@@ -39,15 +39,17 @@ export function dispatchEffect(
 		const tracksLen = hasTracks(result.state)
 			? result.state.tracks.length
 			: undefined;
-		console.log(
-			'[likes-to-go] background dispatch',
+
+		yield* Effect.log(
+			'Event:',
 			event._tag,
 			'→ state',
 			stateTag,
 			tracksLen !== undefined ? { tracks: tracksLen } : '',
 		);
+
 		yield* Effect.forEach(result.commands, runCommandEffect);
-	});
+	}).pipe(Effect.withLogSpan('Dispatch'));
 }
 
 export function handleMessageEffect(
@@ -55,12 +57,12 @@ export function handleMessageEffect(
 	sender: chrome.runtime.MessageSender,
 ): Effect.Effect<GetStateResponse, never, BackgroundEnv> {
 	void sender;
-	const logEffect = Effect.sync(() => {
+	const logEffect = Effect.gen(function* () {
 		const batchInfo = isTracksBatch(message)
 			? { tracks: message.tracks.length }
 			: undefined;
 
-		console.log('[likes-to-go] background received', message._tag, batchInfo);
+		yield* Effect.log('received', message._tag, batchInfo);
 	});
 
 	const dispatchFromMessageEffect = Effect.sync(() =>
@@ -80,5 +82,5 @@ export function handleMessageEffect(
 		Effect.flatMap((ref) =>
 			Ref.get(ref).pipe(Effect.map(collectionStateToGetStateResponse)),
 		),
-	);
+	).pipe(Effect.withLogSpan('handleMessage'));
 }
