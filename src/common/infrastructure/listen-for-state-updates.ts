@@ -1,4 +1,4 @@
-import { isPopupStateUpdate } from '@/common/model/popup-state-update';
+import { isPopupStateUpdate } from '@/common/model/request-message/popup-state-update';
 import type { CollectionStatus } from '@/common/model/request-message';
 
 export interface StateUpdatePayload {

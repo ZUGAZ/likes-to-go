@@ -42,7 +42,7 @@ export function bindViewModel<Env, VM extends ViewModelWithEffects<Env>>(
 					? effectOrFactory
 					: effectOrFactory(...args);
 				void run(
-					effect.pipe(Effect.withLogSpan(name), Effect.withLogSpan(key)),
+					effect.pipe(Effect.withLogSpan(key), Effect.withLogSpan(name)),
 				);
 			};
 		},

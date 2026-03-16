@@ -1,5 +1,4 @@
 import { CommandRunnerTag } from '@/background/command-runner';
-import { PopupNotifierTag } from '@/background/popup-notifier';
 import { StateRefTag } from '@/background/state-ref';
 import type { CollectionCommand } from '@/common/model/collection/command';
 import type { CollectionEvent } from '@/common/model/collection/event';
@@ -17,7 +16,7 @@ import {
 } from '@/common/model/request-message';
 import { Effect, Ref } from 'effect';
 
-export type BackgroundEnv = StateRefTag | CommandRunnerTag | PopupNotifierTag;
+export type BackgroundEnv = StateRefTag | CommandRunnerTag;
 
 function runCommandEffect(
 	cmd: CollectionCommand,
@@ -50,9 +49,6 @@ export function dispatchEffect(
 		);
 
 		yield* Effect.forEach(result.commands, runCommandEffect);
-
-		const notifier = yield* PopupNotifierTag;
-		yield* notifier.notify(collectionStateToGetStateResponse(result.state));
 	}).pipe(Effect.withLogSpan('Dispatch'));
 }
 

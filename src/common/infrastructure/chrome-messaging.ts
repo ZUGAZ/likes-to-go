@@ -17,5 +17,4 @@ export {
 	getState,
 } from '@/common/infrastructure/get-state';
 export { listenForStateUpdates } from '@/common/infrastructure/listen-for-state-updates';
-export { sendStateToPopup } from '@/common/infrastructure/send-state-to-popup';
 export { sendToTab } from '@/common/infrastructure/send-to-tab';

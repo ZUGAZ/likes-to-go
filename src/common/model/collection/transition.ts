@@ -19,6 +19,7 @@ import { Idle, isIdle } from '@/common/model/collection/states/idle';
 import { CloseTab } from '@/common/model/collection/commands/close-tab';
 import { CreateTab } from '@/common/model/collection/commands/create-tab';
 import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
+import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
 import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
 import { SendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import { isCancelCollectionEvent } from '@/common/model/collection/events/cancel-collection';
@@ -62,15 +63,17 @@ export function transition(
 ): TransitionResult {
 	if (isIdle(current)) {
 		if (isStartCollectionEvent(event)) {
+			const newState = CollectingRequested();
 			return {
-				state: CollectingRequested(),
-				commands: [CreateTab({ url: LIKES_URL })],
+				state: newState,
+				commands: [CreateTab({ url: LIKES_URL }), NotifyPopup({ state: newState })],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
+			const newState = ErrorState({ message: event.message });
 			return {
-				state: ErrorState({ message: event.message }),
-				commands: [],
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		return { state: current, commands: [] };
@@ -78,51 +81,65 @@ export function transition(
 
 	if (isCollectingRequested(current)) {
 		if (isTabCreated(event)) {
+			const newState = Collecting({ tabId: event.tabId, tracks: [] });
 			return {
-				state: Collecting({ tabId: event.tabId, tracks: [] }),
-				commands: [],
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isTabCreateFailed(event)) {
+			const newState = ErrorState({ message: event.message });
 			return {
-				state: ErrorState({ message: event.message }),
-				commands: [],
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
-			return { state: Idle(), commands: [] };
+			const newState = Idle();
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
 		}
 		return { state: current, commands: [] };
 	}
 
 	if (isCollecting(current)) {
 		if (isTracksBatchEvent(event)) {
+			const newState = Collecting({
+				tabId: current.tabId,
+				tracks: appendTracksDeduped(current.tracks, event.tracks),
+			});
 			return {
-				state: Collecting({
-					tabId: current.tabId,
-					tracks: appendTracksDeduped(current.tracks, event.tracks),
-				}),
-				commands: [],
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isCollectionCompleteEvent(event)) {
+			const newState = Done({ tracks: current.tracks });
 			return {
-				state: Done({ tracks: current.tracks }),
-				commands: [],
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isCollectionErrorEvent(event)) {
+			const newState = ErrorState({ message: event.message });
 			return {
-				state: ErrorState({ message: event.message }),
-				commands: [CloseTab({ tabId: current.tabId })],
+				state: newState,
+				commands: [
+					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
+			const newState = Idle();
 			return {
-				state: Idle(),
+				state: newState,
 				commands: [
 					SendCancelToTab({ tabId: current.tabId }),
 					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
 				],
 			};
 		}
@@ -133,15 +150,23 @@ export function transition(
 			};
 		}
 		if (isSendToTabFailed(event)) {
+			const newState = ErrorState({ message: event.message });
 			return {
-				state: ErrorState({ message: event.message }),
-				commands: [CloseTab({ tabId: current.tabId })],
+				state: newState,
+				commands: [
+					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		if (isDownloadExportEvent(event)) {
+			const newState = Idle();
 			return {
-				state: Idle(),
-				commands: [DownloadExportCommand({ tracks: current.tracks })],
+				state: newState,
+				commands: [
+					DownloadExportCommand({ tracks: current.tracks }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		return { state: current, commands: [] };
@@ -149,31 +174,48 @@ export function transition(
 
 	if (isDone(current)) {
 		if (isDownloadExportEvent(event)) {
+			const newState = Idle();
 			return {
-				state: Idle(),
-				commands: [DownloadExportCommand({ tracks: current.tracks })],
+				state: newState,
+				commands: [
+					DownloadExportCommand({ tracks: current.tracks }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
-			return { state: Idle(), commands: [] };
+			const newState = Idle();
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
 		}
 		return { state: current, commands: [] };
 	}
 
 	if (isErrorState(current)) {
 		if (isDownloadFailedEvent(event)) {
+			const newState = ErrorState({ message: event.message });
 			return {
-				state: ErrorState({ message: event.message }),
-				commands: [],
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
-			return { state: Idle(), commands: [] };
+			const newState = Idle();
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
 		}
 		if (isStartCollectionEvent(event)) {
+			const newState = CollectingRequested();
 			return {
-				state: CollectingRequested(),
-				commands: [CreateTab({ url: LIKES_URL })],
+				state: newState,
+				commands: [
+					CreateTab({ url: LIKES_URL }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		return { state: current, commands: [] };

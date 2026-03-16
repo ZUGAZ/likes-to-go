@@ -13,9 +13,11 @@ import type { CollectionCommand } from '@/common/model/collection/command';
 import { isCloseTab } from '@/common/model/collection/commands/close-tab';
 import { isCreateTab } from '@/common/model/collection/commands/create-tab';
 import { isDownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
+import { isNotifyPopup } from '@/common/model/collection/commands/notify-popup';
 import { isSendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
 import { isSendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import { Context, Effect } from 'effect';
+import { runNotifyPopup } from './commands/run-notify-popup';
 
 /**
  * CommandRunner runs collection commands (Chrome tabs, sendToTab, download).
@@ -60,6 +62,8 @@ export function runCommand(
 					onSuccess: dispatchEffect,
 				}),
 			);
+		} else if (isNotifyPopup(cmd)) {
+			yield* runNotifyPopup(cmd.state);
 		}
 	}).pipe(Effect.withLogSpan('runCommand'));
 }

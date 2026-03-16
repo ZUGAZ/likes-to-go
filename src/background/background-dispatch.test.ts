@@ -1,6 +1,5 @@
 import { Effect, Layer, Ref } from 'effect';
 import { CommandRunnerTag } from '@/background/command-runner';
-import { PopupNotifierTag } from '@/background/popup-notifier';
 import { StateRefTag } from '@/background/state-ref';
 import {
 	dispatchEffect,
@@ -28,13 +27,6 @@ function makeStubCommandRunner(
 	});
 }
 
-const popupNotifierLayer: Layer.Layer<PopupNotifierTag> = Layer.succeed(
-	PopupNotifierTag,
-	{
-		notify: () => Effect.void,
-	},
-);
-
 describe('background dispatch', () => {
 	it('dispatchEffect(StartCollection) transitions to CollectingRequested and runs CreateTab; re-dispatch TabCreated yields Collecting', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
@@ -43,11 +35,7 @@ describe('background dispatch', () => {
 			Ref.make(initialCollectionState),
 		);
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			runnerLayer,
-			popupNotifierLayer,
-		);
+		const testLayer = Layer.mergeAll(stateRefLayer, runnerLayer);
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
@@ -58,11 +46,17 @@ describe('background dispatch', () => {
 
 		const state = await Effect.runPromise(program);
 
-		expect(recordedCommands.length).toBe(1);
+		// StartCollection -> [CreateTab, NotifyPopup]
+		// TabCreated -> [NotifyPopup]
+		// Total: 3
+		expect(recordedCommands.length).toBe(3);
 		expect(recordedCommands[0]).toMatchObject({
 			_tag: 'CreateTab',
 			url: 'https://soundcloud.com/you/likes',
 		});
+		expect(recordedCommands[1]).toMatchObject({ _tag: 'NotifyPopup' });
+		expect(recordedCommands[2]).toMatchObject({ _tag: 'NotifyPopup' });
+
 		expect(isCollecting(state)).toBe(true);
 		if (isCollecting(state)) {
 			expect(state.tabId).toBe(42);
@@ -77,11 +71,7 @@ describe('background dispatch', () => {
 			Ref.make(initialCollectionState),
 		);
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			runnerLayer,
-			popupNotifierLayer,
-		);
+		const testLayer = Layer.mergeAll(stateRefLayer, runnerLayer);
 
 		const program = handleMessageEffect(
 			GetStateRequest(),
@@ -110,11 +100,7 @@ describe('background dispatch', () => {
 			Ref.make(initialCollectionState),
 		);
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			runnerLayer,
-			popupNotifierLayer,
-		);
+		const testLayer = Layer.mergeAll(stateRefLayer, runnerLayer);
 
 		const program = handleMessageEffect(
 			StartCollectionRequest(),
@@ -133,7 +119,9 @@ describe('background dispatch', () => {
 
 		await Effect.runPromise(program);
 
-		expect(recordedCommands.length).toBe(1);
+		// StartCollection -> [CreateTab, NotifyPopup]
+		expect(recordedCommands.length).toBe(2);
 		expect(recordedCommands[0]).toMatchObject({ _tag: 'CreateTab' });
+		expect(recordedCommands[1]).toMatchObject({ _tag: 'NotifyPopup' });
 	});
 });

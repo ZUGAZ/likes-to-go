@@ -25,7 +25,7 @@ export function sendToBackgroundEffect(
 				reason: err instanceof Error ? err.message : String(err),
 			}),
 	}).pipe(
-		Effect.withLogSpan('sendToBackground'),
 		Effect.tap(() => Effect.log('Message:', message._tag)),
+		Effect.withLogSpan('sendToBackground'),
 	);
 }

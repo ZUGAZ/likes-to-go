@@ -5,6 +5,7 @@ import { CloseTabSchema } from '@/common/model/collection/commands/close-tab';
 import { SendStartToTabSchema } from '@/common/model/collection/commands/send-start-to-tab';
 import { SendCancelToTabSchema } from '@/common/model/collection/commands/send-cancel-to-tab';
 import { DownloadExportCommandSchema } from '@/common/model/collection/commands/download-export-command';
+import { NotifyPopupSchema } from '@/common/model/collection/commands/notify-popup';
 
 export const CollectionCommandSchema = Schema.Union(
 	CreateTabSchema,
@@ -12,6 +13,7 @@ export const CollectionCommandSchema = Schema.Union(
 	SendStartToTabSchema,
 	SendCancelToTabSchema,
 	DownloadExportCommandSchema,
+	NotifyPopupSchema,
 );
 
 export type CollectionCommand = Schema.Schema.Type<
