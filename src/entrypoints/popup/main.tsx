@@ -1,10 +1,21 @@
 import { render } from 'solid-js/web';
+import { Effect } from 'effect';
 
 import '@/assets/main.css';
 
-import { Popup } from '@/popup/popup';
+import { makePopupRuntime } from '@/popup/runtime/popup-runtime';
+import { PopupRoot } from '@/popup/root';
 
 const root = document.getElementById('root');
+
 if (root) {
-	render(() => <Popup />, root);
+	const program = Effect.scoped(
+		Effect.gen(function* () {
+			const runtime = yield* makePopupRuntime();
+			render(() => <PopupRoot runtime={runtime} />, root);
+			return yield* Effect.never;
+		}),
+	);
+
+	void Effect.runPromise(program);
 }
