@@ -40,6 +40,7 @@
 	"devDependencies": {
 		"@commitlint/cli": "^20.4.2",
 		"@commitlint/config-conventional": "^20.4.2",
+		"@effect/language-service": "^0.80.0",
 		"@eslint/js": "^9.39.2",
 		"@solidjs/testing-library": "^0.8.10",
 		"@tailwindcss/vite": "^4.2.0",

@@ -21,6 +21,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^20.4.2
         version: 20.4.2
+      '@effect/language-service':
+        specifier: ^0.80.0
+        version: 0.80.0
       '@eslint/js':
         specifier: ^9.39.2
         version: 9.39.2
@@ -259,6 +262,10 @@ packages:
   '@devicefarmer/adbkit@3.3.8':
     resolution: {integrity: sha512-7rBLLzWQnBwutH2WZ0EWUkQdihqrnLYCUMaB44hSol9e0/cdIhuNFcqZO0xNheAU6qqHVA8sMiLofkYTgb+lmw==}
     engines: {node: '>= 0.10.4'}
+    hasBin: true
+
+  '@effect/language-service@0.80.0':
+    resolution: {integrity: sha512-dKMATT1fDzaCpNrICpXga7sjJBtFLpKCAoE/1MiGXI8UwcHA9rmAZ2t52JO9g/kJpERWyomkJ+rl+VFlwNIofg==}
     hasBin: true
 
   '@emnapi/runtime@1.8.1':
@@ -3359,6 +3366,8 @@ snapshots:
       split: 1.0.1
     transitivePeerDependencies:
       - supports-color
+
+  '@effect/language-service@0.80.0': {}
 
   '@emnapi/runtime@1.8.1':
     dependencies:

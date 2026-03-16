@@ -30,7 +30,8 @@
 			"@@/*": ["./*"],
 			"~~": ["."],
 			"~~/*": ["./*"]
-		}
+		},
+		"plugins": [{ "name": "@effect/language-service" }]
 	},
 	"include": ["**/*", ".wxt/wxt.d.ts"],
 	"exclude": [".output", "node_modules"]
