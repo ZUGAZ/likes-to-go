@@ -4,7 +4,7 @@ import {
 	BackgroundSenderTag,
 	DomScannerTag,
 	ScrollerTag,
-	SendError,
+	SendToBackgroundFailed,
 } from '@/content/infrastructure/collection-services';
 import type {
 	CollectionBatch,
@@ -209,7 +209,10 @@ describe('collectionPipeline', () => {
 		const batch = makeBatch([fakeTrack], 1, false);
 
 		const failingSender = Layer.succeed(BackgroundSenderTag, {
-			sendBatch: () => Effect.fail(new SendError({ reason: 'channel closed' })),
+		sendBatch: () =>
+			Effect.fail(
+				new SendToBackgroundFailed({ reason: 'channel closed' }),
+			),
 			sendComplete: () => Effect.void,
 			sendError: (message) =>
 				Effect.sync(() => {

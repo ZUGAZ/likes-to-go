@@ -4,7 +4,7 @@ import {
 	BackgroundSenderTag,
 	DomScannerTag,
 	ScrollerTag,
-	type SendError,
+	type SendToBackgroundFailed,
 } from '@/content/infrastructure/collection-services';
 import {
 	initialScanState,
@@ -55,7 +55,7 @@ function loopStep(
 	current: LoopState,
 ): Effect.Effect<
 	LoopState | undefined,
-	SendError,
+	SendToBackgroundFailed,
 	DomScannerTag | BackgroundSenderTag | ScrollerTag
 > {
 	return Effect.gen(function* () {
@@ -100,7 +100,7 @@ function loopStep(
  * or fiber interruption (cancel / ctx invalidation).
  *
  * On natural completion, sends CollectionComplete to background.
- * On SendError, sends CollectionError and returns Error outcome.
+ * On SendToBackgroundFailed, sends CollectionError and returns Error outcome.
  * Fiber interruption is handled by the caller (message handler) — this effect
  * is interruptible by default.
  */
@@ -122,7 +122,7 @@ export const collectionPipeline: Effect.Effect<
 	return Completed();
 }).pipe(
 	Effect.withLogSpan('collectionPipeline'),
-	Effect.catchTag('SendError', (err) =>
+	Effect.catchTag('SendToBackgroundFailed', (err) =>
 		Effect.gen(function* () {
 			const sender = yield* BackgroundSenderTag;
 			yield* sender.sendError(err.reason).pipe(Effect.ignore);

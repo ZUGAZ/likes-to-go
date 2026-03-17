@@ -1,6 +1,6 @@
 import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
 import { TRACK_LIST_CONTAINER } from '@/common/infrastructure/selectors';
-import { sendToBackground } from '@/common/infrastructure/send-to-background';
+import { sendToBackgroundEffect } from '@/common/infrastructure/send-to-background';
 import {
 	CollectionErrorRequest,
 	isCancelCollection,
@@ -54,15 +54,12 @@ export function createContentMessageHandler(
 
 			const root = document.querySelector(TRACK_LIST_CONTAINER);
 			if (root === null) {
-				const program = Effect.log('content track list not found').pipe(
-					Effect.zipRight(
-						Effect.promise(() =>
-							sendToBackground(
-								CollectionErrorRequest({
-									message: 'Track list not found on page',
-								}),
-							),
-						),
+				const program = Effect.zipRight(
+					Effect.log('content track list not found'),
+					sendToBackgroundEffect(
+						CollectionErrorRequest({
+							message: 'Track list not found on page',
+						}),
 					),
 				);
 

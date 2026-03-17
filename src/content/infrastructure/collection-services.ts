@@ -12,8 +12,8 @@ import { ScrollerLive, ScrollerTag } from '@/content/infrastructure/scroller';
 export {
 	BackgroundSenderTag,
 	type BackgroundSender,
-	SendError,
 } from '@/content/infrastructure/background-sender';
+export { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
 export {
 	DomScannerTag,
 	type DomScanner,

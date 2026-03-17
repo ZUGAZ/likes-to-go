@@ -1,5 +1,8 @@
-import { Context, Data, Effect, Layer } from 'effect';
-import { sendToBackground } from '@/common/infrastructure/send-to-background';
+import { Context, Effect, Layer } from 'effect';
+import {
+	SendToBackgroundFailed,
+	sendToBackgroundEffect,
+} from '@/common/infrastructure/send-to-background';
 import {
 	CollectionCompleteRequest,
 	CollectionErrorRequest,
@@ -7,16 +10,14 @@ import {
 } from '@/common/model/request-message';
 import type { Track } from '@/common/model/track';
 
-export class SendError extends Data.TaggedError('SendError')<{
-	readonly reason: string;
-}> {}
-
 export interface BackgroundSender {
 	readonly sendBatch: (
 		tracks: readonly Track[],
-	) => Effect.Effect<void, SendError>;
-	readonly sendComplete: () => Effect.Effect<void, SendError>;
-	readonly sendError: (message: string) => Effect.Effect<void, SendError>;
+	) => Effect.Effect<void, SendToBackgroundFailed>;
+	readonly sendComplete: () => Effect.Effect<void, SendToBackgroundFailed>;
+	readonly sendError: (
+		message: string,
+	) => Effect.Effect<void, SendToBackgroundFailed>;
 }
 
 export class BackgroundSenderTag extends Context.Tag('BackgroundSender')<
@@ -24,21 +25,18 @@ export class BackgroundSenderTag extends Context.Tag('BackgroundSender')<
 	BackgroundSender
 >() {}
 
-function wrapSend(promise: Promise<unknown>): Effect.Effect<void, SendError> {
-	return Effect.tryPromise({
-		try: () => promise,
-		catch: (err) =>
-			new SendError({
-				reason: err instanceof Error ? err.message : String(err),
-			}),
-	}).pipe(Effect.asVoid);
-}
-
 export const BackgroundSenderLive: Layer.Layer<BackgroundSenderTag> =
 	Layer.succeed(BackgroundSenderTag, {
 		sendBatch: (tracks) =>
-			wrapSend(sendToBackground(TracksBatchRequest({ tracks: [...tracks] }))),
-		sendComplete: () => wrapSend(sendToBackground(CollectionCompleteRequest())),
+			sendToBackgroundEffect(
+				TracksBatchRequest({ tracks: [...tracks] }),
+			).pipe(Effect.asVoid),
+		sendComplete: () =>
+			sendToBackgroundEffect(CollectionCompleteRequest()).pipe(
+				Effect.asVoid,
+			),
 		sendError: (message) =>
-			wrapSend(sendToBackground(CollectionErrorRequest({ message }))),
+			sendToBackgroundEffect(
+				CollectionErrorRequest({ message }),
+			).pipe(Effect.asVoid),
 	});
