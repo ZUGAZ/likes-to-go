@@ -1,3 +1,4 @@
+import { catchError } from '@/common/model/catch-error';
 import { TabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
 import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { Effect, flow, Option } from 'effect';
@@ -12,10 +13,7 @@ export function runCreateTab(
 				url,
 				active: false,
 			}),
-		catch: (err: unknown) =>
-			TabCreateFailed({
-				message: err instanceof Error ? err.message : String(err),
-			}),
+		catch: catchError(TabCreateFailed, 'Could not open the likes page'),
 	});
 
 	return Effect.gen(function* () {
@@ -30,7 +28,8 @@ export function runCreateTab(
 						onNone: () =>
 							Effect.fail(
 								TabCreateFailed({
-									message: 'Failed to create tab',
+									message: 'Could not open the likes page',
+									reason: 'Tab created without an id',
 								}),
 							),
 						onSome: (tabId) => Effect.succeed(TabCreated({ tabId })),

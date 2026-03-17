@@ -17,6 +17,7 @@ export interface BackgroundSender {
 	readonly sendComplete: () => Effect.Effect<void, SendToBackgroundFailed>;
 	readonly sendError: (
 		message: string,
+		reason: string,
 	) => Effect.Effect<void, SendToBackgroundFailed>;
 }
 
@@ -28,15 +29,13 @@ export class BackgroundSenderTag extends Context.Tag('BackgroundSender')<
 export const BackgroundSenderLive: Layer.Layer<BackgroundSenderTag> =
 	Layer.succeed(BackgroundSenderTag, {
 		sendBatch: (tracks) =>
-			sendToBackgroundEffect(
-				TracksBatchRequest({ tracks: [...tracks] }),
-			).pipe(Effect.asVoid),
-		sendComplete: () =>
-			sendToBackgroundEffect(CollectionCompleteRequest()).pipe(
+			sendToBackgroundEffect(TracksBatchRequest({ tracks: [...tracks] })).pipe(
 				Effect.asVoid,
 			),
-		sendError: (message) =>
-			sendToBackgroundEffect(
-				CollectionErrorRequest({ message }),
-			).pipe(Effect.asVoid),
+		sendComplete: () =>
+			sendToBackgroundEffect(CollectionCompleteRequest()).pipe(Effect.asVoid),
+		sendError: (message, reason) =>
+			sendToBackgroundEffect(CollectionErrorRequest({ message, reason })).pipe(
+				Effect.asVoid,
+			),
 	});

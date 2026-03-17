@@ -1,9 +1,10 @@
-import { Either } from 'effect';
+import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
 import type {
 	MessageResponse,
 	RequestMessage,
 } from '@/common/model/request-message';
-import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
+import { errorToReason } from '@/common/model/error-to-reason';
+import { Either } from 'effect';
 
 /**
  * Register the runtime message listener (call once from background script, synchronously at top level).
@@ -37,7 +38,7 @@ export function registerRuntimeListener(
 					sendResponse({
 						status: 'error',
 						trackCount: 0,
-						errorMessage: err instanceof Error ? err.message : String(err),
+						errorMessage: errorToReason(err),
 					});
 				});
 			return true; // keep channel open for async response

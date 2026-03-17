@@ -125,8 +125,9 @@ export const collectionPipeline: Effect.Effect<
 	Effect.catchTag('SendToBackgroundFailed', (err) =>
 		Effect.gen(function* () {
 			const sender = yield* BackgroundSenderTag;
-			yield* sender.sendError(err.reason).pipe(Effect.ignore);
-			return OutcomeError({ message: err.reason });
+			const message = 'Could not read your likes list';
+			yield* sender.sendError(message, err.reason).pipe(Effect.ignore);
+			return OutcomeError({ message });
 		}),
 	),
 );

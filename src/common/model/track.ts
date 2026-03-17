@@ -1,5 +1,4 @@
-import { Either, Schema } from 'effect';
-import { InvalidTrack } from '@/common/model/errors';
+import { Data, Either, Schema } from 'effect';
 
 /**
  * Full track schema for v1 JSON output: required title, artist, url, duration_ms;
@@ -21,6 +20,10 @@ export const TrackSchema = Schema.Struct({
 });
 
 export type Track = Schema.Schema.Type<typeof TrackSchema>;
+
+export class InvalidTrack extends Data.TaggedError('InvalidTrack')<{
+	readonly reason: string;
+}> {}
 
 /**
  * Decode unknown input to Track. Invalid data produces InvalidTrack (typed error), no throw.

@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { buildExportPayload } from '@/common/model/exporter';
 import { downloadJson } from '@/common/infrastructure/chrome-downloads';
 import { runDownloadExport } from '@/background/commands/run-download-export';
@@ -32,7 +32,7 @@ describe('runDownloadExport', () => {
 
 	it('fails with DownloadFailed on download error', async () => {
 		const error = new Error('boom');
-		(downloadJson as unknown as vi.Mock).mockRejectedValueOnce(error);
+		(downloadJson as unknown as Mock).mockRejectedValueOnce(error);
 
 		const result = await Effect.runPromiseExit(runDownloadExport([]));
 
@@ -40,7 +40,12 @@ describe('runDownloadExport', () => {
 		if (result._tag === 'Failure') {
 			const failure = result.cause as any;
 			const errorValue = (failure as any).error ?? failure;
-			expect(errorValue).toEqual(DownloadFailed({ message: 'boom' }));
+			expect(errorValue).toEqual(
+				DownloadFailed({
+					message: 'Could not save your export',
+					reason: 'boom',
+				}),
+			);
 		}
 	});
 });

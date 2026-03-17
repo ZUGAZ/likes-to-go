@@ -3,6 +3,7 @@ import { Data, Schema } from 'effect';
 
 export const CollectionErrorEventSchema = taggedStruct('CollectionError', {
 	message: Schema.String,
+	reason: Schema.String,
 });
 
 export type CollectionError = Schema.Schema.Type<

@@ -1,4 +1,5 @@
 import type { RequestMessage } from '@/common/model/request-message';
+import { errorToReason } from '@/common/model/error-to-reason';
 import { Data, Effect } from 'effect';
 
 export class SendToBackgroundFailed extends Data.TaggedError(
@@ -22,7 +23,7 @@ export function sendToBackgroundEffect(
 		try: () => sendToBackground(message),
 		catch: (err: unknown) =>
 			new SendToBackgroundFailed({
-				reason: err instanceof Error ? err.message : String(err),
+				reason: errorToReason(err),
 			}),
 	}).pipe(
 		Effect.tap(() => Effect.log('Message:', message._tag)),

@@ -11,6 +11,7 @@ export const TracksBatchSchema = taggedStruct('TracksBatch', {
 export const CollectionCompleteSchema = taggedStruct('CollectionComplete');
 export const CollectionErrorSchema = taggedStruct('CollectionError', {
 	message: Schema.String,
+	reason: Schema.String,
 });
 export const CancelCollectionSchema = taggedStruct('CancelCollection');
 export const DownloadExportSchema = taggedStruct('DownloadExport');

@@ -3,6 +3,7 @@ import { Effect } from 'effect';
 import { collectionStateToGetStateResponse } from '@/common/model/collection/state-to-response';
 import type { CollectionState } from '@/common/model/collection/state';
 import { PopupStateUpdate } from '@/common/model/request-message/popup-state-update';
+import { errorToReason } from '@/common/model/error-to-reason';
 
 export function runNotifyPopup(state: CollectionState): Effect.Effect<void> {
 	const response = collectionStateToGetStateResponse(state);
@@ -20,8 +21,7 @@ export function runNotifyPopup(state: CollectionState): Effect.Effect<void> {
 			PopupStateUpdate({
 				status: response.status,
 				trackCount: response.trackCount,
-				errorMessage: err instanceof Error ? err.message : String(err),
+				errorMessage: errorToReason(err),
 			}),
 	}).pipe(Effect.ignore);
 }
- 

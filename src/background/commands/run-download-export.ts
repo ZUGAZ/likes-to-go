@@ -1,4 +1,5 @@
 import { downloadJson } from '@/common/infrastructure/chrome-downloads';
+import { catchError } from '@/common/model/catch-error';
 import { DownloadExport } from '@/common/model/collection/events/download-export-event';
 import { DownloadFailed } from '@/common/model/collection/events/download-failed';
 import { buildExportPayload } from '@/common/model/exporter';
@@ -14,10 +15,7 @@ export function runDownloadExport(
 			await downloadJson(JSON.stringify(payload));
 			return DownloadExport();
 		},
-		catch: (err: unknown) =>
-			DownloadFailed({
-				message: err instanceof Error ? err.message : String(err),
-			}),
+		catch: catchError(DownloadFailed, 'Could not save your export'),
 	});
 
 	return Effect.gen(function* () {

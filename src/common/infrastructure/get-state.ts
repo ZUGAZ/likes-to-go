@@ -7,6 +7,7 @@ import {
 	GetStateResponseSchema,
 	type GetStateResponse,
 } from '@/common/model/request-message';
+import { errorToReason } from '@/common/model/error-to-reason';
 import { Data, Effect, Schema } from 'effect';
 
 export class DecodeGetStateResponseFailed extends Data.TaggedError(
@@ -25,7 +26,7 @@ export function decodeGetStateResponse(
 		try: () => Schema.decodeUnknownSync(GetStateResponseSchema)(raw),
 		catch: (err: unknown) =>
 			new DecodeGetStateResponseFailed({
-				reason: err instanceof Error ? err.message : String(err),
+				reason: errorToReason(err),
 			}),
 	});
 }

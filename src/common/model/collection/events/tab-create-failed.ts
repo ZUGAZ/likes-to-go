@@ -3,6 +3,7 @@ import { Data, Schema } from 'effect';
 
 export const TabCreateFailedSchema = taggedStruct('TabCreateFailed', {
 	message: Schema.String,
+	reason: Schema.String,
 });
 
 export type TabCreateFailed = Schema.Schema.Type<typeof TabCreateFailedSchema>;

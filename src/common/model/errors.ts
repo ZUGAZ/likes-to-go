@@ -6,10 +6,3 @@ import { Data } from 'effect';
 export class InvalidMessage extends Data.TaggedError('InvalidMessage')<{
 	readonly reason: string;
 }> {}
-
-/**
- * Invalid track data (e.g. from DOM or TracksBatch payload).
- */
-export class InvalidTrack extends Data.TaggedError('InvalidTrack')<{
-	readonly reason: string;
-}> {}

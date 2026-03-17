@@ -209,14 +209,12 @@ describe('collectionPipeline', () => {
 		const batch = makeBatch([fakeTrack], 1, false);
 
 		const failingSender = Layer.succeed(BackgroundSenderTag, {
-		sendBatch: () =>
-			Effect.fail(
-				new SendToBackgroundFailed({ reason: 'channel closed' }),
-			),
+			sendBatch: () =>
+				Effect.fail(new SendToBackgroundFailed({ reason: 'channel closed' })),
 			sendComplete: () => Effect.void,
-			sendError: (message) =>
+			sendError: (message, reason) =>
 				Effect.sync(() => {
-					calls.push(`CollectionError:${message}`);
+					calls.push(`CollectionError:${message}:${reason}`);
 				}),
 		});
 
@@ -226,8 +224,12 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual(OutcomeError({ message: 'channel closed' }));
-		expect(calls).toContain('CollectionError:channel closed');
+		expect(value).toEqual(
+			OutcomeError({ message: 'Could not read your likes list' }),
+		);
+		expect(calls).toContain(
+			'CollectionError:Could not read your likes list:channel closed',
+		);
 	});
 
 	it('sends multiple batches across iterations', async () => {

@@ -47,7 +47,12 @@ describe('runCreateTab', () => {
 		expect(exit._tag).toBe('Failure');
 		if (exit._tag === 'Failure') {
 			const failure = (exit.cause as any).error ?? exit.cause;
-			expect(failure).toEqual(TabCreateFailed({ message: 'boom' }));
+			expect(failure).toEqual(
+				TabCreateFailed({
+					message: 'Could not open the likes page',
+					reason: 'boom',
+				}),
+			);
 		}
 	});
 });

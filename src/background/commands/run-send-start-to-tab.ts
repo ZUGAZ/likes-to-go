@@ -1,4 +1,5 @@
 import { sendToTab } from '@/common/infrastructure/chrome-messaging';
+import { catchError } from '@/common/model/catch-error';
 import { SendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
 import { StartCollectionRequest } from '@/common/model/request-message';
 import { Effect } from 'effect';
@@ -10,10 +11,10 @@ export function runSendStartToTab(
 		try: async () => {
 			await sendToTab(tabId, StartCollectionRequest());
 		},
-		catch: (err: unknown) =>
-			SendToTabFailed({
-				message: err instanceof Error ? err.message : String(err),
-			}),
+		catch: catchError(
+			SendToTabFailed,
+			'Could not open or talk to the likes page',
+		),
 	});
 
 	return Effect.gen(function* () {
