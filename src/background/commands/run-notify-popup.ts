@@ -13,6 +13,9 @@ export function runNotifyPopup(state: CollectionState): Effect.Effect<void> {
 		...(response.errorMessage === undefined
 			? {}
 			: { errorMessage: response.errorMessage }),
+		...(response.skippedTrackCount === undefined
+			? {}
+			: { skippedTrackCount: response.skippedTrackCount }),
 	});
 
 	return Effect.tryPromise({

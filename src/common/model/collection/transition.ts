@@ -66,7 +66,10 @@ export function transition(
 			const newState = CollectingRequested();
 			return {
 				state: newState,
-				commands: [CreateTab({ url: LIKES_URL }), NotifyPopup({ state: newState })],
+				commands: [
+					CreateTab({ url: LIKES_URL }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
@@ -81,7 +84,11 @@ export function transition(
 
 	if (isCollectingRequested(current)) {
 		if (isTabCreated(event)) {
-			const newState = Collecting({ tabId: event.tabId, tracks: [] });
+			const newState = Collecting({
+				tabId: event.tabId,
+				tracks: [],
+				skippedTrackCount: 0,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -109,6 +116,7 @@ export function transition(
 			const newState = Collecting({
 				tabId: current.tabId,
 				tracks: appendTracksDeduped(current.tracks, event.tracks),
+				skippedTrackCount: current.skippedTrackCount + event.skippedTrackCount,
 			});
 			return {
 				state: newState,
@@ -116,7 +124,10 @@ export function transition(
 			};
 		}
 		if (isCollectionCompleteEvent(event)) {
-			const newState = Done({ tracks: current.tracks });
+			const newState = Done({
+				tracks: current.tracks,
+				skippedTrackCount: current.skippedTrackCount,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],

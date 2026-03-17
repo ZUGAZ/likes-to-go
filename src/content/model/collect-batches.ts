@@ -5,21 +5,24 @@ import type { Track } from '@/common/model/track';
 
 export interface CollectionBatch {
 	readonly tracks: readonly Track[];
-	readonly rawLength: number;
-	readonly totalCardCount: number;
+	readonly parsedCount: number;
+	readonly skippedCount: number;
+	readonly totalValidCount: number;
 	readonly noNewCards: boolean;
 }
 
 /** State carried between single-pass scans; used by the collection loop, not by this module's public API. */
 export interface CollectionScanState {
-	readonly previousCount: number;
-	readonly totalRawLength: number;
+	readonly previousValidCount: number;
+	readonly totalParsedCount: number;
+	readonly totalSkippedCount: number;
 	readonly batchIndex: number;
 }
 
 const INITIAL_SCAN_STATE: CollectionScanState = {
-	previousCount: 0,
-	totalRawLength: 0,
+	previousValidCount: 0,
+	totalParsedCount: 0,
+	totalSkippedCount: 0,
 	batchIndex: 0,
 };
 
@@ -37,7 +40,7 @@ export function collectBatch(
 	baseUrl: string,
 	state: CollectionScanState,
 ): { batch: CollectionBatch; nextState: CollectionScanState } {
-	const selector = trackCardsFromIndex(state.previousCount);
+	const selector = trackCardsFromIndex(state.previousValidCount);
 	const cards = root.querySelectorAll(selector);
 	const debugColors = ['red', 'blue', 'green', 'lime', 'magenta'];
 	const color = debugColors[state.batchIndex % debugColors.length];
@@ -49,20 +52,26 @@ export function collectBatch(
 	});
 	const raw = getTracksFromCards(Array.from(cards), baseUrl);
 	const tracks = decodeTracksFromRaw(raw);
-	const totalCardCount = state.previousCount + tracks.length;
+
+	const parsedCount = raw.length;
+	const skippedCount = parsedCount - tracks.length;
+	// Counts only schema-validated tracks, not raw DOM elements.
+	// Placeholder cards (lazy-loaded, empty title/url) are filtered by
+	// getTracksFromCards and will activate on later scroll passes.
+	const totalValidCount = state.previousValidCount + tracks.length;
 	const noNewCards = tracks.length === 0;
-	const rawLength = raw.length;
-	const totalRawLength = state.totalRawLength + rawLength;
 
 	const batch: CollectionBatch = {
 		tracks,
-		rawLength,
-		totalCardCount,
+		parsedCount,
+		skippedCount,
+		totalValidCount,
 		noNewCards,
 	};
 	const nextState: CollectionScanState = {
-		previousCount: totalCardCount,
-		totalRawLength,
+		previousValidCount: totalValidCount,
+		totalParsedCount: state.totalParsedCount + parsedCount,
+		totalSkippedCount: state.totalSkippedCount + skippedCount,
 		batchIndex: state.batchIndex + 1,
 	};
 	return { batch, nextState };

@@ -7,6 +7,7 @@ interface PopupViewProps {
 	state: Accessor<PopupState>;
 	trackCount: Accessor<number>;
 	errorMessage: Accessor<string | undefined>;
+	skippedTrackCount: Accessor<number>;
 	onStart: () => void;
 	onCancel: () => void;
 	onDownload: () => void;
@@ -33,9 +34,12 @@ export function PopupView(props: PopupViewProps) {
 					<div class="text-2xl">
 						<ProcessingHeart />
 					</div>
-					<p class="text-neutral-700">
-						preparing {props.trackCount()} tracks…
-					</p>
+					<p class="text-neutral-700">preparing {props.trackCount()} tracks…</p>
+					<Show when={props.skippedTrackCount() > 0} fallback={null}>
+						<p class="text-center text-amber-600 text-xs">
+							{props.skippedTrackCount()} tracks could not be read yet
+						</p>
+					</Show>
 					<button
 						type="button"
 						class="rounded border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100"
@@ -55,6 +59,11 @@ export function PopupView(props: PopupViewProps) {
 					>
 						💚 Ready to go
 					</button>
+					<Show when={props.skippedTrackCount() > 0} fallback={null}>
+						<p class="text-center text-amber-600 text-xs">
+							{props.skippedTrackCount()} tracks could not be read
+						</p>
+					</Show>
 				</div>
 			</Show>
 
@@ -76,4 +85,3 @@ export function PopupView(props: PopupViewProps) {
 		</div>
 	);
 }
-

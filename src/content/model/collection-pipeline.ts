@@ -68,20 +68,23 @@ function loopStep(
 			? current.passesWithNoNewTracks + 1
 			: 0;
 
-		if (batch.rawLength > batch.tracks.length) {
-			yield* Effect.log(
-				'skipped invalid cards',
-				batch.rawLength - batch.tracks.length,
-				'raw:',
-				batch.rawLength,
-				'validated:',
+		if (batch.skippedCount > 0) {
+			yield* Effect.logWarning(
+				'skipped invalid tracks',
+				batch.skippedCount,
+				'parsed:',
+				batch.parsedCount,
+				'valid:',
 				batch.tracks.length,
 			);
 		}
 
 		if (batch.tracks.length > 0) {
 			yield* Effect.log('sending TracksBatch', batch.tracks.length);
-			yield* sender.sendBatch(batch.tracks);
+			yield* sender.sendBatch({
+				tracks: batch.tracks,
+				skippedTrackCount: batch.skippedCount,
+			});
 		}
 
 		if (passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES) {

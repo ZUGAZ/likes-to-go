@@ -26,6 +26,7 @@ export interface PopupViewModel {
 	readonly state: () => PopupState;
 	readonly trackCount: () => number;
 	readonly errorMessage: () => string | undefined;
+	readonly skippedTrackCount: () => number;
 	readonly effects: {
 		readonly syncState: ViewModelEffect;
 		readonly startCollection: ViewModelEffect;
@@ -39,12 +40,14 @@ export function createPopupViewModel(): PopupViewModel {
 	const [state, setState] = createSignal<PopupState>('initial');
 	const [trackCount, setTrackCount] = createSignal(0);
 	const [errorMessage, setErrorMessage] = createSignal<string | undefined>();
+	const [skippedTrackCount, setSkippedTrackCount] = createSignal(0);
 
 	const applyModel = (model: PopupModel): void => {
 		batch(() => {
 			setState(model.state);
 			setTrackCount(model.trackCount);
 			setErrorMessage(model.errorMessage);
+			setSkippedTrackCount(model.skippedTrackCount ?? 0);
 		});
 	};
 
@@ -53,6 +56,7 @@ export function createPopupViewModel(): PopupViewModel {
 			state: mapStatusToPopupState(response.status),
 			trackCount: response.trackCount,
 			errorMessage: response.errorMessage,
+			skippedTrackCount: response.skippedTrackCount,
 		});
 	};
 
@@ -92,6 +96,7 @@ export function createPopupViewModel(): PopupViewModel {
 		state,
 		trackCount,
 		errorMessage,
+		skippedTrackCount,
 		effects: {
 			syncState,
 			startCollection,

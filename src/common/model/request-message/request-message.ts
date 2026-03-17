@@ -7,6 +7,7 @@ import { Data, Schema } from 'effect';
 export const StartCollectionSchema = taggedStruct('StartCollection');
 export const TracksBatchSchema = taggedStruct('TracksBatch', {
 	tracks: Schema.Array(TrackSchema),
+	skippedTrackCount: Schema.Number,
 });
 export const CollectionCompleteSchema = taggedStruct('CollectionComplete');
 export const CollectionErrorSchema = taggedStruct('CollectionError', {

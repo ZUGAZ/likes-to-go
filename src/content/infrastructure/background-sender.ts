@@ -10,9 +10,14 @@ import {
 } from '@/common/model/request-message';
 import type { Track } from '@/common/model/track';
 
+export interface TracksBatchPayload {
+	readonly tracks: readonly Track[];
+	readonly skippedTrackCount: number;
+}
+
 export interface BackgroundSender {
 	readonly sendBatch: (
-		tracks: readonly Track[],
+		args: TracksBatchPayload,
 	) => Effect.Effect<void, SendToBackgroundFailed>;
 	readonly sendComplete: () => Effect.Effect<void, SendToBackgroundFailed>;
 	readonly sendError: (
@@ -28,10 +33,10 @@ export class BackgroundSenderTag extends Context.Tag('BackgroundSender')<
 
 export const BackgroundSenderLive: Layer.Layer<BackgroundSenderTag> =
 	Layer.succeed(BackgroundSenderTag, {
-		sendBatch: (tracks) =>
-			sendToBackgroundEffect(TracksBatchRequest({ tracks: [...tracks] })).pipe(
-				Effect.asVoid,
-			),
+		sendBatch: ({ tracks, skippedTrackCount }) =>
+			sendToBackgroundEffect(
+				TracksBatchRequest({ tracks: [...tracks], skippedTrackCount }),
+			).pipe(Effect.asVoid),
 		sendComplete: () =>
 			sendToBackgroundEffect(CollectionCompleteRequest()).pipe(Effect.asVoid),
 		sendError: (message, reason) =>

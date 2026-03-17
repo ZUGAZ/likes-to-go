@@ -6,6 +6,7 @@ export interface PopupModel {
 	readonly state: PopupState;
 	readonly trackCount: number;
 	readonly errorMessage: string | undefined;
+	readonly skippedTrackCount?: number | undefined;
 }
 
 export function mapStatusToPopupState(
@@ -28,6 +29,7 @@ export function initialPopupModel(): PopupModel {
 		state: 'initial',
 		trackCount: 0,
 		errorMessage: undefined,
+		skippedTrackCount: undefined,
 	};
 }
 
@@ -36,6 +38,6 @@ export function processingPopupModel(): PopupModel {
 		state: 'processing',
 		trackCount: 0,
 		errorMessage: undefined,
+		skippedTrackCount: undefined,
 	};
 }
-

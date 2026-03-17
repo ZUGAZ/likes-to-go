@@ -5,6 +5,7 @@ import { Data, Schema } from 'effect';
 export const CollectingStateSchema = taggedStruct('Collecting', {
 	tabId: Schema.Number,
 	tracks: Schema.Array(TrackSchema),
+	skippedTrackCount: Schema.Number,
 });
 
 export type Collecting = Schema.Schema.Type<typeof CollectingStateSchema>;

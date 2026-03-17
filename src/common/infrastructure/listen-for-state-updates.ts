@@ -5,6 +5,7 @@ export interface StateUpdatePayload {
 	readonly status: CollectionStatus;
 	readonly trackCount: number;
 	readonly errorMessage?: string | undefined;
+	readonly skippedTrackCount?: number | undefined;
 }
 
 export function listenForStateUpdates(
@@ -19,6 +20,7 @@ export function listenForStateUpdates(
 			status: message.status,
 			trackCount: message.trackCount,
 			errorMessage: message.errorMessage,
+			skippedTrackCount: message.skippedTrackCount,
 		});
 	};
 

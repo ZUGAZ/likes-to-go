@@ -47,25 +47,28 @@ const twoCardsHtml = `
 `;
 
 describe('initialScanState', () => {
-	it('returns state with previousCount 0 and totalRawLength 0', () => {
+	it('returns state with zero counts', () => {
 		const state = initialScanState();
-		expect(state.previousCount).toBe(0);
-		expect(state.totalRawLength).toBe(0);
+		expect(state.previousValidCount).toBe(0);
+		expect(state.totalParsedCount).toBe(0);
+		expect(state.totalSkippedCount).toBe(0);
 	});
 });
 
 describe('collectBatch', () => {
-	it('returns no new cards and unchanged totalCardCount when root has no cards', () => {
+	it('returns no new cards and unchanged totals when root has no cards', () => {
 		const root = createListRoot('<p>empty</p>');
 		const state = initialScanState();
 		const { batch, nextState } = collectBatch(root, baseUrl, state);
 
 		expect(batch.tracks).toHaveLength(0);
-		expect(batch.rawLength).toBe(0);
-		expect(batch.totalCardCount).toBe(0);
+		expect(batch.parsedCount).toBe(0);
+		expect(batch.skippedCount).toBe(0);
+		expect(batch.totalValidCount).toBe(0);
 		expect(batch.noNewCards).toBe(true);
-		expect(nextState.previousCount).toBe(0);
-		expect(nextState.totalRawLength).toBe(0);
+		expect(nextState.previousValidCount).toBe(0);
+		expect(nextState.totalParsedCount).toBe(0);
+		expect(nextState.totalSkippedCount).toBe(0);
 	});
 
 	it('returns first batch with all parsed tracks and correct state update', () => {
@@ -74,8 +77,9 @@ describe('collectBatch', () => {
 		const { batch, nextState } = collectBatch(root, baseUrl, state);
 
 		expect(batch.tracks).toHaveLength(2);
-		expect(batch.rawLength).toBe(2);
-		expect(batch.totalCardCount).toBe(2);
+		expect(batch.parsedCount).toBe(2);
+		expect(batch.skippedCount).toBe(0);
+		expect(batch.totalValidCount).toBe(2);
 		expect(batch.noNewCards).toBe(false);
 		expect(batch.tracks[0]?.title).toBe('Track A');
 		expect(batch.tracks[0]?.url.toString()).toBe(
@@ -83,25 +87,29 @@ describe('collectBatch', () => {
 		);
 		expect(batch.tracks[1]?.title).toBe('Track B');
 
-		expect(nextState.previousCount).toBe(2);
-		expect(nextState.totalRawLength).toBe(2);
+		expect(nextState.previousValidCount).toBe(2);
+		expect(nextState.totalParsedCount).toBe(2);
+		expect(nextState.totalSkippedCount).toBe(0);
 	});
 
 	it('second pass with same state returns no new cards and idempotent counts', () => {
 		const root = createListRoot(twoCardsHtml);
 		const state: CollectionScanState = {
-			previousCount: 2,
-			totalRawLength: 2,
+			previousValidCount: 2,
+			totalParsedCount: 2,
+			totalSkippedCount: 0,
 			batchIndex: 0,
 		};
 		const { batch, nextState } = collectBatch(root, baseUrl, state);
 
 		expect(batch.tracks).toHaveLength(0);
-		expect(batch.rawLength).toBe(0);
-		expect(batch.totalCardCount).toBe(2);
+		expect(batch.parsedCount).toBe(0);
+		expect(batch.skippedCount).toBe(0);
+		expect(batch.totalValidCount).toBe(2);
 		expect(batch.noNewCards).toBe(true);
-		expect(nextState.previousCount).toBe(2);
-		expect(nextState.totalRawLength).toBe(2);
+		expect(nextState.previousValidCount).toBe(2);
+		expect(nextState.totalParsedCount).toBe(2);
+		expect(nextState.totalSkippedCount).toBe(0);
 	});
 
 	it('single card: first pass returns one track, second pass returns no new cards', () => {
@@ -114,7 +122,9 @@ describe('collectBatch', () => {
 		);
 
 		expect(batch1.tracks).toHaveLength(1);
-		expect(batch1.totalCardCount).toBe(1);
+		expect(batch1.parsedCount).toBe(1);
+		expect(batch1.skippedCount).toBe(0);
+		expect(batch1.totalValidCount).toBe(1);
 		expect(batch1.noNewCards).toBe(false);
 
 		const { batch: batch2, nextState: state2 } = collectBatch(
@@ -123,9 +133,12 @@ describe('collectBatch', () => {
 			state1,
 		);
 		expect(batch2.tracks).toHaveLength(0);
-		expect(batch2.totalCardCount).toBe(1);
+		expect(batch2.parsedCount).toBe(0);
+		expect(batch2.skippedCount).toBe(0);
+		expect(batch2.totalValidCount).toBe(1);
 		expect(batch2.noNewCards).toBe(true);
-		expect(state2.previousCount).toBe(1);
-		expect(state2.totalRawLength).toBe(1);
+		expect(state2.previousValidCount).toBe(1);
+		expect(state2.totalParsedCount).toBe(1);
+		expect(state2.totalSkippedCount).toBe(0);
 	});
 });

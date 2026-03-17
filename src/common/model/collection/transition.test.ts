@@ -35,12 +35,18 @@ describe('collection-transition', () => {
 				validTrack({ title: 'B', url: 'https://soundcloud.com/b/2' }),
 				validTrack({ title: 'C', url: 'https://soundcloud.com/c/3' }),
 			];
-			state = transition(state, TracksBatch({ tracks })).state;
+			state = transition(
+				state,
+				TracksBatch({ tracks, skippedTrackCount: 2 }),
+			).state;
 
 			const response = collectionStateToGetStateResponse(state);
 			expect(response.status).toBe('collecting');
 			expect(response.trackCount).toBe(3);
 			expect(hasTracks(state) && state.tracks.length).toBe(3);
+			if (hasTracks(state)) {
+				expect(state.skippedTrackCount).toBe(2);
+			}
 		});
 
 		it('GetStateResponse trackCount is 0 when Idle', () => {

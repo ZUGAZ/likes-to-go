@@ -30,13 +30,14 @@ const fakeTrack: Track = {
 
 function makeBatch(
 	tracks: readonly Track[],
-	totalCardCount: number,
+	totalValidCount: number,
 	noNewCards: boolean,
 ): CollectionBatch {
 	return {
 		tracks,
-		rawLength: tracks.length,
-		totalCardCount,
+		parsedCount: tracks.length,
+		skippedCount: 0,
+		totalValidCount,
 		noNewCards,
 	};
 }
@@ -50,11 +51,12 @@ function makeDomScannerStub(batches: readonly CollectionBatch[]) {
 				const batch =
 					entry !== undefined
 						? entry
-						: makeBatch([], state.previousCount, true);
+						: makeBatch([], state.previousValidCount, true);
 				callIndex++;
 				const nextState: CollectionScanState = {
-					previousCount: batch.totalCardCount,
-					totalRawLength: state.totalRawLength + batch.rawLength,
+					previousValidCount: batch.totalValidCount,
+					totalParsedCount: state.totalParsedCount + batch.parsedCount,
+					totalSkippedCount: state.totalSkippedCount + batch.skippedCount,
 					batchIndex: state.batchIndex + 1,
 				};
 				return { batch, nextState };
@@ -64,7 +66,7 @@ function makeDomScannerStub(batches: readonly CollectionBatch[]) {
 
 function makeBackgroundSenderStub(calls: string[]) {
 	return Layer.succeed(BackgroundSenderTag, {
-		sendBatch: (tracks) =>
+		sendBatch: ({ tracks }) =>
 			Effect.sync(() => {
 				calls.push(`TracksBatch:${String(tracks.length)}`);
 			}),
