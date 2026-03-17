@@ -59,6 +59,7 @@ export function createContentMessageHandler(
 					sendToBackgroundEffect(
 						CollectionErrorRequest({
 							message: 'Track list not found on page',
+							reason: 'Track list container selector did not match any elements',
 						}),
 					),
 				);

@@ -17,6 +17,7 @@
 		"package": "wxt zip",
 		"test": "vitest",
 		"test:run": "vitest run",
+		"test:types": "tsc --noEmit",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write .",

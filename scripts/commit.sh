@@ -11,7 +11,10 @@ fi
 echo "Formatting staged files with lint-staged..."
 pnpm lint-staged
 
-# 3. Run tests (non-watch)
+# 3. Run typecheck and tests (non-watch)
+echo "Running typecheck (pnpm test:types)..."
+pnpm test:types
+
 echo "Running tests (pnpm test:run)..."
 pnpm test:run
 

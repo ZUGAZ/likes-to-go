@@ -17,7 +17,7 @@ describe('runCreateTab', () => {
 	});
 
 	it('succeeds with tabId when chrome.tabs.create returns an id', async () => {
-		(chrome.tabs.create as unknown as vi.Mock).mockResolvedValueOnce({
+		(chrome.tabs.create as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
 			id: 123,
 		});
 
@@ -36,7 +36,7 @@ describe('runCreateTab', () => {
 	});
 
 	it('fails when chrome.tabs.create rejects', async () => {
-		(chrome.tabs.create as unknown as vi.Mock).mockRejectedValueOnce(
+		(chrome.tabs.create as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
 			new Error('boom'),
 		);
 

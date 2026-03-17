@@ -1,3 +1,10 @@
+import type { CollectionEvent } from '@/common/model/collection/event';
+import { CancelCollection } from '@/common/model/collection/events/cancel-collection';
+import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
+import { CollectionError } from '@/common/model/collection/events/collection-error';
+import { DownloadExport } from '@/common/model/collection/events/download-export-event';
+import { StartCollection } from '@/common/model/collection/events/start-collection';
+import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import {
 	type RequestMessage,
 	isCancelCollection,
@@ -8,13 +15,6 @@ import {
 	isStartCollection,
 	isTracksBatch,
 } from '@/common/model/request-message';
-import type { CollectionEvent } from '@/common/model/collection/event';
-import { CancelCollection } from '@/common/model/collection/events/cancel-collection';
-import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
-import { CollectionError } from '@/common/model/collection/events/collection-error';
-import { DownloadExport } from '@/common/model/collection/events/download-export-event';
-import { StartCollection } from '@/common/model/collection/events/start-collection';
-import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 
 /**
  * Maps a validated RequestMessage to the corresponding CollectionEvent, or null for GetState.
@@ -25,10 +25,17 @@ export function requestMessageToCollectionEvent(
 ): CollectionEvent | null {
 	if (isGetStateRequest(message)) return null;
 	if (isStartCollection(message)) return StartCollection();
-	if (isTracksBatch(message)) return TracksBatch({ tracks: message.tracks });
+	if (isTracksBatch(message))
+		return TracksBatch({
+			tracks: message.tracks,
+			skippedTrackCount: message.skippedTrackCount,
+		});
 	if (isCollectionComplete(message)) return CollectionComplete();
 	if (isCollectionError(message))
-		return CollectionError({ message: message.message });
+		return CollectionError({
+			message: message.message,
+			reason: message.reason,
+		});
 	if (isCancelCollection(message)) return CancelCollection();
 	if (isDownloadExport(message)) return DownloadExport();
 	return null;
