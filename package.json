@@ -28,7 +28,8 @@
 	},
 	"dependencies": {
 		"effect": "^3.19.18",
-		"solid-js": "^1.9.11"
+		"solid-js": "^1.9.11",
+		"solid-transition-group": "^0.3.0"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
