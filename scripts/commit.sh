@@ -28,5 +28,9 @@ echo "The existing commit-msg hook will validate the conventional commit format.
 echo
 
 # 5. Open interactive commit editor
+if [ -z "${GIT_EDITOR:-}" ] && command -v cursor >/dev/null 2>&1; then
+	export GIT_EDITOR="cursor --wait"
+fi
+
 git commit
 
