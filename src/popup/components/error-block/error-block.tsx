@@ -14,7 +14,7 @@ export function ErrorBlock(props: ErrorBlockProps) {
 				❤️ Try again
 			</button>
 
-			<p class="text-center text-rose-600 text-sm" role="alert">
+			<p class="break-words text-center text-rose-600 text-sm" role="alert">
 				💔 {props.message}
 			</p>
 		</div>

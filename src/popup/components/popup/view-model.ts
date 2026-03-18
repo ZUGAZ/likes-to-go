@@ -17,7 +17,7 @@ import type { ViewModelEffect } from '@/common/viewmodel/bind-viewmodel';
 import {
 	initialPopupModel,
 	mapStatusToPopupState,
-	processingPopupModel,
+	loadingPopupModel,
 	type PopupModel,
 	type PopupState,
 } from '@/popup/components/popup/model';
@@ -64,8 +64,8 @@ export function createPopupViewModel(): PopupViewModel {
 		applyModel(initialPopupModel());
 	};
 
-	const setToProcessing = (): void => {
-		applyModel(processingPopupModel());
+	const setToLoading = (): void => {
+		applyModel(loadingPopupModel());
 	};
 
 	const stopListening = listenForStateUpdates(applyGetStateResponse);
@@ -73,8 +73,19 @@ export function createPopupViewModel(): PopupViewModel {
 	const syncState = getState().pipe(Effect.tap(applyGetStateResponse));
 
 	const startCollection = Effect.gen(function* () {
-		yield* sendToBackgroundEffect(StartCollectionRequest());
-		setToProcessing();
+		setToLoading();
+		yield* sendToBackgroundEffect(StartCollectionRequest()).pipe(
+			Effect.catchAll((err) =>
+				Effect.sync(() => {
+					applyModel({
+						state: 'error',
+						trackCount: 0,
+						errorMessage: err.message,
+						skippedTrackCount: undefined,
+					});
+				}),
+			),
+		);
 	});
 
 	const cancelCollection = Effect.gen(function* () {

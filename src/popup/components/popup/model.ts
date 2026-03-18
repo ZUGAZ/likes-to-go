@@ -1,6 +1,11 @@
 export type PopupCollectionStatus = 'idle' | 'collecting' | 'done' | 'error';
 
-export type PopupState = 'initial' | 'processing' | 'done' | 'error';
+export type PopupState =
+	| 'initial'
+	| 'loading'
+	| 'processing'
+	| 'done'
+	| 'error';
 
 export interface PopupModel {
 	readonly state: PopupState;
@@ -36,6 +41,15 @@ export function initialPopupModel(): PopupModel {
 export function processingPopupModel(): PopupModel {
 	return {
 		state: 'processing',
+		trackCount: 0,
+		errorMessage: undefined,
+		skippedTrackCount: undefined,
+	};
+}
+
+export function loadingPopupModel(): PopupModel {
+	return {
+		state: 'loading',
 		trackCount: 0,
 		errorMessage: undefined,
 		skippedTrackCount: undefined,

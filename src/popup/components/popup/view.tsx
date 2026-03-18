@@ -16,7 +16,7 @@ interface PopupViewProps {
 
 export function PopupView(props: PopupViewProps) {
 	return (
-		<div class="min-w-[280px] p-4 font-sans text-sm">
+		<div class="w-[280px] overflow-x-hidden p-4 font-sans text-sm">
 			<div class="min-h-[170px]">
 				<Transition name="fade" mode="outin">
 					<Switch fallback={null}>
@@ -24,12 +24,21 @@ export function PopupView(props: PopupViewProps) {
 							<div class="flex flex-col items-center gap-2">
 								<button
 									type="button"
-									class="rounded bg-rose-500 px-4 py-2 text-white hover:bg-rose-600"
+									class="rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800 ring-1 ring-rose-200/40"
 									onClick={props.onStart}
 								>
 									❤️ Likes to go
 								</button>
 								<p class="text-neutral-600">Waiting for order</p>
+							</div>
+						</Match>
+
+						<Match when={props.state() === 'loading'}>
+							<div class="flex flex-col items-center gap-3">
+								<div class="text-2xl">
+									<ProcessingHeart />
+								</div>
+								<p class="text-neutral-700">Starting…</p>
 							</div>
 						</Match>
 

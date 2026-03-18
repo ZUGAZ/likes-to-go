@@ -6,14 +6,30 @@ import { createPopupViewModel } from '@/popup/components/popup/view-model';
 import type { PopupEnv } from '@/popup/runtime/popup-env';
 import { HeartLoggerLive } from '@/common/infrastructure/logger';
 
-const { stopListeningMock, listenForStateUpdatesMock } = vi.hoisted(() => {
-	const stopListening = vi.fn();
-	const listenForStateUpdates = vi.fn(() => stopListening);
-	return {
-		stopListeningMock: stopListening,
-		listenForStateUpdatesMock: listenForStateUpdates,
-	};
-});
+const { stopListeningMock, listenForStateUpdatesMock, triggerStateUpdate } =
+	vi.hoisted(() => {
+		const stopListening = vi.fn();
+		let onStateUpdate: ((payload: unknown) => void) | undefined;
+
+		const listenForStateUpdates = vi.fn(
+			(callback: (payload: unknown) => void) => {
+				onStateUpdate = callback;
+				return stopListening;
+			},
+		);
+
+		const triggerStateUpdate = (payload: unknown): void => {
+			if (onStateUpdate == null) {
+				return;
+			}
+			onStateUpdate(payload);
+		};
+		return {
+			stopListeningMock: stopListening,
+			listenForStateUpdatesMock: listenForStateUpdates,
+			triggerStateUpdate,
+		};
+	});
 
 vi.mock('@/common/infrastructure/chrome-messaging', () => ({
 	getState: () =>
@@ -59,13 +75,31 @@ describe('Popup viewmodel', () => {
 		expect(vm.errorMessage()).toBeUndefined();
 	});
 
-	it('startCollection moves to processing state', async () => {
+	it('startCollection moves to loading state', async () => {
 		const runtime = makeTestRuntime();
 		const vm = createPopupViewModel();
 
 		await runtime.runPromise(vm.effects.startCollection);
 
-		expect(vm.state()).toBe('processing');
+		expect(vm.state()).toBe('loading');
 		expect(vm.trackCount()).toBe(0);
+	});
+
+	it('loading transitions to processing on first collecting update', async () => {
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.startCollection);
+		expect(vm.state()).toBe('loading');
+
+		triggerStateUpdate({
+			status: 'collecting',
+			trackCount: 3,
+			errorMessage: undefined,
+			skippedTrackCount: undefined,
+		});
+
+		expect(vm.state()).toBe('processing');
+		expect(vm.trackCount()).toBe(3);
 	});
 });
