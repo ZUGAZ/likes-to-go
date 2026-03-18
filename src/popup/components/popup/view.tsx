@@ -1,8 +1,8 @@
-import { Match, Show, Switch, type Accessor } from 'solid-js';
-import { Transition } from 'solid-transition-group';
-
+import { ErrorBlock } from '@/popup/components/error-block/error-block';
 import type { PopupState } from '@/popup/components/popup/model';
 import { ProcessingHeart } from '@/popup/components/processing-heart/processing-heart';
+import { Match, Show, Switch, type Accessor } from 'solid-js';
+import { Transition } from 'solid-transition-group';
 
 interface PopupViewProps {
 	state: Accessor<PopupState>;
@@ -74,19 +74,10 @@ export function PopupView(props: PopupViewProps) {
 						</Match>
 
 						<Match when={props.state() === 'error'}>
-							<div class="flex flex-col items-center gap-2">
-								<button
-									type="button"
-									class="rounded bg-rose-500 px-4 py-2 text-white hover:bg-rose-600"
-									onClick={props.onStart}
-								>
-									❤️ Likes to go
-								</button>
-								<p class="text-neutral-600">Waiting for order</p>
-								<p class="text-center text-rose-600" role="alert">
-									💔 {props.errorMessage() ?? 'Something went wrong'}
-								</p>
-							</div>
+							<ErrorBlock
+								message={props.errorMessage() ?? 'Something went wrong'}
+								onRetry={props.onStart}
+							/>
 						</Match>
 					</Switch>
 				</Transition>
