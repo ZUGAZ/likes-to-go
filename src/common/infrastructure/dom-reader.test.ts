@@ -1,9 +1,17 @@
-import { TRACK_CARD } from '@/common/infrastructure/selectors';
+import {
+	TRACK_ARTIST,
+	TRACK_ARTWORK,
+	TRACK_CARD,
+	TRACK_LINK,
+	TRACK_LIST_CONTAINER,
+	TRACK_TITLE,
+} from '@/common/infrastructure/selectors';
 import { describe, expect, it } from 'vitest';
 import {
 	getTracksFromCards,
 	getTracksFromRoot,
 } from '@/common/infrastructure/dom-reader';
+import { loadFixtureText } from '@/common/tests/fixture-loaders';
 
 function createFixture(innerHTML: string): Element {
 	const root = document.createElement('div');
@@ -153,5 +161,82 @@ describe('getTracksFromRoot', () => {
 		expect(getTracksFromCards(cards, baseUrl)).toEqual(
 			getTracksFromRoot(root, baseUrl),
 		);
+	});
+});
+
+function loadBadgesViewFixture(): Element {
+	const html = loadFixtureText('badges-view.html');
+	document.body.innerHTML = html;
+
+	const root = document.querySelector(TRACK_LIST_CONTAINER);
+	if (root == null) {
+		throw new Error(
+			`Fixture root not found for selector ${TRACK_LIST_CONTAINER}`,
+		);
+	}
+
+	return root;
+}
+
+describe('badges-view fixture', () => {
+	it('extracts well-formed tracks and skips malformed/loading placeholders', () => {
+		const baseUrl = 'https://soundcloud.com';
+		const root = loadBadgesViewFixture();
+
+		const cards = Array.from(root.querySelectorAll(TRACK_CARD));
+		expect(cards).toHaveLength(5);
+
+		const malformedCard = cards.find((card) => {
+			return card.querySelector(TRACK_LINK)?.getAttribute('href') === '';
+		});
+		if (malformedCard == null) {
+			throw new Error('Expected malformed card with empty href');
+		}
+
+		expect(malformedCard.querySelector(TRACK_TITLE)).toBeNull();
+		expect(malformedCard.querySelector(TRACK_ARTIST)).toBeNull();
+
+		const tracks = getTracksFromRoot(root, baseUrl);
+
+		// Only 3 cards are well-formed: valid title + non-empty href.
+		expect(tracks).toHaveLength(3);
+
+		expect(tracks.map((t) => t.url)).toEqual([
+			'https://soundcloud.com/datatransmissiondnb/nkz-run-away-rollout-records',
+			'https://soundcloud.com/shorednb/bou-toxinate-bounce-shore',
+			'https://soundcloud.com/datatransmissiondnb/apple-police-those-moves-subliminal-recordings',
+		]);
+
+		expect(tracks).toEqual([
+			{
+				title: "NKZ 'Run Away' [Rollout Records] *PREMIERE*",
+				artist: 'NKZ',
+				url: 'https://soundcloud.com/datatransmissiondnb/nkz-run-away-rollout-records',
+				artwork_url:
+					'https://i1.sndcdn.com/artworks-QPhQzEwsqobVlxam-cyaOVg-t500x500.png',
+			},
+			{
+				title: 'Bou & Toxinate - Bounce (SHORE REMIX)',
+				artist: 'SHORE',
+				url: 'https://soundcloud.com/shorednb/bou-toxinate-bounce-shore',
+				artwork_url:
+					'https://i1.sndcdn.com/artworks-xIhS2PjFLHgvS7dP-TciMsw-t500x500.jpg',
+			},
+			{
+				title: "Apple Police 'Those Moves' [Sub-liminal Recordings] *PREMIERE*",
+				artist: 'Apple Police',
+				url: 'https://soundcloud.com/datatransmissiondnb/apple-police-those-moves-subliminal-recordings',
+				artwork_url:
+					'https://i1.sndcdn.com/artworks-cfziaPh9kyH3RUBl-VWi3jw-t500x500.png',
+			},
+		]);
+
+		// Sanity check: malformed/loading cards shouldn’t contribute empty hrefs.
+		expect(tracks.some((t) => t.url === '')).toBe(false);
+
+		// Sanity check: malformed cards may still have artwork elements, but no parsed artwork URL.
+		const malformedArtworkStyle =
+			malformedCard.querySelector(TRACK_ARTWORK)?.getAttribute('style') ?? '';
+		expect(malformedArtworkStyle).not.toContain('background-image');
 	});
 });
