@@ -1,5 +1,5 @@
 import type { Track } from '@/common/model/track';
-import { NO_NEW_TRACKS_PASSES } from '@/content/constants';
+import { MAX_ERROR_RETRIES, NO_NEW_TRACKS_PASSES } from '@/content/constants';
 import {
 	BackgroundSenderTag,
 	DomScannerTag,
@@ -44,9 +44,12 @@ function makeBatch(
 function makeDomScannerStub(
 	batches: readonly CollectionBatch[],
 	isLoadingIndicatorPresentResponses?: readonly boolean[],
+	isErrorIndicatorPresentResponses?: readonly boolean[],
+	clickRetryCalls?: string[],
 ) {
 	let callIndex = 0;
 	let loadingIndicatorCallIndex = 0;
+	let errorIndicatorCallIndex = 0;
 	return Layer.succeed(DomScannerTag, {
 		scanBatch: (state: CollectionScanState) =>
 			Effect.sync(() => {
@@ -72,6 +75,18 @@ function makeDomScannerStub(
 				// Default: spinner exists (keeps existing tests stable).
 				return response ?? true;
 			}),
+		isErrorIndicatorPresent: () =>
+			Effect.sync(() => {
+				const response =
+					isErrorIndicatorPresentResponses?.[errorIndicatorCallIndex];
+				errorIndicatorCallIndex++;
+				// Default: no inline error.
+				return response ?? false;
+			}),
+		clickRetry: () =>
+			Effect.sync(() => {
+				clickRetryCalls?.push('RetryClick');
+			}),
 	});
 }
 
@@ -85,9 +100,9 @@ function makeBackgroundSenderStub(calls: string[]) {
 			Effect.sync(() => {
 				calls.push('CollectionComplete');
 			}),
-		sendError: (message) =>
+		sendError: (message, reason) =>
 			Effect.sync(() => {
-				calls.push(`CollectionError:${message}`);
+				calls.push(`CollectionError:${message}:${reason}`);
 			}),
 	});
 }
@@ -100,9 +115,16 @@ function makeTestLayer(
 	batches: readonly CollectionBatch[],
 	calls: string[],
 	isLoadingIndicatorPresentResponses?: readonly boolean[],
+	isErrorIndicatorPresentResponses?: readonly boolean[],
+	clickRetryCalls?: string[],
 ): Layer.Layer<DomScannerTag | BackgroundSenderTag | ScrollerTag> {
 	return Layer.mergeAll(
-		makeDomScannerStub(batches, isLoadingIndicatorPresentResponses),
+		makeDomScannerStub(
+			batches,
+			isLoadingIndicatorPresentResponses,
+			isErrorIndicatorPresentResponses,
+			clickRetryCalls,
+		),
 		makeBackgroundSenderStub(calls),
 		scrollerStub,
 	);
@@ -121,6 +143,8 @@ function runWithTestClock(
 		interruptAfterAdvances?: number;
 		senderLayer?: Layer.Layer<BackgroundSenderTag>;
 		isLoadingIndicatorPresentResponses?: readonly boolean[];
+		isErrorIndicatorPresentResponses?: readonly boolean[];
+		clickRetryCalls?: string[];
 	},
 ): Effect.Effect<{
 	fiber: Fiber.RuntimeFiber<CollectionOutcome>;
@@ -128,11 +152,22 @@ function runWithTestClock(
 }> {
 	const serviceLayer = opts?.senderLayer
 		? Layer.mergeAll(
-				makeDomScannerStub(batches, opts.isLoadingIndicatorPresentResponses),
+				makeDomScannerStub(
+					batches,
+					opts.isLoadingIndicatorPresentResponses,
+					opts.isErrorIndicatorPresentResponses,
+					opts.clickRetryCalls,
+				),
 				opts.senderLayer,
 				scrollerStub,
 			)
-		: makeTestLayer(batches, calls, opts?.isLoadingIndicatorPresentResponses);
+		: makeTestLayer(
+				batches,
+				calls,
+				opts?.isLoadingIndicatorPresentResponses,
+				opts?.isErrorIndicatorPresentResponses,
+				opts?.clickRetryCalls,
+			);
 
 	return Effect.gen(function* () {
 		const fiber = yield* Effect.fork(
@@ -330,5 +365,74 @@ describe('collectionPipeline', () => {
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const batchCalls = calls.filter((c) => c.startsWith('TracksBatch'));
 		expect(batchCalls).toHaveLength(0);
+	});
+
+	it('retries inline error and continues when it clears', async () => {
+		const calls: string[] = [];
+		const clickRetryCalls: string[] = [];
+
+		const batch1 = makeBatch([], 0, true);
+		const batch2 = makeBatch([], 0, true);
+		const batches = [batch1, batch2];
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				advanceCount: 10,
+				// spinner is present on pass 1, absent on pass 2.
+				isLoadingIndicatorPresentResponses: [true, false],
+				// inline error is present initially, clears after 2 clicks.
+				// Call order:
+				//  - iteration 1 initial check: true
+				//  - after retry attempt 1: true
+				//  - after retry attempt 2: false
+				//  - iteration 2 initial check: false
+				isErrorIndicatorPresentResponses: [true, true, false, false],
+				clickRetryCalls,
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(Completed());
+
+		expect(clickRetryCalls).toHaveLength(2);
+		expect(calls).toContain('CollectionComplete');
+		expect(calls.some((c) => c.startsWith('CollectionError:'))).toBe(false);
+	});
+
+	it('fails with OutcomeError after MAX_ERROR_RETRIES when inline error persists', async () => {
+		const calls: string[] = [];
+		const clickRetryCalls: string[] = [];
+
+		const batch1 = makeBatch([], 0, true);
+		const batches = [batch1];
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				advanceCount: 10,
+				isErrorIndicatorPresentResponses: [
+					true,
+					// after attempt 1
+					true,
+					// after attempt 2
+					true,
+					// after attempt 3
+					true,
+				],
+				clickRetryCalls,
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(
+			OutcomeError({ message: 'Could not read your likes list' }),
+		);
+
+		expect(clickRetryCalls).toHaveLength(MAX_ERROR_RETRIES);
+		expect(calls).toContain(
+			`CollectionError:Could not read your likes list:inline error persists after retries`,
+		);
+		expect(calls).not.toContain('CollectionComplete');
 	});
 });

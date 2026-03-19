@@ -1,5 +1,10 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
-import { NO_NEW_TRACKS_PASSES, WAIT_FOR_NODES_MS } from '@/content/constants';
+import {
+	ERROR_RETRY_DELAY_MS,
+	MAX_ERROR_RETRIES,
+	NO_NEW_TRACKS_PASSES,
+	WAIT_FOR_NODES_MS,
+} from '@/content/constants';
 import {
 	BackgroundSenderTag,
 	DomScannerTag,
@@ -37,6 +42,10 @@ export const Cancelled = Data.tagged<Cancelled>('Cancelled');
 type OutcomeError = Schema.Schema.Type<typeof OutcomeErrorSchema>;
 export const OutcomeError = Data.tagged<OutcomeError>('Error');
 
+class InlineErrorPersisted extends Data.TaggedError('InlineErrorPersisted')<{
+	readonly reason: string;
+}> {}
+
 interface LoopState {
 	readonly scanState: CollectionScanState;
 	readonly passesWithNoNewTracks: number;
@@ -55,7 +64,7 @@ function loopStep(
 	current: LoopState,
 ): Effect.Effect<
 	LoopState | undefined,
-	SendToBackgroundFailed,
+	SendToBackgroundFailed | InlineErrorPersisted,
 	DomScannerTag | BackgroundSenderTag | ScrollerTag
 > {
 	return Effect.gen(function* () {
@@ -87,12 +96,37 @@ function loopStep(
 			});
 		}
 
-		if (passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES) {
-			return undefined;
+		const hasInlineError = yield* scanner.isErrorIndicatorPresent();
+		if (hasInlineError) {
+			const retryAttempt = Effect.gen(function* () {
+				yield* scanner.clickRetry();
+				yield* Effect.sleep(ERROR_RETRY_DELAY_MS);
+
+				const stillPresent = yield* scanner.isErrorIndicatorPresent();
+				if (stillPresent) {
+					return yield* Effect.fail(
+						new InlineErrorPersisted({
+							reason: 'inline error persists after retries',
+						}),
+					);
+				}
+			});
+
+			yield* Effect.retry(retryAttempt, { times: MAX_ERROR_RETRIES - 1 });
 		}
 
 		yield* scroller.scrollToBottom();
 		yield* Effect.sleep(WAIT_FOR_NODES_MS);
+
+		const isLoadingIndicatorPresent =
+			yield* scanner.isLoadingIndicatorPresent();
+
+		if (
+			!isLoadingIndicatorPresent &&
+			passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES
+		) {
+			return undefined;
+		}
 
 		return { scanState: nextState, passesWithNoNewTracks };
 	}).pipe(Effect.withLogSpan('loopStep'));
@@ -126,6 +160,14 @@ export const collectionPipeline: Effect.Effect<
 }).pipe(
 	Effect.withLogSpan('collectionPipeline'),
 	Effect.catchTag('SendToBackgroundFailed', (err) =>
+		Effect.gen(function* () {
+			const sender = yield* BackgroundSenderTag;
+			const message = 'Could not read your likes list';
+			yield* sender.sendError(message, err.reason).pipe(Effect.ignore);
+			return OutcomeError({ message });
+		}),
+	),
+	Effect.catchTag('InlineErrorPersisted', (err) =>
 		Effect.gen(function* () {
 			const sender = yield* BackgroundSenderTag;
 			const message = 'Could not read your likes list';

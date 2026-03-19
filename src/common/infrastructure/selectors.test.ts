@@ -1,11 +1,14 @@
 import {
+	ERROR_INDICATOR,
 	LOADING_INDICATOR,
+	RETRY_BUTTON,
 	TRACK_ARTIST,
 	TRACK_ARTWORK,
 	TRACK_CARD,
 	TRACK_LINK,
 	TRACK_LIST_CONTAINER,
 	TRACK_TITLE,
+	isErrorIndicatorPresent,
 	isLoadingIndicatorPresent,
 	selectors,
 	trackCardsFromIndex,
@@ -24,6 +27,10 @@ describe('selectors', () => {
 		expect(typeof TRACK_ARTWORK).toBe('string');
 		expect(typeof LOADING_INDICATOR).toBe('string');
 		expect(LOADING_INDICATOR.length).toBeGreaterThan(0);
+		expect(typeof ERROR_INDICATOR).toBe('string');
+		expect(ERROR_INDICATOR.length).toBeGreaterThan(0);
+		expect(typeof RETRY_BUTTON).toBe('string');
+		expect(RETRY_BUTTON.length).toBeGreaterThan(0);
 	});
 
 	it('selectors object matches constants', () => {
@@ -34,6 +41,8 @@ describe('selectors', () => {
 		expect(selectors.trackLink).toBe(TRACK_LINK);
 		expect(selectors.trackArtwork).toBe(TRACK_ARTWORK);
 		expect(selectors.loadingIndicator).toBe(LOADING_INDICATOR);
+		expect(selectors.errorIndicator).toBe(ERROR_INDICATOR);
+		expect(selectors.retryButton).toBe(RETRY_BUTTON);
 	});
 });
 
@@ -129,5 +138,30 @@ describe('isLoadingIndicatorPresent', () => {
 	it('returns false when the loading spinner is absent', () => {
 		const scope = loadBadgesViewWithoutLoadingFixture();
 		expect(isLoadingIndicatorPresent(scope)).toBe(false);
+	});
+});
+
+function loadBadgesViewWithErrorFixture(): ParentNode {
+	const badgesView = loadFixtureText('badges-view.html');
+	const error = loadFixtureText('error.html');
+	document.body.innerHTML = badgesView + error;
+	return document;
+}
+
+function loadBadgesViewWithoutErrorFixture(): ParentNode {
+	const html = loadFixtureText('badges-view.html');
+	document.body.innerHTML = html;
+	return document;
+}
+
+describe('isErrorIndicatorPresent', () => {
+	it('returns true when the inline error container is present', () => {
+		const scope = loadBadgesViewWithErrorFixture();
+		expect(isErrorIndicatorPresent(scope)).toBe(true);
+	});
+
+	it('returns false when the inline error container is absent', () => {
+		const scope = loadBadgesViewWithoutErrorFixture();
+		expect(isErrorIndicatorPresent(scope)).toBe(false);
 	});
 });

@@ -26,6 +26,12 @@ export const TRACK_ARTWORK = '.playableTile__artwork .sc-artwork.image__full';
 /** CSS selector for SoundCloud's infinite-scroll loading spinner (end-of-feed sentinel). */
 export const LOADING_INDICATOR = '.loading.regular.m-padded';
 
+/** CSS selector for SoundCloud's inline error container shown after the track list. */
+export const ERROR_INDICATOR = '.inlineError';
+
+/** CSS selector for the "Retry" anchor inside the inline error container. */
+export const RETRY_BUTTON = '.inlineError .sc-button';
+
 /**
  * Selector for track cards from 0-based index onward (for incremental collection).
  * Uses :nth-child(n+K) so the DOM returns only cards at index >= fromIndex. Assumes cards are direct children of the list root.
@@ -44,6 +50,15 @@ export function isLoadingIndicatorPresent(scope: ParentNode): boolean {
 	return scope.querySelector(LOADING_INDICATOR) != null;
 }
 
+/**
+ * DOM check for SoundCloud's inline error container.
+ * The error is a sibling of the track list container, so the query must run
+ * against a parent scope that contains both nodes (e.g. `document`).
+ */
+export function isErrorIndicatorPresent(scope: ParentNode): boolean {
+	return scope.querySelector(ERROR_INDICATOR) != null;
+}
+
 export const selectors = {
 	trackListContainer: TRACK_LIST_CONTAINER,
 	trackCard: TRACK_CARD,
@@ -53,4 +68,6 @@ export const selectors = {
 	trackLink: TRACK_LINK,
 	trackArtwork: TRACK_ARTWORK,
 	loadingIndicator: LOADING_INDICATOR,
+	errorIndicator: ERROR_INDICATOR,
+	retryButton: RETRY_BUTTON,
 } as const;
