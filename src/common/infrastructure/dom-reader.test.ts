@@ -212,6 +212,7 @@ describe('badges-view fixture', () => {
 				title: "NKZ 'Run Away' [Rollout Records] *PREMIERE*",
 				artist: 'NKZ',
 				url: 'https://soundcloud.com/datatransmissiondnb/nkz-run-away-rollout-records',
+				user_url: 'https://soundcloud.com/datatransmissiondnb',
 				artwork_url:
 					'https://i1.sndcdn.com/artworks-QPhQzEwsqobVlxam-cyaOVg-t500x500.png',
 			},
@@ -219,6 +220,7 @@ describe('badges-view fixture', () => {
 				title: 'Bou & Toxinate - Bounce (SHORE REMIX)',
 				artist: 'SHORE',
 				url: 'https://soundcloud.com/shorednb/bou-toxinate-bounce-shore',
+				user_url: 'https://soundcloud.com/shorednb',
 				artwork_url:
 					'https://i1.sndcdn.com/artworks-xIhS2PjFLHgvS7dP-TciMsw-t500x500.jpg',
 			},
@@ -226,6 +228,7 @@ describe('badges-view fixture', () => {
 				title: "Apple Police 'Those Moves' [Sub-liminal Recordings] *PREMIERE*",
 				artist: 'Apple Police',
 				url: 'https://soundcloud.com/datatransmissiondnb/apple-police-those-moves-subliminal-recordings',
+				user_url: 'https://soundcloud.com/datatransmissiondnb',
 				artwork_url:
 					'https://i1.sndcdn.com/artworks-cfziaPh9kyH3RUBl-VWi3jw-t500x500.png',
 			},

@@ -6,6 +6,7 @@ export interface ExportTrack {
 	readonly artist: string;
 	readonly url: string;
 	readonly artwork_url?: string;
+	readonly user_url?: string;
 }
 
 export interface ExportInput {
@@ -33,6 +34,7 @@ function trackToExportTrack(t: Track): ExportTrack {
 		artist: t.artist,
 		url: t.url.toString(),
 		...(t.artwork_url !== undefined && { artwork_url: t.artwork_url }),
+		...(t.user_url !== undefined && { user_url: t.user_url }),
 	};
 }
 

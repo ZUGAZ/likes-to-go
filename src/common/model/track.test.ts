@@ -10,10 +10,13 @@ const validRawTrack = fc
 		artist: fc.string({ minLength: 1 }),
 		url: fc.webUrl(),
 		artwork_url: fc.option(fc.webUrl(), { nil: undefined }),
+		user_url: fc.option(fc.webUrl(), { nil: undefined }),
 	})
-	.map(({ artwork_url, ...base }) =>
-		artwork_url === undefined ? base : { ...base, artwork_url },
-	);
+	.map(({ artwork_url, user_url, ...base }) => ({
+		...base,
+		...(artwork_url !== undefined && { artwork_url }),
+		...(user_url !== undefined && { user_url }),
+	}));
 
 describe('TrackSchema', () => {
 	it('decodes valid object with url string to Track', () => {
@@ -28,6 +31,7 @@ describe('TrackSchema', () => {
 		expect(decoded.url).toBeInstanceOf(URL);
 		expect(decoded.url.toString()).toBe('https://soundcloud.com/artist/song');
 		expect(decoded.artwork_url).toBeUndefined();
+		expect(decoded.user_url).toBeUndefined();
 	});
 
 	it('decodes with optional artwork_url', () => {
@@ -39,6 +43,7 @@ describe('TrackSchema', () => {
 		};
 		const decoded = Schema.decodeUnknownSync(TrackSchema)(raw);
 		expect(decoded.artwork_url).toBe(raw.artwork_url);
+		expect(decoded.user_url).toBeUndefined();
 	});
 
 	it('decodes minimal object (required fields only); artwork_url undefined', () => {
@@ -50,6 +55,7 @@ describe('TrackSchema', () => {
 		const decoded = Schema.decodeUnknownSync(TrackSchema)(raw);
 		expect(decoded.title).toBe('Minimal');
 		expect(decoded.artwork_url).toBeUndefined();
+		expect(decoded.user_url).toBeUndefined();
 	});
 
 	it('rejects invalid url', () => {
@@ -87,6 +93,10 @@ describe('TrackSchema property tests', () => {
 						const rawArtworkUrl =
 							'artwork_url' in raw ? raw.artwork_url : undefined;
 						expect(trackArtworkUrl).toBe(rawArtworkUrl);
+						const trackUserUrl =
+							'user_url' in track ? track.user_url : undefined;
+						const rawUserUrl = 'user_url' in raw ? raw.user_url : undefined;
+						expect(trackUserUrl).toBe(rawUserUrl);
 					},
 				});
 			}),
@@ -116,6 +126,11 @@ describe('TrackSchema property tests', () => {
 						const trackArtworkUrl =
 							'artwork_url' in track ? track.artwork_url : undefined;
 						expect(decodedAgainArtworkUrl).toBe(trackArtworkUrl);
+						const decodedAgainUserUrl =
+							'user_url' in decodedAgain ? decodedAgain.user_url : undefined;
+						const trackUserUrl =
+							'user_url' in track ? track.user_url : undefined;
+						expect(decodedAgainUserUrl).toBe(trackUserUrl);
 					},
 				});
 			}),
@@ -142,6 +157,11 @@ describe('TrackSchema property tests', () => {
 							fc.constant(null),
 							fc.boolean(),
 						),
+						user_url: fc.oneof(
+							fc.integer({ max: -1 }),
+							fc.constant(null),
+							fc.boolean(),
+						),
 					})
 					.map((corrupt) => ({ ...base, ...corrupt })),
 			),
@@ -157,6 +177,9 @@ describe('TrackSchema property tests', () => {
 					}
 				}),
 				artwork_url: fc.option(fc.oneof(fc.integer(), fc.constant(null)), {
+					nil: undefined,
+				}),
+				user_url: fc.option(fc.oneof(fc.integer(), fc.constant(null)), {
 					nil: undefined,
 				}),
 			}),

@@ -62,7 +62,10 @@ describe('buildExportPayload', () => {
 
 	it('tracks include optional v1 fields when present', () => {
 		const tracks = [
-			validTrack({ artwork_url: 'https://i1.sndcdn.com/artworks-x.jpg' }),
+			validTrack({
+				artwork_url: 'https://i1.sndcdn.com/artworks-x.jpg',
+				user_url: 'https://soundcloud.com/artist',
+			}),
 		];
 		const payload = buildExportPayload({ tracks });
 		expect(payload.tracks[0]).toMatchObject({
@@ -70,6 +73,7 @@ describe('buildExportPayload', () => {
 			artist: 'Artist',
 			url: 'https://soundcloud.com/artist/track',
 			artwork_url: 'https://i1.sndcdn.com/artworks-x.jpg',
+			user_url: 'https://soundcloud.com/artist',
 		});
 	});
 
@@ -85,6 +89,7 @@ describe('buildExportPayload', () => {
 			url: 'https://soundcloud.com/artist/track',
 		});
 		expect('artwork_url' in t).toBe(false);
+		expect('user_url' in t).toBe(false);
 	});
 
 	it('property: any valid track array yields correct shape and format_version', () => {

@@ -16,6 +16,7 @@ export interface RawTrack {
 	readonly artist: string;
 	readonly url: string;
 	readonly artwork_url?: string;
+	readonly user_url?: string;
 }
 
 /**
@@ -39,6 +40,16 @@ function getHref(card: Element, baseUrl: string): string {
 	const href = a?.getAttribute('href');
 	if (href == null || href === '') return '';
 	return resolveUrl(href, baseUrl);
+}
+
+function getUserUrl(card: Element, baseUrl: string): string | undefined {
+	const a = card.querySelector(TRACK_ARTIST);
+	const href = a?.getAttribute('href');
+	if (href == null) return undefined;
+	const trimmed = href.trim();
+	if (trimmed === '') return undefined;
+	const resolved = resolveUrl(trimmed, baseUrl);
+	return resolved.trim() === '' ? undefined : resolved;
 }
 
 /** Extract artwork URL from element's background-image style. Returns undefined if missing or unparseable. */
@@ -68,12 +79,14 @@ export function getTracksFromCards(
 		const url = getHref(card, baseUrl);
 		if (title === '' || url === '') continue;
 
+		const user_url = getUserUrl(card, baseUrl);
 		const artwork_url = getArtworkUrl(card);
 
 		out.push({
 			title,
 			artist,
 			url,
+			...(user_url !== undefined && { user_url }),
 			...(artwork_url !== undefined && { artwork_url }),
 		});
 	}

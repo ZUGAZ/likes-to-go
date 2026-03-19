@@ -11,6 +11,7 @@ export const TrackSchema = Schema.Struct({
 	artist: Schema.String,
 	url: Schema.URL,
 	artwork_url: Schema.optional(Schema.String),
+	user_url: Schema.optional(Schema.String),
 });
 
 export type Track = Schema.Schema.Type<typeof TrackSchema>;

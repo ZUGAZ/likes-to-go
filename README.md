@@ -50,6 +50,7 @@ Your likes are saved as a JSON file with this structure:
 		{
 			"title": "Track Name",
 			"artist": "Artist Name",
+			"user_url": "https://soundcloud.com/artist-name",
 			"url": "https://soundcloud.com/artist/track-name",
 			"artwork_url": "https://i1.sndcdn.com/artworks-...-large.jpg"
 		}
