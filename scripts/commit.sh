@@ -19,18 +19,18 @@ echo "Running tests (pnpm test:run)..."
 pnpm test:run
 
 # 4. Show staged diff summary
-echo
-echo "=== Staged changes ==="
-git diff --cached --stat
-echo
-echo "Opening commit editor. You can write your message or use Cursor to generate one."
-echo "The existing commit-msg hook will validate the conventional commit format."
-echo
+#echo
+#echo "=== Staged changes ==="
+#git diff --cached --stat
+#echo
+#echo "Opening commit editor. You can write your message or use Cursor to generate one."
+#echo "The existing commit-msg hook will validate the conventional commit format."
+#echo
 
 # 5. Open interactive commit editor
-if [ -z "${GIT_EDITOR:-}" ] && command -v cursor >/dev/null 2>&1; then
-	export GIT_EDITOR="cursor --wait"
-fi
+#if [ -z "${GIT_EDITOR:-}" ] && command -v cursor >/dev/null 2>&1; then
+#	export GIT_EDITOR="cursor --wait"
+#fi
 
-git commit
+#git commit
 
