@@ -5,13 +5,7 @@ export interface ExportTrack {
 	readonly title: string;
 	readonly artist: string;
 	readonly url: string;
-	readonly duration_ms: number;
-	readonly genre?: string;
-	readonly tags?: readonly string[];
 	readonly artwork_url?: string;
-	readonly liked_at?: string;
-	readonly playback_count?: number;
-	readonly likes_count?: number;
 }
 
 export interface ExportInput {
@@ -38,13 +32,7 @@ function trackToExportTrack(t: Track): ExportTrack {
 		title: t.title,
 		artist: t.artist,
 		url: t.url.toString(),
-		duration_ms: t.duration_ms,
-		...(t.genre !== undefined && { genre: t.genre }),
-		...(t.tags !== undefined && { tags: t.tags }),
 		...(t.artwork_url !== undefined && { artwork_url: t.artwork_url }),
-		...(t.liked_at !== undefined && { liked_at: t.liked_at }),
-		...(t.playback_count !== undefined && { playback_count: t.playback_count }),
-		...(t.likes_count !== undefined && { likes_count: t.likes_count }),
 	};
 }
 

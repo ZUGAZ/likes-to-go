@@ -18,7 +18,6 @@ function validTrack(
 		title: 'Track',
 		artist: 'Artist',
 		url: 'https://soundcloud.com/artist/track',
-		duration_ms: 120_000,
 		...overrides,
 	});
 }

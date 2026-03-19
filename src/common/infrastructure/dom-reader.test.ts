@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
 	getTracksFromCards,
 	getTracksFromRoot,
-	parseDurationToMs,
 } from '@/common/infrastructure/dom-reader';
 
 function createFixture(innerHTML: string): Element {
@@ -12,29 +11,6 @@ function createFixture(innerHTML: string): Element {
 	root.innerHTML = innerHTML;
 	return root;
 }
-
-describe('parseDurationToMs', () => {
-	it('parses mm:ss to milliseconds', () => {
-		expect(parseDurationToMs('3:45')).toBe(225_000);
-		expect(parseDurationToMs('0:30')).toBe(30_000);
-	});
-
-	it('parses h:mm:ss to milliseconds', () => {
-		expect(parseDurationToMs('1:23:45')).toBe(
-			1 * 3600 * 1000 + 23 * 60 * 1000 + 45 * 1000,
-		);
-	});
-
-	it('parses single number as seconds', () => {
-		expect(parseDurationToMs('90')).toBe(90_000);
-	});
-
-	it('returns 0 for empty or invalid', () => {
-		expect(parseDurationToMs('')).toBe(0);
-		expect(parseDurationToMs('  ')).toBe(0);
-		expect(parseDurationToMs('ab:cd')).toBe(0);
-	});
-});
 
 describe('getTracksFromRoot', () => {
 	const baseUrl = 'https://soundcloud.com';
@@ -53,7 +29,6 @@ describe('getTracksFromRoot', () => {
 						<a class="playableTile__mainHeading">Track A</a>
 						<a class="playableTile__usernameHeading">Artist One</a>
 					</div>
-					<span class="playbackTimeline__duration">2:30</span>
 				</li>
 				<li class="badgeList__item">
 					<div class="audibleTile">
@@ -61,7 +36,6 @@ describe('getTracksFromRoot', () => {
 						<a class="playableTile__mainHeading">Track B</a>
 						<a class="playableTile__usernameHeading">Artist Two</a>
 					</div>
-					<span class="playbackTimeline__duration">1:00</span>
 				</li>
 			</ul>
 		`);
@@ -71,13 +45,11 @@ describe('getTracksFromRoot', () => {
 			title: 'Track A',
 			artist: 'Artist One',
 			url: 'https://soundcloud.com/artist-one/track-a',
-			duration_ms: 150_000,
 		});
 		expect(tracks[1]).toEqual({
 			title: 'Track B',
 			artist: 'Artist Two',
 			url: 'https://soundcloud.com/artist-two/track-b',
-			duration_ms: 60_000,
 		});
 	});
 
@@ -90,7 +62,6 @@ describe('getTracksFromRoot', () => {
 						<a class="playableTile__mainHeading">No link</a>
 						<a class="playableTile__usernameHeading">Who</a>
 					</div>
-					<span class="playbackTimeline__duration">0:00</span>
 				</li>
 				<li class="badgeList__item">
 					<div class="audibleTile">
@@ -98,7 +69,6 @@ describe('getTracksFromRoot', () => {
 						<a class="playableTile__mainHeading"></a>
 						<a class="playableTile__usernameHeading">Artist</a>
 					</div>
-					<span class="playbackTimeline__duration">1:00</span>
 				</li>
 			</ul>
 		`);
@@ -114,7 +84,6 @@ describe('getTracksFromRoot', () => {
 					<a class="playableTile__mainHeading">Song</a>
 					<a class="playableTile__usernameHeading">User</a>
 				</div>
-				<span class="playbackTimeline__duration">3:00</span>
 			</li>
 		`);
 		const tracks = getTracksFromRoot(root, baseUrl);
@@ -134,7 +103,6 @@ describe('getTracksFromRoot', () => {
 					<a class="playableTile__mainHeading">Track</a>
 					<a class="playableTile__usernameHeading">Artist</a>
 				</div>
-				<span class="playbackTimeline__duration">1:00</span>
 			</li>
 		`);
 		const tracks = getTracksFromRoot(root, baseUrl);
@@ -142,24 +110,6 @@ describe('getTracksFromRoot', () => {
 		expect(tracks[0]?.artwork_url).toBe(
 			'https://i1.sndcdn.com/artworks-abc-t500x500.png',
 		);
-	});
-
-	it('extracts playback_count and likes_count from .soundStats text', () => {
-		const root = createFixture(`
-			<li class="badgeList__item">
-				<div class="audibleTile">
-					<a class="audibleTile__artworkLink" href="/a/b"></a>
-					<a class="playableTile__mainHeading">Track</a>
-					<a class="playableTile__usernameHeading">Artist</a>
-				</div>
-				<span class="playbackTimeline__duration">2:00</span>
-				<div class="soundStats">12.5K 890</div>
-			</li>
-		`);
-		const tracks = getTracksFromRoot(root, baseUrl);
-		expect(tracks).toHaveLength(1);
-		expect(tracks[0]?.playback_count).toBe(12_500);
-		expect(tracks[0]?.likes_count).toBe(890);
 	});
 
 	it('omits optional fields when missing; does not fail card', () => {
@@ -170,7 +120,6 @@ describe('getTracksFromRoot', () => {
 					<a class="playableTile__mainHeading">Minimal</a>
 					<a class="playableTile__usernameHeading">Who</a>
 				</div>
-				<span class="playbackTimeline__duration">0:00</span>
 			</li>
 		`);
 		const tracks = getTracksFromRoot(root, baseUrl);
@@ -179,11 +128,8 @@ describe('getTracksFromRoot', () => {
 			title: 'Minimal',
 			artist: 'Who',
 			url: 'https://soundcloud.com/x/y',
-			duration_ms: 0,
 		});
 		expect('artwork_url' in (tracks[0] ?? {})).toBe(false);
-		expect('playback_count' in (tracks[0] ?? {})).toBe(false);
-		expect('likes_count' in (tracks[0] ?? {})).toBe(false);
 	});
 
 	it('getTracksFromCards matches getTracksFromRoot when given all cards from root', () => {
@@ -194,7 +140,6 @@ describe('getTracksFromRoot', () => {
 					<a class="playableTile__mainHeading">One</a>
 					<a class="playableTile__usernameHeading">Artist</a>
 				</div>
-				<span class="playbackTimeline__duration">1:00</span>
 			</li>
 			<li class="badgeList__item">
 				<div class="audibleTile">
@@ -202,7 +147,6 @@ describe('getTracksFromRoot', () => {
 					<a class="playableTile__mainHeading">Two</a>
 					<a class="playableTile__usernameHeading">Other</a>
 				</div>
-				<span class="playbackTimeline__duration">2:30</span>
 			</li>
 		`);
 		const cards = Array.from(root.querySelectorAll(TRACK_CARD));

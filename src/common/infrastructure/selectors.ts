@@ -1,8 +1,8 @@
 /**
  * Single place for SoundCloud DOM targets (you/likes page).
  * When the host site changes markup, only this file changes.
- * Covers all v1 fields: list/card, title, artist, link, duration, artwork, stats.
- * Aligned with collection grid: playableTile/audibleTile; v1 fallbacks for .soundStats / .playbackTimeline__duration.
+ * Covers badges-view fields used by v1 collection: list/card, title, artist, link, artwork.
+ * Aligned with collection grid: playableTile/audibleTile.
  */
 
 /** CSS selector for the track list container (root for dom-reader). */
@@ -20,14 +20,8 @@ export const TRACK_ARTIST = '.playableTile__usernameHeading';
 /** Selector for track link (relative to card); artwork link points to track page. */
 export const TRACK_LINK = '.audibleTile__artworkLink';
 
-/** Selector for duration (relative to card); may be absent on likes grid. */
-export const TRACK_DURATION = '.playbackTimeline__duration';
-
 /** Selector for artwork image element (relative to card); URL is in inline style background-image. */
 export const TRACK_ARTWORK = '.playableTile__artwork .sc-artwork.image__full';
-
-/** Selector for stats container (relative to card); contains playback count and likes count. May be absent on grid. */
-export const TRACK_STATS = '.soundStats';
 
 /**
  * Selector for track cards from 0-based index onward (for incremental collection).
@@ -45,7 +39,5 @@ export const selectors = {
 	trackTitle: TRACK_TITLE,
 	trackArtist: TRACK_ARTIST,
 	trackLink: TRACK_LINK,
-	trackDuration: TRACK_DURATION,
 	trackArtwork: TRACK_ARTWORK,
-	trackStats: TRACK_STATS,
 } as const;

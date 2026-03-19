@@ -25,7 +25,6 @@ const fakeTrack: Track = {
 	title: 'Test Track',
 	artist: 'Test Artist',
 	url: new URL('https://soundcloud.com/test/track'),
-	duration_ms: 180_000,
 };
 
 function makeBatch(

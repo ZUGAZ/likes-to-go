@@ -10,7 +10,7 @@ You have hundreds (or thousands) of liked tracks on SoundCloud. This extension l
 
 - Open your SoundCloud likes page
 - Hit the button
-- Get a file with every track: title, artist, URL, duration, genre, tags, artwork, and more
+- Get a file with every track: title, artist, URL, artwork, and more
 
 That's it. Your likes, your file, your hard drive.
 
@@ -51,13 +51,7 @@ Your likes are saved as a JSON file with this structure:
 			"title": "Track Name",
 			"artist": "Artist Name",
 			"url": "https://soundcloud.com/artist/track-name",
-			"duration_ms": 215000,
-			"genre": "Electronic",
-			"tags": ["ambient", "chill"],
-			"artwork_url": "https://i1.sndcdn.com/artworks-...-large.jpg",
-			"liked_at": "2026-01-15T08:30:00Z",
-			"playback_count": 12500,
-			"likes_count": 890
+			"artwork_url": "https://i1.sndcdn.com/artworks-...-large.jpg"
 		}
 	]
 }

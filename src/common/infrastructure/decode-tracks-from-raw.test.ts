@@ -12,7 +12,6 @@ describe('decodeTracksFromRaw', () => {
 				title: 'Song',
 				artist: 'Artist',
 				url: 'https://soundcloud.com/artist/song',
-				duration_ms: 180000,
 			},
 		];
 		const tracks = decodeTracksFromRaw(raw);
@@ -23,7 +22,6 @@ describe('decodeTracksFromRaw', () => {
 		expect(tracks[0]?.url.toString()).toBe(
 			'https://soundcloud.com/artist/song',
 		);
-		expect(tracks[0]?.duration_ms).toBe(180000);
 	});
 
 	it('skips items with invalid url', () => {
@@ -32,19 +30,6 @@ describe('decodeTracksFromRaw', () => {
 				title: 'Bad',
 				artist: 'X',
 				url: 'not-a-url',
-				duration_ms: 100,
-			},
-		];
-		expect(decodeTracksFromRaw(raw)).toEqual([]);
-	});
-
-	it('skips items with negative duration', () => {
-		const raw = [
-			{
-				title: 'Bad',
-				artist: 'X',
-				url: 'https://soundcloud.com/a/b',
-				duration_ms: -1,
 			},
 		];
 		expect(decodeTracksFromRaw(raw)).toEqual([]);
@@ -56,19 +41,16 @@ describe('decodeTracksFromRaw', () => {
 				title: 'Valid',
 				artist: 'A',
 				url: 'https://soundcloud.com/a/valid',
-				duration_ms: 0,
 			},
 			{
 				title: 'Invalid URL',
 				artist: 'B',
 				url: 'not-a-url',
-				duration_ms: 100,
 			},
 			{
 				title: 'Valid Two',
 				artist: 'C',
 				url: 'https://soundcloud.com/c/two',
-				duration_ms: 200,
 			},
 		];
 		const tracks = decodeTracksFromRaw(raw);

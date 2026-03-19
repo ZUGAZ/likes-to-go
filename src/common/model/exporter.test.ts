@@ -8,7 +8,6 @@ function validTrack(overrides?: Partial<Track>): Track {
 		title: 'Track',
 		artist: 'Artist',
 		url: new URL('https://soundcloud.com/artist/track'),
-		duration_ms: 180000,
 		...overrides,
 	};
 }
@@ -58,33 +57,19 @@ describe('buildExportPayload', () => {
 			title: 'Track',
 			artist: 'Artist',
 			url: 'https://soundcloud.com/u/s',
-			duration_ms: 180000,
 		});
 	});
 
 	it('tracks include optional v1 fields when present', () => {
 		const tracks = [
-			validTrack({
-				genre: 'Electronic',
-				tags: ['ambient', 'chill'],
-				artwork_url: 'https://i1.sndcdn.com/artworks-x.jpg',
-				liked_at: '2026-01-15T08:30:00Z',
-				playback_count: 12_500,
-				likes_count: 890,
-			}),
+			validTrack({ artwork_url: 'https://i1.sndcdn.com/artworks-x.jpg' }),
 		];
 		const payload = buildExportPayload({ tracks });
 		expect(payload.tracks[0]).toMatchObject({
 			title: 'Track',
 			artist: 'Artist',
 			url: 'https://soundcloud.com/artist/track',
-			duration_ms: 180000,
-			genre: 'Electronic',
-			tags: ['ambient', 'chill'],
 			artwork_url: 'https://i1.sndcdn.com/artworks-x.jpg',
-			liked_at: '2026-01-15T08:30:00Z',
-			playback_count: 12_500,
-			likes_count: 890,
 		});
 	});
 
@@ -98,9 +83,7 @@ describe('buildExportPayload', () => {
 			title: 'Track',
 			artist: 'Artist',
 			url: 'https://soundcloud.com/artist/track',
-			duration_ms: 180000,
 		});
-		expect('genre' in t).toBe(false);
 		expect('artwork_url' in t).toBe(false);
 	});
 
@@ -112,7 +95,6 @@ describe('buildExportPayload', () => {
 						title: fc.string(),
 						artist: fc.string(),
 						url: fc.webUrl(),
-						duration_ms: fc.integer({ min: 0, max: 3600000 }),
 					}),
 					{ maxLength: 50 },
 				),
@@ -132,8 +114,6 @@ describe('buildExportPayload', () => {
 						expect(typeof t.title).toBe('string');
 						expect(typeof t.artist).toBe('string');
 						expect(typeof t.url).toBe('string');
-						expect(Number.isInteger(t.duration_ms)).toBe(true);
-						expect(t.duration_ms).toBeGreaterThanOrEqual(0);
 					}
 				},
 			),
