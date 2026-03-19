@@ -1,6 +1,37 @@
-import { Schema } from 'effect';
+import { Either, Schema } from 'effect';
+import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { decodeTrack, TrackSchema } from '@/common/model/track';
+
+/** Wire-format raw track (string url) for decode input. Optional fields omitted when absent. */
+const validRawTrack = fc
+	.record({
+		title: fc.string({ minLength: 1 }),
+		artist: fc.string({ minLength: 1 }),
+		url: fc.webUrl(),
+		duration_ms: fc.integer({ min: 0 }),
+	})
+	.chain((base) =>
+		fc
+			.record({
+				genre: fc.option(fc.string(), { nil: undefined }),
+				tags: fc.option(fc.array(fc.string()), { nil: undefined }),
+				artwork_url: fc.option(fc.webUrl(), { nil: undefined }),
+				liked_at: fc.option(
+					fc.date().map((d) => d.toISOString()),
+					{ nil: undefined },
+				),
+				playback_count: fc.option(fc.integer({ min: 0 }), { nil: undefined }),
+				likes_count: fc.option(fc.integer({ min: 0 }), { nil: undefined }),
+			})
+			.map((opt) => {
+				const extra: Record<string, unknown> = {};
+				for (const [k, v] of Object.entries(opt)) {
+					if (v !== undefined) extra[k] = v;
+				}
+				return { ...base, ...extra };
+			}),
+	);
 
 describe('TrackSchema', () => {
 	it('decodes valid object with url string to Track', () => {
@@ -186,5 +217,139 @@ describe('decodeTrack', () => {
 		if (result._tag === 'Left') {
 			expect(result.left._tag).toBe('InvalidTrack');
 		}
+	});
+});
+
+describe('TrackSchema property tests', () => {
+	it('property: any valid raw track decodes successfully, url is URL instance, required fields match', () => {
+		fc.assert(
+			fc.property(validRawTrack, (raw) => {
+				const decoded = Schema.decodeUnknownEither(TrackSchema)(raw);
+				Either.match(decoded, {
+					onLeft: () => {
+						throw new Error(`Expected Right, got Left: ${JSON.stringify(raw)}`);
+					},
+					onRight: (track) => {
+						expect(track.url).toBeInstanceOf(URL);
+						expect(track.title).toBe(raw.title);
+						expect(track.artist).toBe(raw.artist);
+						expect(track.url.href).toBe(new URL(raw.url).href);
+						expect(track.duration_ms).toBe(raw.duration_ms);
+					},
+				});
+			}),
+		);
+	});
+
+	it('property: any valid track round-trips (decode → encode → decode yields equal)', () => {
+		fc.assert(
+			fc.property(validRawTrack, (raw) => {
+				const decoded = Schema.decodeUnknownEither(TrackSchema)(raw);
+				Either.match(decoded, {
+					onLeft: () => {
+						throw new Error(
+							`Expected Right for round-trip: ${JSON.stringify(raw)}`,
+						);
+					},
+					onRight: (track) => {
+						const encoded = Schema.encodeSync(TrackSchema)(track);
+						const decodedAgain = Schema.decodeUnknownSync(TrackSchema)(encoded);
+						expect(decodedAgain.title).toBe(track.title);
+						expect(decodedAgain.artist).toBe(track.artist);
+						expect(decodedAgain.url.href).toBe(track.url.href);
+						expect(decodedAgain.duration_ms).toBe(track.duration_ms);
+						expect(decodedAgain.genre).toBe(track.genre);
+						expect(decodedAgain.tags).toEqual(track.tags);
+						expect(decodedAgain.artwork_url).toBe(track.artwork_url);
+						expect(decodedAgain.liked_at).toBe(track.liked_at);
+						expect(decodedAgain.playback_count).toBe(track.playback_count);
+						expect(decodedAgain.likes_count).toBe(track.likes_count);
+					},
+				});
+			}),
+		);
+	});
+
+	it('property: corrupted inputs (missing fields, wrong types, negative duration, bad URL) are rejected', () => {
+		const invalidRawTrack = fc.oneof(
+			validRawTrack.chain((base) =>
+				fc
+					.constantFrom('title', 'artist', 'url', 'duration_ms')
+					.map((key) =>
+						Object.fromEntries(Object.entries(base).filter(([k]) => k !== key)),
+					),
+			),
+			validRawTrack.chain((base) =>
+				fc
+					.record({
+						title: fc.oneof(fc.integer(), fc.boolean(), fc.constant(null)),
+						artist: fc.oneof(fc.integer(), fc.boolean(), fc.constant(null)),
+						url: fc.oneof(fc.integer(), fc.boolean(), fc.constant(null)),
+						duration_ms: fc.oneof(
+							fc.string(),
+							fc.integer({ max: -1 }),
+							fc.double({ max: -0.0001 }),
+						),
+					})
+					.map((corrupt) => ({ ...base, ...corrupt })),
+			),
+			fc.record({
+				title: fc.string({ minLength: 1 }),
+				artist: fc.string({ minLength: 1 }),
+				url: fc.string({ minLength: 1 }).filter((s) => {
+					try {
+						new URL(s);
+						return false;
+					} catch {
+						return true;
+					}
+				}),
+				duration_ms: fc.integer({ min: 0 }),
+			}),
+		);
+
+		fc.assert(
+			fc.property(invalidRawTrack, (raw) => {
+				const decoded = Schema.decodeUnknownEither(TrackSchema)(raw);
+				Either.match(decoded, {
+					onLeft: () => {
+						// Expected: invalid input rejected
+					},
+					onRight: () => {
+						throw new Error(
+							`Expected Left for invalid input: ${JSON.stringify(raw)}`,
+						);
+					},
+				});
+			}),
+		);
+	});
+
+	it('property: DOM-derived invalid shapes (empty url, null/undefined required, non-numeric duration) produce Left(InvalidTrack)', () => {
+		const domInvalidShape = fc.oneof(
+			validRawTrack.map((base) => ({ ...base, url: '' })),
+			validRawTrack.map((base) => ({ ...base, title: null })),
+			validRawTrack.map((base) => ({ ...base, artist: null })),
+			validRawTrack.map((base) => ({ ...base, url: null })),
+			validRawTrack.map((base) => ({ ...base, duration_ms: null })),
+			validRawTrack.map((base) => ({ ...base, title: undefined })),
+			validRawTrack.map((base) => ({ ...base, duration_ms: 'not-a-number' })),
+		);
+
+		fc.assert(
+			fc.property(domInvalidShape, (raw) => {
+				const result = decodeTrack(raw);
+				Either.match(result, {
+					onLeft: (err) => {
+						expect(err._tag).toBe('InvalidTrack');
+					},
+					onRight: () => {
+						throw new Error(
+							`Expected Left(InvalidTrack) for DOM invalid: ${JSON.stringify(raw)}`,
+						);
+					},
+				});
+			}),
+		);
 	});
 });
