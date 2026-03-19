@@ -96,24 +96,24 @@ function loopStep(
 			});
 		}
 
-		const hasInlineError = yield* scanner.isErrorIndicatorPresent();
-		if (hasInlineError) {
-			const retryAttempt = Effect.gen(function* () {
+		const retryAttempt = Effect.gen(function* () {
+			const stillPresent = yield* scanner.isErrorIndicatorPresent();
+
+			if (stillPresent) {
 				yield* scanner.clickRetry();
 				yield* Effect.sleep(ERROR_RETRY_DELAY_MS);
 
-				const stillPresent = yield* scanner.isErrorIndicatorPresent();
-				if (stillPresent) {
-					return yield* Effect.fail(
-						new InlineErrorPersisted({
-							reason: 'inline error persists after retries',
-						}),
-					);
-				}
-			});
+				yield* Effect.log('inline error persists after retries');
 
-			yield* Effect.retry(retryAttempt, { times: MAX_ERROR_RETRIES - 1 });
-		}
+				return yield* Effect.fail(
+					new InlineErrorPersisted({
+						reason: 'inline error persists after retries',
+					}),
+				);
+			}
+		});
+
+		yield* Effect.retry(retryAttempt, { times: MAX_ERROR_RETRIES - 1 });
 
 		yield* scroller.scrollToBottom();
 		yield* Effect.sleep(WAIT_FOR_NODES_MS);
