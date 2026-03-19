@@ -11,7 +11,26 @@ fi
 echo "Formatting staged files with lint-staged..."
 pnpm lint-staged
 
-# 3. Run typecheck and tests (non-watch)
+# 3. Run ESLint on staged JS/TS files (lint-staged already ran Prettier)
+echo "Running ESLint on staged JS/TS files..."
+mapfile -t staged_files < <(git diff --cached --name-only)
+
+lint_files=()
+for file in "${staged_files[@]}"; do
+	case "$file" in
+		*.ts | *.tsx | *.js | *.jsx)
+			lint_files+=("$file")
+			;;
+	esac
+done
+
+if [ "${#lint_files[@]}" -gt 0 ]; then
+	pnpm exec eslint -- "${lint_files[@]}"
+else
+	echo "No staged JS/TS files to lint."
+fi
+
+# 4. Run typecheck and tests (non-watch)
 echo "Running typecheck (pnpm test:types)..."
 pnpm test:types
 
