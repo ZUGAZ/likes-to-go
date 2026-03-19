@@ -23,6 +23,9 @@ export const TRACK_LINK = '.audibleTile__artworkLink';
 /** Selector for artwork image element (relative to card); URL is in inline style background-image. */
 export const TRACK_ARTWORK = '.playableTile__artwork .sc-artwork.image__full';
 
+/** CSS selector for SoundCloud's infinite-scroll loading spinner (end-of-feed sentinel). */
+export const LOADING_INDICATOR = '.loading.regular.m-padded';
+
 /**
  * Selector for track cards from 0-based index onward (for incremental collection).
  * Uses :nth-child(n+K) so the DOM returns only cards at index >= fromIndex. Assumes cards are direct children of the list root.
@@ -30,6 +33,15 @@ export const TRACK_ARTWORK = '.playableTile__artwork .sc-artwork.image__full';
 export function trackCardsFromIndex(fromIndex: number): string {
 	const k = fromIndex + 1;
 	return `${TRACK_CARD}:nth-child(n+${String(k)})`;
+}
+
+/**
+ * DOM check for the infinite-scroll loading spinner.
+ * The selector is a sibling of the track list container, so the query must be done
+ * against a parent scope that contains both nodes (e.g. `document`).
+ */
+export function isLoadingIndicatorPresent(scope: ParentNode): boolean {
+	return scope.querySelector(LOADING_INDICATOR) != null;
 }
 
 export const selectors = {
@@ -40,4 +52,5 @@ export const selectors = {
 	trackArtist: TRACK_ARTIST,
 	trackLink: TRACK_LINK,
 	trackArtwork: TRACK_ARTWORK,
+	loadingIndicator: LOADING_INDICATOR,
 } as const;

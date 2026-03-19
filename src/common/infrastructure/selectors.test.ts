@@ -1,15 +1,17 @@
-import { describe, expect, it } from 'vitest';
 import {
+	LOADING_INDICATOR,
 	TRACK_ARTIST,
 	TRACK_ARTWORK,
 	TRACK_CARD,
 	TRACK_LINK,
 	TRACK_LIST_CONTAINER,
 	TRACK_TITLE,
+	isLoadingIndicatorPresent,
 	selectors,
 	trackCardsFromIndex,
 } from '@/common/infrastructure/selectors';
 import { loadFixtureText } from '@/common/tests/fixture-loaders';
+import { describe, expect, it } from 'vitest';
 
 describe('selectors', () => {
 	it('export string selectors for badges view fields (list, card, title, artist, link, artwork)', () => {
@@ -20,6 +22,8 @@ describe('selectors', () => {
 		expect(typeof TRACK_ARTIST).toBe('string');
 		expect(typeof TRACK_LINK).toBe('string');
 		expect(typeof TRACK_ARTWORK).toBe('string');
+		expect(typeof LOADING_INDICATOR).toBe('string');
+		expect(LOADING_INDICATOR.length).toBeGreaterThan(0);
 	});
 
 	it('selectors object matches constants', () => {
@@ -29,6 +33,7 @@ describe('selectors', () => {
 		expect(selectors.trackArtist).toBe(TRACK_ARTIST);
 		expect(selectors.trackLink).toBe(TRACK_LINK);
 		expect(selectors.trackArtwork).toBe(TRACK_ARTWORK);
+		expect(selectors.loadingIndicator).toBe(LOADING_INDICATOR);
 	});
 });
 
@@ -99,5 +104,30 @@ describe('selectors fixture coverage', () => {
 		expect(root.querySelectorAll(trackCardsFromIndex(0))).toHaveLength(5);
 		expect(root.querySelectorAll(trackCardsFromIndex(1))).toHaveLength(4);
 		expect(root.querySelectorAll(trackCardsFromIndex(3))).toHaveLength(2);
+	});
+});
+
+function loadBadgesViewWithLoadingFixture(): ParentNode {
+	const badgesView = loadFixtureText('badges-view.html');
+	const loading = loadFixtureText('loading.html');
+	document.body.innerHTML = badgesView + loading;
+	return document;
+}
+
+function loadBadgesViewWithoutLoadingFixture(): ParentNode {
+	const html = loadFixtureText('badges-view.html');
+	document.body.innerHTML = html;
+	return document;
+}
+
+describe('isLoadingIndicatorPresent', () => {
+	it('returns true when the loading spinner is present', () => {
+		const scope = loadBadgesViewWithLoadingFixture();
+		expect(isLoadingIndicatorPresent(scope)).toBe(true);
+	});
+
+	it('returns false when the loading spinner is absent', () => {
+		const scope = loadBadgesViewWithoutLoadingFixture();
+		expect(isLoadingIndicatorPresent(scope)).toBe(false);
 	});
 });

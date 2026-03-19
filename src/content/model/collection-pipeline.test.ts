@@ -41,8 +41,12 @@ function makeBatch(
 	};
 }
 
-function makeDomScannerStub(batches: readonly CollectionBatch[]) {
+function makeDomScannerStub(
+	batches: readonly CollectionBatch[],
+	isLoadingIndicatorPresentResponses?: readonly boolean[],
+) {
 	let callIndex = 0;
+	let loadingIndicatorCallIndex = 0;
 	return Layer.succeed(DomScannerTag, {
 		scanBatch: (state: CollectionScanState) =>
 			Effect.sync(() => {
@@ -59,6 +63,14 @@ function makeDomScannerStub(batches: readonly CollectionBatch[]) {
 					batchIndex: state.batchIndex + 1,
 				};
 				return { batch, nextState };
+			}),
+		isLoadingIndicatorPresent: () =>
+			Effect.sync(() => {
+				const response =
+					isLoadingIndicatorPresentResponses?.[loadingIndicatorCallIndex];
+				loadingIndicatorCallIndex++;
+				// Default: spinner exists (keeps existing tests stable).
+				return response ?? true;
 			}),
 	});
 }
@@ -87,9 +99,10 @@ const scrollerStub = Layer.succeed(ScrollerTag, {
 function makeTestLayer(
 	batches: readonly CollectionBatch[],
 	calls: string[],
+	isLoadingIndicatorPresentResponses?: readonly boolean[],
 ): Layer.Layer<DomScannerTag | BackgroundSenderTag | ScrollerTag> {
 	return Layer.mergeAll(
-		makeDomScannerStub(batches),
+		makeDomScannerStub(batches, isLoadingIndicatorPresentResponses),
 		makeBackgroundSenderStub(calls),
 		scrollerStub,
 	);
@@ -107,6 +120,7 @@ function runWithTestClock(
 		advanceCount?: number;
 		interruptAfterAdvances?: number;
 		senderLayer?: Layer.Layer<BackgroundSenderTag>;
+		isLoadingIndicatorPresentResponses?: readonly boolean[];
 	},
 ): Effect.Effect<{
 	fiber: Fiber.RuntimeFiber<CollectionOutcome>;
@@ -114,11 +128,11 @@ function runWithTestClock(
 }> {
 	const serviceLayer = opts?.senderLayer
 		? Layer.mergeAll(
-				makeDomScannerStub(batches),
+				makeDomScannerStub(batches, opts.isLoadingIndicatorPresentResponses),
 				opts.senderLayer,
 				scrollerStub,
 			)
-		: makeTestLayer(batches, calls);
+		: makeTestLayer(batches, calls, opts?.isLoadingIndicatorPresentResponses);
 
 	return Effect.gen(function* () {
 		const fiber = yield* Effect.fork(
@@ -156,14 +170,46 @@ describe('collectionPipeline', () => {
 			),
 		];
 
+		// The pipeline stops only when:
+		// - spinner is absent AND
+		// - we reached NO_NEW_TRACKS_PASSES consecutive `noNewCards` batches.
+		// Here the first iteration has tracks, then we need 2 consecutive empty
+		// passes; the spinner is absent on the second empty pass.
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				isLoadingIndicatorPresentResponses: [true, true, false],
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
 		expect(value).toEqual(Completed());
 		expect(calls).toContain('TracksBatch:2');
+		expect(calls).toContain('CollectionComplete');
+	});
+
+	it('terminates when loading indicator is absent after scrolling', async () => {
+		const calls: string[] = [];
+		const batch1 = makeBatch([], 0, true);
+		const batch2 = makeBatch([], 0, true);
+
+		const batches = [batch1, batch2];
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				advanceCount: 5,
+				// Keep spinner "present" for the first no-new pass, then "absent"
+				// on the second consecutive no-new pass (passesWithNoNewTracks >= 2).
+				isLoadingIndicatorPresentResponses: [true, false],
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(Completed());
+
+		const batchCalls = calls.filter((c) => c.startsWith('TracksBatch'));
+		expect(batchCalls).toHaveLength(0);
 		expect(calls).toContain('CollectionComplete');
 	});
 
@@ -174,8 +220,12 @@ describe('collectionPipeline', () => {
 			length: NO_NEW_TRACKS_PASSES,
 		}).fill(emptyBatch);
 
+		// We need 2 consecutive empty passes; spinner absence should happen on
+		// the second pass.
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				isLoadingIndicatorPresentResponses: [true, false],
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -247,8 +297,12 @@ describe('collectionPipeline', () => {
 			),
 		];
 
+		// Two initial batches contain tracks, then we need 2 consecutive empty
+		// passes; spinner absence should happen on the second empty pass.
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				isLoadingIndicatorPresentResponses: [true, true, true, false],
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -266,8 +320,11 @@ describe('collectionPipeline', () => {
 			length: NO_NEW_TRACKS_PASSES,
 		}).fill(emptyBatch);
 
+		// Spinner absence should happen on the second consecutive empty pass.
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				isLoadingIndicatorPresentResponses: [true, false],
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
