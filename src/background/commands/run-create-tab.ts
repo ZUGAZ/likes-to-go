@@ -11,7 +11,7 @@ export function runCreateTab(
 		try: () =>
 			chrome.tabs.create({
 				url,
-				active: false,
+				active: true,
 			}),
 		catch: catchError(TabCreateFailed, 'Could not open the likes page'),
 	});
