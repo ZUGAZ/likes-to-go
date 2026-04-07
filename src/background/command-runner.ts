@@ -3,6 +3,7 @@ import {
 	type BackgroundEnv,
 } from '@/background/background-dispatch';
 import {
+	runCheckLogin,
 	runCloseTab,
 	runCreateTab,
 	runDownloadExport,
@@ -10,6 +11,7 @@ import {
 	runSendStartToTab,
 } from '@/background/commands';
 import type { CollectionCommand } from '@/common/model/collection/command';
+import { isCheckLogin } from '@/common/model/collection/commands/check-login';
 import { isCloseTab } from '@/common/model/collection/commands/close-tab';
 import { isCreateTab } from '@/common/model/collection/commands/create-tab';
 import { isDownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
@@ -43,8 +45,15 @@ export function runCommand(
 		if (isCreateTab(cmd)) {
 			yield* runCreateTab(cmd.url).pipe(
 				Effect.matchEffect({
-					onFailure: dispatchEffect,
 					onSuccess: dispatchEffect,
+					onFailure: dispatchEffect,
+				}),
+			);
+		} else if (isCheckLogin(cmd)) {
+			yield* runCheckLogin().pipe(
+				Effect.matchEffect({
+					onSuccess: dispatchEffect,
+					onFailure: dispatchEffect,
 				}),
 			);
 		} else if (isCloseTab(cmd)) {

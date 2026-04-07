@@ -17,6 +17,7 @@ import {
 } from '@/common/model/collection/states/error-state';
 import { Idle, isIdle } from '@/common/model/collection/states/idle';
 import { CloseTab } from '@/common/model/collection/commands/close-tab';
+import { CheckLogin } from '@/common/model/collection/commands/check-login';
 import { CreateTab } from '@/common/model/collection/commands/create-tab';
 import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
 import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
@@ -27,6 +28,9 @@ import { isCollectionCompleteEvent } from '@/common/model/collection/events/coll
 import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
 import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
 import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
+import { isGetStateRequested } from '@/common/model/collection/events/get-state-requested';
+import { isLoginRequired } from '@/common/model/collection/events/login-required';
+import { isLoginVerified } from '@/common/model/collection/events/login-verified';
 import { isSendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
 import { isStartCollectionEvent } from '@/common/model/collection/events/start-collection';
 import { isTabComplete } from '@/common/model/collection/events/tab-complete';
@@ -62,14 +66,17 @@ export function transition(
 	event: CollectionEvent,
 ): TransitionResult {
 	if (isIdle(current)) {
+		if (isGetStateRequested(event)) {
+			return {
+				state: current,
+				commands: [CheckLogin()],
+			};
+		}
 		if (isStartCollectionEvent(event)) {
 			const newState = CollectingRequested();
 			return {
 				state: newState,
-				commands: [
-					CreateTab({ url: LIKES_URL }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [CheckLogin(), NotifyPopup({ state: newState })],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
@@ -78,6 +85,18 @@ export function transition(
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
 			};
+		}
+		if (isLoginRequired(event)) {
+			const newState = ErrorState({
+				message: 'Please log in to SoundCloud, then try again.',
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isLoginVerified(event)) {
+			return { state: current, commands: [] };
 		}
 		return { state: current, commands: [] };
 	}
@@ -96,6 +115,21 @@ export function transition(
 		}
 		if (isTabCreateFailed(event)) {
 			const newState = ErrorState({ message: event.message });
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isLoginVerified(event)) {
+			return {
+				state: current,
+				commands: [CreateTab({ url: LIKES_URL })],
+			};
+		}
+		if (isLoginRequired(event)) {
+			const newState = ErrorState({
+				message: 'Please log in to SoundCloud, then try again.',
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -223,10 +257,7 @@ export function transition(
 			const newState = CollectingRequested();
 			return {
 				state: newState,
-				commands: [
-					CreateTab({ url: LIKES_URL }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [CheckLogin(), NotifyPopup({ state: newState })],
 			};
 		}
 		return { state: current, commands: [] };

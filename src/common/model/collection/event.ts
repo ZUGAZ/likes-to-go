@@ -11,6 +11,9 @@ import { DownloadExportEventSchema } from '@/common/model/collection/events/down
 import { TabCompleteSchema } from '@/common/model/collection/events/tab-complete';
 import { SendToTabFailedSchema } from '@/common/model/collection/events/send-to-tab-failed';
 import { DownloadFailedSchema } from '@/common/model/collection/events/download-failed';
+import { LoginVerifiedEventSchema } from '@/common/model/collection/events/login-verified';
+import { LoginRequiredEventSchema } from '@/common/model/collection/events/login-required';
+import { GetStateRequestedEventSchema } from '@/common/model/collection/events/get-state-requested';
 
 export const CollectionEventSchema = Schema.Union(
 	StartCollectionEventSchema,
@@ -24,6 +27,9 @@ export const CollectionEventSchema = Schema.Union(
 	TabCompleteSchema,
 	SendToTabFailedSchema,
 	DownloadFailedSchema,
+	LoginVerifiedEventSchema,
+	LoginRequiredEventSchema,
+	GetStateRequestedEventSchema,
 );
 
 export type CollectionEvent = Schema.Schema.Type<typeof CollectionEventSchema>;

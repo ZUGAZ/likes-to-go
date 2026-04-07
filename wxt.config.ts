@@ -1,6 +1,6 @@
-import { defineConfig } from 'wxt';
 import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'node:path';
+import { defineConfig } from 'wxt';
 
 export default defineConfig({
 	srcDir: 'src',
@@ -8,7 +8,11 @@ export default defineConfig({
 	autoIcons: { baseIconPath: 'assets/icon.svg' },
 	imports: false,
 	manifest: {
-		permissions: ['downloads'],
+		permissions: ['downloads', 'cookies'],
+		host_permissions: [
+			'https://*.soundcloud.com/*',
+			'https://api-auth.soundcloud.com/*',
+		],
 	},
 	// Don't auto-open a browser; load extension manually (e.g. Chrome on host when dev in container).
 	webExt: { disabled: true },

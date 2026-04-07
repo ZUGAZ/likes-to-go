@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Effect, Layer, ManagedRuntime } from 'effect';
+import type { GetStateResponse } from '@/common/model/request-message';
 
 import { createPopupViewModel } from '@/popup/components/popup/view-model';
 import type { PopupEnv } from '@/popup/runtime/popup-env';
@@ -31,13 +32,18 @@ const { stopListeningMock, listenForStateUpdatesMock, triggerStateUpdate } =
 		};
 	});
 
-vi.mock('@/common/infrastructure/chrome-messaging', () => ({
-	getState: () =>
+const { getStateMock } = vi.hoisted(() => ({
+	getStateMock: vi.fn<() => Effect.Effect<GetStateResponse>>(() =>
 		Effect.succeed({
 			status: 'idle',
 			trackCount: 0,
 			errorMessage: undefined,
 		}),
+	),
+}));
+
+vi.mock('@/common/infrastructure/chrome-messaging', () => ({
+	getState: getStateMock,
 	sendToBackgroundEffect: () => Effect.succeed(undefined),
 	decodeGetStateResponse: () =>
 		Effect.succeed({
@@ -54,6 +60,14 @@ const makeTestRuntime = () =>
 describe('Popup viewmodel', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		getStateMock.mockReset();
+		getStateMock.mockImplementation(() =>
+			Effect.succeed({
+				status: 'idle',
+				trackCount: 0,
+				errorMessage: undefined,
+			}),
+		);
 	});
 
 	it('registers and tears down state update listener', () => {
@@ -73,6 +87,25 @@ describe('Popup viewmodel', () => {
 		expect(vm.state()).toBe('initial');
 		expect(vm.trackCount()).toBe(0);
 		expect(vm.errorMessage()).toBeUndefined();
+	});
+
+	it('syncState sets login-required error when cookie is missing', async () => {
+		getStateMock.mockImplementationOnce(() =>
+			Effect.succeed({
+				status: 'error',
+				trackCount: 0,
+				errorMessage: 'Please log in to SoundCloud, then try again.',
+			}),
+		);
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		expect(vm.state()).toBe('error');
+		expect(vm.errorMessage()).toBe(
+			'Please log in to SoundCloud, then try again.',
+		);
 	});
 
 	it('startCollection moves to loading state', async () => {

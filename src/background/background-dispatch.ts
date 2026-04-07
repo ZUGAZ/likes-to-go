@@ -10,10 +10,6 @@ import type {
 	GetStateResponse,
 	RequestMessage,
 } from '@/common/model/request-message';
-import {
-	isGetStateRequest,
-	isTracksBatch,
-} from '@/common/model/request-message';
 import { Effect, Ref } from 'effect';
 
 export type BackgroundEnv = StateRefTag | CommandRunnerTag;
@@ -57,30 +53,14 @@ export function handleMessageEffect(
 	sender: chrome.runtime.MessageSender,
 ): Effect.Effect<GetStateResponse, never, BackgroundEnv> {
 	void sender;
-	const logEffect = Effect.gen(function* () {
-		const batchInfo = isTracksBatch(message)
-			? { tracks: message.tracks.length }
-			: undefined;
+	return Effect.gen(function* () {
+		yield* Effect.log('incomming message', message._tag);
 
-		yield* Effect.log('received', message._tag, batchInfo);
-	});
+		const event = requestMessageToCollectionEvent(message);
+		yield* dispatchEffect(event);
 
-	const dispatchFromMessageEffect = Effect.sync(() =>
-		requestMessageToCollectionEvent(message),
-	).pipe(
-		Effect.flatMap((event) =>
-			event === null ? Effect.void : dispatchEffect(event),
-		),
-	);
-
-	return StateRefTag.pipe(
-		Effect.tap(() =>
-			isGetStateRequest(message)
-				? Effect.void
-				: logEffect.pipe(Effect.zipRight(dispatchFromMessageEffect)),
-		),
-		Effect.flatMap((ref) =>
-			Ref.get(ref).pipe(Effect.map(collectionStateToGetStateResponse)),
-		),
-	).pipe(Effect.withLogSpan('handleMessage'));
+		const ref = yield* StateRefTag;
+		const state = yield* Ref.get(ref);
+		return collectionStateToGetStateResponse(state);
+	}).pipe(Effect.withLogSpan('handleMessage'));
 }

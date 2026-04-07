@@ -3,6 +3,7 @@ import { CancelCollection } from '@/common/model/collection/events/cancel-collec
 import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
 import { CollectionError } from '@/common/model/collection/events/collection-error';
 import { DownloadExport } from '@/common/model/collection/events/download-export-event';
+import { GetStateRequested } from '@/common/model/collection/events/get-state-requested';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import {
@@ -15,15 +16,16 @@ import {
 	isStartCollection,
 	isTracksBatch,
 } from '@/common/model/request-message';
+import { absurd } from 'effect/Function';
 
 /**
- * Maps a validated RequestMessage to the corresponding CollectionEvent, or null for GetState.
+ * Maps a validated RequestMessage to the corresponding CollectionEvent.
  * Used by the background to turn incoming messages into state-machine events without branching on _tag.
  */
 export function requestMessageToCollectionEvent(
 	message: RequestMessage,
-): CollectionEvent | null {
-	if (isGetStateRequest(message)) return null;
+): CollectionEvent {
+	if (isGetStateRequest(message)) return GetStateRequested();
 	if (isStartCollection(message)) return StartCollection();
 	if (isTracksBatch(message))
 		return TracksBatch({
@@ -38,5 +40,5 @@ export function requestMessageToCollectionEvent(
 		});
 	if (isCancelCollection(message)) return CancelCollection();
 	if (isDownloadExport(message)) return DownloadExport();
-	return null;
+	return absurd(message);
 }
