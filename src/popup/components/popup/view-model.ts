@@ -16,8 +16,9 @@ import {
 import type { ViewModelEffect } from '@/common/viewmodel/bind-viewmodel';
 import {
 	initialPopupModel,
-	mapStatusToPopupState,
+	initializingPopupModel,
 	loadingPopupModel,
+	mapStatusToPopupState,
 	type PopupModel,
 	type PopupState,
 } from '@/popup/components/popup/model';
@@ -29,6 +30,7 @@ export interface PopupViewModel {
 	readonly skippedTrackCount: () => number;
 	readonly effects: {
 		readonly syncState: ViewModelEffect;
+		readonly retryAfterError: ViewModelEffect;
 		readonly startCollection: ViewModelEffect;
 		readonly cancelCollection: ViewModelEffect;
 		readonly download: ViewModelEffect;
@@ -37,16 +39,25 @@ export interface PopupViewModel {
 }
 
 export function createPopupViewModel(): PopupViewModel {
-	const [state, setState] = createSignal<PopupState>('initial');
-	const [trackCount, setTrackCount] = createSignal(0);
-	const [errorMessage, setErrorMessage] = createSignal<string | undefined>();
-	const [skippedTrackCount, setSkippedTrackCount] = createSignal(0);
+	const boot = initializingPopupModel();
+	const [state, setState] = createSignal<PopupState>(boot.state);
+	const [trackCount, setTrackCount] = createSignal(boot.trackCount);
+	const [errorMessage, setErrorMessage] = createSignal<string | undefined>(
+		boot.errorMessage,
+	);
+	const [skippedTrackCount, setSkippedTrackCount] = createSignal(
+		boot.skippedTrackCount ?? 0,
+	);
 
 	const applyModel = (model: PopupModel): void => {
 		batch(() => {
 			setState(model.state);
 			setTrackCount(model.trackCount);
-			setErrorMessage(model.errorMessage);
+			setErrorMessage(
+				model.state === 'error'
+					? (model.errorMessage ?? 'Something went wrong')
+					: undefined,
+			);
 			setSkippedTrackCount(model.skippedTrackCount ?? 0);
 		});
 	};
@@ -88,6 +99,11 @@ export function createPopupViewModel(): PopupViewModel {
 		);
 	});
 
+	const retryAfterError = Effect.gen(function* () {
+		applyModel(initializingPopupModel());
+		yield* getState().pipe(Effect.tap(applyGetStateResponse));
+	});
+
 	const cancelCollection = Effect.gen(function* () {
 		yield* sendToBackgroundEffect(CancelCollectionRequest());
 		setToInitial();
@@ -110,6 +126,7 @@ export function createPopupViewModel(): PopupViewModel {
 		skippedTrackCount,
 		effects: {
 			syncState,
+			retryAfterError,
 			startCollection,
 			cancelCollection,
 			download,

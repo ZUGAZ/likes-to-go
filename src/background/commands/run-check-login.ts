@@ -15,6 +15,10 @@ export function runCheckLogin(): Effect.Effect<LoginVerified, LoginRequired> {
 				reason: 'Missing login cookie',
 			}),
 		),
+		Effect.tapBoth({
+			onSuccess: () => Effect.log('Login cookie found'),
+			onFailure: () => Effect.log('Login cookie not found'),
+		}),
 		Effect.withLogSpan('runCheckLogin'),
 	);
 }

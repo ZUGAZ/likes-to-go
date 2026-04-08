@@ -41,6 +41,7 @@ function renderPopupView(
 	);
 
 	const onStart = vi.fn();
+	const onRetryFromError = vi.fn();
 	const onCancel = vi.fn();
 	const onDownload = vi.fn();
 
@@ -51,6 +52,7 @@ function renderPopupView(
 			skippedTrackCount={skippedTrackCount}
 			errorMessage={errorMessage}
 			onStart={onStart}
+			onRetryFromError={onRetryFromError}
 			onCancel={onCancel}
 			onDownload={onDownload}
 		/>
@@ -65,6 +67,7 @@ function renderPopupView(
 		setSkippedTrackCount,
 		setErrorMessage,
 		onStart,
+		onRetryFromError,
 		onCancel,
 		onDownload,
 	};
@@ -76,6 +79,13 @@ describe('Popup view', () => {
 
 		expect(popup.getByRole('button', { name: '❤️ Likes to go' })).toBeTruthy();
 		expect(popup.getByText('Waiting for order')).toBeTruthy();
+	});
+
+	it('renders the initializing state', () => {
+		const popup = renderPopupView({ state: 'initializing' });
+
+		expect(popup.getByText('Loading…')).toBeTruthy();
+		expect(popup.queryByRole('button', { name: '❤️ Likes to go' })).toBeNull();
 	});
 
 	it('renders the loading state', () => {
@@ -157,14 +167,14 @@ describe('Popup view', () => {
 		expect(popup.onDownload).toHaveBeenCalledTimes(1);
 	});
 
-	it('calls onStart when clicking Try again in the error state', () => {
+	it('calls onRetryFromError when clicking Try again in the error state', () => {
 		const popup = renderPopupView({
 			state: 'error',
 			errorMessage: 'Boom',
 		});
 
 		fireEvent.click(popup.getByRole('button', { name: '❤️ Try again' }));
-		expect(popup.onStart).toHaveBeenCalledTimes(1);
+		expect(popup.onRetryFromError).toHaveBeenCalledTimes(1);
 	});
 
 	it('updates the rendered output when the state signal changes', async () => {

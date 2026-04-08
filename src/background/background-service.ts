@@ -14,7 +14,7 @@ export function initBackgroundService(): void {
 			const runtime = yield* makeBackgroundRuntime();
 			registerMessageListener(runtime);
 			registerTabUpdatedListener(runtime);
-			yield* Effect.never;
+			return yield* Effect.never;
 		}),
 	);
 

@@ -1,8 +1,8 @@
 import { errorToReason } from '@/common/model/error-to-reason';
 import { Data, Effect } from 'effect';
 
-const SOUNDCLOUD_LIKES_URL = 'https://api-auth.soundcloud.com';
-const SESSION_COOKIE_NAME = '_soundcloud_session';
+const SOUNDCLOUD_LIKES_URL = 'https://soundcloud.com';
+const SESSION_COOKIE_NAME = 'connect_session';
 
 export class GetSoundcloudLoginCookieFailed extends Data.TaggedError(
 	'GetSoundcloudLoginCookieFailed',

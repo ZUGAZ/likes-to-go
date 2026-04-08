@@ -24,6 +24,7 @@ export function PopupContainer() {
 			errorMessage={vm.errorMessage}
 			skippedTrackCount={vm.skippedTrackCount}
 			onStart={vm.actions.startCollection}
+			onRetryFromError={vm.actions.retryAfterError}
 			onCancel={vm.actions.cancelCollection}
 			onDownload={vm.actions.download}
 		/>

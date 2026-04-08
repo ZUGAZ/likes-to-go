@@ -1,6 +1,7 @@
 export type PopupCollectionStatus = 'idle' | 'collecting' | 'done' | 'error';
 
 export type PopupState =
+	| 'initializing'
 	| 'initial'
 	| 'loading'
 	| 'processing'
@@ -27,6 +28,15 @@ export function mapStatusToPopupState(
 		default:
 			return 'error';
 	}
+}
+
+export function initializingPopupModel(): PopupModel {
+	return {
+		state: 'initializing',
+		trackCount: 0,
+		errorMessage: undefined,
+		skippedTrackCount: undefined,
+	};
 }
 
 export function initialPopupModel(): PopupModel {

@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 import type { GetStateResponse } from '@/common/model/request-message';
 
+import { HeartLoggerLive } from '@/common/infrastructure/logger';
 import { createPopupViewModel } from '@/popup/components/popup/view-model';
 import type { PopupEnv } from '@/popup/runtime/popup-env';
-import { HeartLoggerLive } from '@/common/infrastructure/logger';
 
 const { stopListeningMock, listenForStateUpdatesMock, triggerStateUpdate } =
 	vi.hoisted(() => {
@@ -32,8 +32,10 @@ const { stopListeningMock, listenForStateUpdatesMock, triggerStateUpdate } =
 		};
 	});
 
+type GetStateMockEffect = Effect.Effect<GetStateResponse>;
+
 const { getStateMock } = vi.hoisted(() => ({
-	getStateMock: vi.fn<() => Effect.Effect<GetStateResponse>>(() =>
+	getStateMock: vi.fn<() => GetStateMockEffect>(() =>
 		Effect.succeed({
 			status: 'idle',
 			trackCount: 0,
@@ -78,6 +80,12 @@ describe('Popup viewmodel', () => {
 		expect(stopListeningMock).toHaveBeenCalledTimes(1);
 	});
 
+	it('starts in initializing state before syncState', () => {
+		const vm = createPopupViewModel();
+
+		expect(vm.state()).toBe('initializing');
+	});
+
 	it('syncState sets initial state from background', async () => {
 		const runtime = makeTestRuntime();
 		const vm = createPopupViewModel();
@@ -106,6 +114,80 @@ describe('Popup viewmodel', () => {
 		expect(vm.errorMessage()).toBe(
 			'Please log in to SoundCloud, then try again.',
 		);
+	});
+
+	it('retryAfterError re-runs getState when sync returned error (e.g. login required)', async () => {
+		getStateMock
+			.mockImplementationOnce(() =>
+				Effect.succeed({
+					status: 'error',
+					trackCount: 0,
+					errorMessage: 'Please log in to SoundCloud, then try again.',
+				}),
+			)
+			.mockImplementation(() =>
+				Effect.succeed({
+					status: 'error',
+					trackCount: 0,
+					errorMessage: 'Still need login.',
+				}),
+			);
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+		expect(getStateMock).toHaveBeenCalledTimes(1);
+
+		await runtime.runPromise(vm.effects.retryAfterError);
+
+		expect(getStateMock).toHaveBeenCalledTimes(2);
+		expect(vm.state()).toBe('error');
+		expect(vm.errorMessage()).toBe('Still need login.');
+	});
+
+	it('syncState sets error when getState fails', async () => {
+		getStateMock.mockImplementationOnce(() =>
+			Effect.succeed({
+				status: 'error',
+				trackCount: 0,
+				errorMessage: 'Could not reach the extension. Channel closed',
+			}),
+		);
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		expect(vm.state()).toBe('error');
+		expect(vm.errorMessage()).toContain('Channel closed');
+	});
+
+	it('retryAfterError re-runs sync from initializing when sync failed', async () => {
+		getStateMock
+			.mockImplementationOnce(() =>
+				Effect.succeed({
+					status: 'error',
+					trackCount: 0,
+					errorMessage: 'Could not reach the extension. first failure',
+				}),
+			)
+			.mockImplementation(() =>
+				Effect.succeed({
+					status: 'idle',
+					trackCount: 0,
+					errorMessage: undefined,
+				}),
+			);
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+		expect(vm.state()).toBe('error');
+
+		await runtime.runPromise(vm.effects.retryAfterError);
+
+		expect(vm.state()).toBe('initial');
+		expect(vm.errorMessage()).toBeUndefined();
 	});
 
 	it('startCollection moves to loading state', async () => {

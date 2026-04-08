@@ -10,6 +10,7 @@ interface PopupViewProps {
 	errorMessage: Accessor<string | undefined>;
 	skippedTrackCount: Accessor<number>;
 	onStart: () => void;
+	onRetryFromError: () => void;
 	onCancel: () => void;
 	onDownload: () => void;
 }
@@ -20,6 +21,15 @@ export function PopupView(props: PopupViewProps) {
 			<div class="min-h-[170px]">
 				<Transition name="fade" mode="outin">
 					<Switch fallback={null}>
+						<Match when={props.state() === 'initializing'}>
+							<div class="flex flex-col items-center gap-3">
+								<div class="text-2xl">
+									<ProcessingHeart />
+								</div>
+								<p class="text-neutral-700">Loading…</p>
+							</div>
+						</Match>
+
 						<Match when={props.state() === 'initial'}>
 							<div class="flex flex-col items-center gap-2">
 								<button
@@ -85,7 +95,7 @@ export function PopupView(props: PopupViewProps) {
 						<Match when={props.state() === 'error'}>
 							<ErrorBlock
 								message={props.errorMessage() ?? 'Something went wrong'}
-								onRetry={props.onStart}
+								onRetry={props.onRetryFromError}
 							/>
 						</Match>
 					</Switch>

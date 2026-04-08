@@ -42,6 +42,8 @@ export function dispatchEffect(
 			'→ state',
 			stateTag,
 			tracksLen !== undefined ? { tracks: tracksLen } : '',
+			'commands',
+			result.commands.map((cmd) => cmd._tag).join(', '),
 		);
 
 		yield* Effect.forEach(result.commands, runCommandEffect);

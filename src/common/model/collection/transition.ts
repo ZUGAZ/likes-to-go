@@ -1,6 +1,26 @@
-import type { Track } from '@/common/model/track';
 import type { CollectionCommand } from '@/common/model/collection/command';
+import { CheckLogin } from '@/common/model/collection/commands/check-login';
+import { CloseTab } from '@/common/model/collection/commands/close-tab';
+import { CreateTab } from '@/common/model/collection/commands/create-tab';
+import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
+import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
+import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
+import { SendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import type { CollectionEvent } from '@/common/model/collection/event';
+import { isCancelCollectionEvent } from '@/common/model/collection/events/cancel-collection';
+import { isCollectionCompleteEvent } from '@/common/model/collection/events/collection-complete';
+import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
+import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
+import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
+import { isGetStateRequested } from '@/common/model/collection/events/get-state-requested';
+import { isLoginRequired } from '@/common/model/collection/events/login-required';
+import { isLoginVerified } from '@/common/model/collection/events/login-verified';
+import { isSendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
+import { isStartCollectionEvent } from '@/common/model/collection/events/start-collection';
+import { isTabComplete } from '@/common/model/collection/events/tab-complete';
+import { isTabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
+import { isTabCreated } from '@/common/model/collection/events/tab-created';
+import { isTracksBatchEvent } from '@/common/model/collection/events/tracks-batch';
 import type { CollectionState } from '@/common/model/collection/state';
 import {
 	Collecting,
@@ -16,27 +36,7 @@ import {
 	isErrorState,
 } from '@/common/model/collection/states/error-state';
 import { Idle, isIdle } from '@/common/model/collection/states/idle';
-import { CloseTab } from '@/common/model/collection/commands/close-tab';
-import { CheckLogin } from '@/common/model/collection/commands/check-login';
-import { CreateTab } from '@/common/model/collection/commands/create-tab';
-import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
-import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
-import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
-import { SendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
-import { isCancelCollectionEvent } from '@/common/model/collection/events/cancel-collection';
-import { isCollectionCompleteEvent } from '@/common/model/collection/events/collection-complete';
-import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
-import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
-import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
-import { isGetStateRequested } from '@/common/model/collection/events/get-state-requested';
-import { isLoginRequired } from '@/common/model/collection/events/login-required';
-import { isLoginVerified } from '@/common/model/collection/events/login-verified';
-import { isSendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
-import { isStartCollectionEvent } from '@/common/model/collection/events/start-collection';
-import { isTabComplete } from '@/common/model/collection/events/tab-complete';
-import { isTabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
-import { isTabCreated } from '@/common/model/collection/events/tab-created';
-import { isTracksBatchEvent } from '@/common/model/collection/events/tracks-batch';
+import type { Track } from '@/common/model/track';
 
 const LIKES_URL = 'https://soundcloud.com/you/likes';
 
@@ -239,6 +239,12 @@ export function transition(
 	}
 
 	if (isErrorState(current)) {
+		if (isGetStateRequested(event)) {
+			return {
+				state: current,
+				commands: [CheckLogin()],
+			};
+		}
 		if (isDownloadFailedEvent(event)) {
 			const newState = ErrorState({ message: event.message });
 			return {

@@ -16,6 +16,23 @@ export class DecodeGetStateResponseFailed extends Data.TaggedError(
 	readonly reason: string;
 }> {}
 
+function transportErrorToGetStateResponse(
+	err: SendToBackgroundFailed | DecodeGetStateResponseFailed,
+): GetStateResponse {
+	if (err instanceof SendToBackgroundFailed) {
+		return {
+			status: 'error',
+			trackCount: 0,
+			errorMessage: `Could not reach the extension. ${err.reason}`,
+		};
+	}
+	return {
+		status: 'error',
+		trackCount: 0,
+		errorMessage: `Could not read extension state. ${err.reason}`,
+	};
+}
+
 /**
  * Decode unknown value as GetStateResponse. Use at message boundary when background returns state.
  */
@@ -33,13 +50,14 @@ export function decodeGetStateResponse(
 
 /**
  * Request current collection state from the background. Validates response at boundary.
+ * Messaging or decode failures become a successful {@link GetStateResponse} with `status: 'error'`.
  */
-export function getState(): Effect.Effect<
-	GetStateResponse,
-	SendToBackgroundFailed | DecodeGetStateResponseFailed
-> {
+export function getState(): Effect.Effect<GetStateResponse> {
 	return sendToBackgroundEffect(GetStateRequest()).pipe(
 		Effect.flatMap(decodeGetStateResponse),
+		Effect.catchAll((err) =>
+			Effect.succeed(transportErrorToGetStateResponse(err)),
+		),
 		Effect.withLogSpan('getState'),
 	);
 }
