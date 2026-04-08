@@ -1,8 +1,12 @@
 import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
-import { TRACK_LIST_CONTAINER } from '@/common/infrastructure/selectors';
+import {
+	TRACK_LIST_CONTAINER,
+	isUserLoggedIn,
+} from '@/common/infrastructure/selectors';
 import { sendToBackgroundEffect } from '@/common/infrastructure/send-to-background';
 import {
 	CollectionErrorRequest,
+	LoginRequiredRequest,
 	isCancelCollection,
 	isStartCollection,
 } from '@/common/model/request-message';
@@ -59,7 +63,23 @@ export function createContentMessageHandler(
 					sendToBackgroundEffect(
 						CollectionErrorRequest({
 							message: 'Track list not found on page',
-							reason: 'Track list container selector did not match any elements',
+							reason:
+								'Track list container selector did not match any elements',
+						}),
+					),
+				);
+
+				void Runtime.runPromise(runtime)(program).then(() => sendResponse());
+				return true;
+			}
+
+			if (!isUserLoggedIn(document)) {
+				const program = Effect.zipRight(
+					Effect.log('content login check failed: user nav not found'),
+					sendToBackgroundEffect(
+						LoginRequiredRequest({
+							message: 'Please log in to SoundCloud, then try again.',
+							reason: 'User nav selector not found in page DOM',
 						}),
 					),
 				);

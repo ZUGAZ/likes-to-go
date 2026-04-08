@@ -4,6 +4,7 @@ import { CollectionComplete } from '@/common/model/collection/events/collection-
 import { CollectionError } from '@/common/model/collection/events/collection-error';
 import { DownloadExport } from '@/common/model/collection/events/download-export-event';
 import { GetStateRequested } from '@/common/model/collection/events/get-state-requested';
+import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import {
@@ -13,6 +14,7 @@ import {
 	isCollectionError,
 	isDownloadExport,
 	isGetStateRequest,
+	isLoginRequired,
 	isStartCollection,
 	isTracksBatch,
 } from '@/common/model/request-message';
@@ -35,6 +37,11 @@ export function requestMessageToCollectionEvent(
 	if (isCollectionComplete(message)) return CollectionComplete();
 	if (isCollectionError(message))
 		return CollectionError({
+			message: message.message,
+			reason: message.reason,
+		});
+	if (isLoginRequired(message))
+		return LoginRequired({
 			message: message.message,
 			reason: message.reason,
 		});

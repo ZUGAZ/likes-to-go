@@ -17,6 +17,10 @@ export const CollectionErrorSchema = taggedStruct('CollectionError', {
 export const CancelCollectionSchema = taggedStruct('CancelCollection');
 export const DownloadExportSchema = taggedStruct('DownloadExport');
 export const GetStateSchema = taggedStruct('GetState');
+export const LoginRequiredSchema = taggedStruct('LoginRequired', {
+	message: Schema.String,
+	reason: Schema.String,
+});
 
 export const RequestMessageSchema = Schema.Union(
 	StartCollectionSchema,
@@ -26,6 +30,7 @@ export const RequestMessageSchema = Schema.Union(
 	CancelCollectionSchema,
 	DownloadExportSchema,
 	GetStateSchema,
+	LoginRequiredSchema,
 );
 
 export type RequestMessage = Schema.Schema.Type<typeof RequestMessageSchema>;
@@ -63,6 +68,10 @@ export const DownloadExportRequest =
 type GetStateRequest = Schema.Schema.Type<typeof GetStateSchema>;
 export const GetStateRequest = Data.tagged<GetStateRequest>('GetState');
 
+type LoginRequiredRequest = Schema.Schema.Type<typeof LoginRequiredSchema>;
+export const LoginRequiredRequest =
+	Data.tagged<LoginRequiredRequest>('LoginRequired');
+
 // --- Type guards (Schema.is) ---
 
 export const isGetStateRequest = Schema.is(GetStateSchema);
@@ -72,3 +81,4 @@ export const isCollectionComplete = Schema.is(CollectionCompleteSchema);
 export const isCollectionError = Schema.is(CollectionErrorSchema);
 export const isCancelCollection = Schema.is(CancelCollectionSchema);
 export const isDownloadExport = Schema.is(DownloadExportSchema);
+export const isLoginRequired = Schema.is(LoginRequiredSchema);

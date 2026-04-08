@@ -115,15 +115,15 @@ describe('background dispatch', () => {
 
 		const state = await Effect.runPromise(program);
 
-		// StartCollection -> [CheckLogin, NotifyPopup]
+		// StartCollection -> [NotifyPopup, CheckLogin]
 		// LoginVerified -> [CreateTab]
 		// TabCreated -> [NotifyPopup]
 		// Total: 4
 		expect(recordedCommands.length).toBe(4);
-		expect(recordedCommands[0]).toMatchObject({
+		expect(recordedCommands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+		expect(recordedCommands[1]).toMatchObject({
 			_tag: 'CheckLogin',
 		});
-		expect(recordedCommands[1]).toMatchObject({ _tag: 'NotifyPopup' });
 		expect(recordedCommands[2]).toMatchObject({
 			_tag: 'CreateTab',
 			url: 'https://soundcloud.com/you/likes',
@@ -227,9 +227,9 @@ describe('background dispatch', () => {
 
 		await Effect.runPromise(program);
 
-		// StartCollection -> [CheckLogin, NotifyPopup]
+		// StartCollection -> [NotifyPopup, CheckLogin]
 		expect(recordedCommands.length).toBe(2);
-		expect(recordedCommands[0]).toMatchObject({ _tag: 'CheckLogin' });
-		expect(recordedCommands[1]).toMatchObject({ _tag: 'NotifyPopup' });
+		expect(recordedCommands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+		expect(recordedCommands[1]).toMatchObject({ _tag: 'CheckLogin' });
 	});
 });

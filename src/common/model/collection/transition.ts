@@ -76,7 +76,7 @@ export function transition(
 			const newState = CollectingRequested();
 			return {
 				state: newState,
-				commands: [CheckLogin(), NotifyPopup({ state: newState })],
+				commands: [NotifyPopup({ state: newState }), CheckLogin()],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
@@ -263,7 +263,14 @@ export function transition(
 			const newState = CollectingRequested();
 			return {
 				state: newState,
-				commands: [CheckLogin(), NotifyPopup({ state: newState })],
+				commands: [NotifyPopup({ state: newState }), CheckLogin()],
+			};
+		}
+		if (isLoginVerified(event)) {
+			const newState = Idle();
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		return { state: current, commands: [] };

@@ -35,6 +35,9 @@ export const ERROR_INDICATOR = '.inlineError';
 /** CSS selector for the "Retry" anchor inside the inline error container. */
 export const RETRY_BUTTON = '.inlineError .sc-button';
 
+/** CSS selector for the user navigation element in the header (present only when logged in). */
+export const USER_NAV = '.header__userNav';
+
 /**
  * Selector for track cards from 0-based index onward (for incremental collection).
  * Uses :nth-child(n+K) so the DOM returns only cards at index >= fromIndex. Assumes cards are direct children of the list root.
@@ -62,6 +65,15 @@ export function isErrorIndicatorPresent(scope: ParentNode): boolean {
 	return scope.querySelector(ERROR_INDICATOR) != null;
 }
 
+/**
+ * DOM check for user login status.
+ * The user nav element is only present when a user is logged in to SoundCloud.
+ * The selector must be queried against a parent scope that contains the header (e.g. `document`).
+ */
+export function isUserLoggedIn(scope: ParentNode): boolean {
+	return scope.querySelector(USER_NAV) != null;
+}
+
 export const selectors = {
 	trackListContainer: TRACK_LIST_CONTAINER,
 	trackCard: TRACK_CARD,
@@ -74,4 +86,5 @@ export const selectors = {
 	loadingIndicator: LOADING_INDICATOR,
 	errorIndicator: ERROR_INDICATOR,
 	retryButton: RETRY_BUTTON,
+	userNav: USER_NAV,
 } as const;

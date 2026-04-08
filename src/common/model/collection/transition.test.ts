@@ -27,10 +27,11 @@ function validTrack(
 
 describe('collection-transition', () => {
 	describe('progress count = validated tracks only', () => {
-		it('StartCollection emits CheckLogin before creating tab', () => {
+		it('StartCollection notifies popup then emits CheckLogin', () => {
 			const result = transition(initialCollectionState, StartCollection());
 
-			expect(result.commands[0]).toMatchObject({ _tag: 'CheckLogin' });
+			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.commands[1]).toMatchObject({ _tag: 'CheckLogin' });
 		});
 
 		it('Idle + GetStateRequested emits CheckLogin without state change', () => {
