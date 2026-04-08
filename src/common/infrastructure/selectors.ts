@@ -23,6 +23,9 @@ export const TRACK_LINK = '.audibleTile__artworkLink';
 /** Selector for artwork image element (relative to card); URL is in inline style background-image. */
 export const TRACK_ARTWORK = '.playableTile__artwork .sc-artwork.image__full';
 
+/** Selector for artwork container (relative to card); used for overlay positioning. */
+export const TRACK_ARTWORK_CONTAINER = '.playableTile__artwork';
+
 /** CSS selector for SoundCloud's infinite-scroll loading spinner (end-of-feed sentinel). */
 export const LOADING_INDICATOR = '.loading.regular.m-padded';
 
@@ -67,6 +70,7 @@ export const selectors = {
 	trackArtist: TRACK_ARTIST,
 	trackLink: TRACK_LINK,
 	trackArtwork: TRACK_ARTWORK,
+	trackArtworkContainer: TRACK_ARTWORK_CONTAINER,
 	loadingIndicator: LOADING_INDICATOR,
 	errorIndicator: ERROR_INDICATOR,
 	retryButton: RETRY_BUTTON,

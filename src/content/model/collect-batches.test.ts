@@ -98,7 +98,6 @@ describe('collectBatch', () => {
 			previousValidCount: 2,
 			totalParsedCount: 2,
 			totalSkippedCount: 0,
-			batchIndex: 0,
 		};
 		const { batch, nextState } = collectBatch(root, baseUrl, state);
 

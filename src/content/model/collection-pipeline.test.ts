@@ -63,7 +63,6 @@ function makeDomScannerStub(
 					previousValidCount: batch.totalValidCount,
 					totalParsedCount: state.totalParsedCount + batch.parsedCount,
 					totalSkippedCount: state.totalSkippedCount + batch.skippedCount,
-					batchIndex: state.batchIndex + 1,
 				};
 				return { batch, nextState };
 			}),

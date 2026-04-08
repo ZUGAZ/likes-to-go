@@ -1,6 +1,9 @@
 import { decodeTracksFromRaw } from '@/common/infrastructure/decode-tracks-from-raw';
 import { getTracksFromCards } from '@/common/infrastructure/dom-reader';
-import { trackCardsFromIndex } from '@/common/infrastructure/selectors';
+import {
+	TRACK_ARTWORK_CONTAINER,
+	trackCardsFromIndex,
+} from '@/common/infrastructure/selectors';
 import type { Track } from '@/common/model/track';
 
 export interface CollectionBatch {
@@ -16,15 +19,45 @@ export interface CollectionScanState {
 	readonly previousValidCount: number;
 	readonly totalParsedCount: number;
 	readonly totalSkippedCount: number;
-	readonly batchIndex: number;
 }
 
 const INITIAL_SCAN_STATE: CollectionScanState = {
 	previousValidCount: 0,
 	totalParsedCount: 0,
 	totalSkippedCount: 0,
-	batchIndex: 0,
 };
+
+/** Data attribute used to mark artwork containers that have been scanned. */
+const LTG_SCANNED_ATTR = 'data-ltg-scanned';
+
+/**
+ * Apply a semi-transparent heart overlay to the artwork container of a scanned card.
+ * Idempotent: does not create duplicate overlays if called multiple times on the same card.
+ */
+function applyScannedOverlay(card: Element): void {
+	const artwork = card.querySelector(TRACK_ARTWORK_CONTAINER);
+	if (!(artwork instanceof HTMLElement)) return;
+	if (artwork.hasAttribute(LTG_SCANNED_ATTR)) return;
+
+	artwork.setAttribute(LTG_SCANNED_ATTR, '');
+	artwork.style.position = 'relative';
+
+	const overlay = document.createElement('div');
+	overlay.textContent = '❤';
+	overlay.style.cssText = [
+		'position:absolute',
+		'inset:0',
+		'display:flex',
+		'align-items:center',
+		'justify-content:center',
+		'font-size:10rem',
+		'background:rgba(0,0,0,0.35)',
+		'pointer-events:none',
+		'z-index:10',
+	].join(';');
+
+	artwork.appendChild(overlay);
+}
 
 /** Initial state for the first call to collectBatch. */
 export function initialScanState(): CollectionScanState {
@@ -42,13 +75,8 @@ export function collectBatch(
 ): { batch: CollectionBatch; nextState: CollectionScanState } {
 	const selector = trackCardsFromIndex(state.previousValidCount);
 	const cards = root.querySelectorAll(selector);
-	const debugColors = ['red', 'blue', 'green', 'lime', 'magenta'];
-	const color = debugColors[state.batchIndex % debugColors.length];
 	cards.forEach((card) => {
-		if (card instanceof HTMLElement) {
-			// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-			card.style.border = `2px solid ${color}`;
-		}
+		applyScannedOverlay(card);
 	});
 	const raw = getTracksFromCards(Array.from(cards), baseUrl);
 	const tracks = decodeTracksFromRaw(raw);
@@ -72,7 +100,6 @@ export function collectBatch(
 		previousValidCount: totalValidCount,
 		totalParsedCount: state.totalParsedCount + parsedCount,
 		totalSkippedCount: state.totalSkippedCount + skippedCount,
-		batchIndex: state.batchIndex + 1,
 	};
 	return { batch, nextState };
 }
