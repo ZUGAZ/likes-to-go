@@ -1,6 +1,7 @@
 import { Cause, Effect, Exit, Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { runCheckLogin } from '@/background/commands/run-check-login';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
 
@@ -57,7 +58,7 @@ describe('runCheckLogin', () => {
 		const failure = exit.cause.pipe(Cause.failureOption, Option.getOrUndefined);
 		expect(failure).toEqual(
 			LoginRequired({
-				message: 'Please log in to SoundCloud, then try again.',
+				message: LOGIN_REQUIRED_MESSAGE,
 				reason: 'Missing login cookie',
 			}),
 		);

@@ -4,6 +4,7 @@ import {
 	isUserLoggedIn,
 } from '@/common/infrastructure/selectors';
 import { sendToBackgroundEffect } from '@/common/infrastructure/send-to-background';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import {
 	CollectionErrorRequest,
 	LoginRequiredRequest,
@@ -78,7 +79,7 @@ export function createContentMessageHandler(
 					Effect.log('content login check failed: user nav not found'),
 					sendToBackgroundEffect(
 						LoginRequiredRequest({
-							message: 'Please log in to SoundCloud, then try again.',
+							message: LOGIN_REQUIRED_MESSAGE,
 							reason: 'User nav selector not found in page DOM',
 						}),
 					),

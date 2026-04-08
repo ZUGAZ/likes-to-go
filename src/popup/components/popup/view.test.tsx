@@ -95,6 +95,17 @@ describe('Popup view', () => {
 		expect(popup.queryByRole('button')).toBeNull();
 	});
 
+	it('renders the checking-login state', () => {
+		const popup = renderPopupView({
+			state: 'checking-login',
+			trackCount: 0,
+			skippedTrackCount: 0,
+		});
+
+		expect(popup.getByText('Checking login status…')).toBeTruthy();
+		expect(popup.getByRole('button', { name: 'Cancel order' })).toBeTruthy();
+	});
+
 	it('renders the processing state', () => {
 		const popup = renderPopupView({
 			state: 'processing',
@@ -102,7 +113,7 @@ describe('Popup view', () => {
 			skippedTrackCount: 0,
 		});
 
-		expect(popup.getByText('preparing 42 tracks…')).toBeTruthy();
+		expect(popup.getByText('Collecting likes… (42 found)')).toBeTruthy();
 		expect(popup.getByRole('button', { name: 'Cancel order' })).toBeTruthy();
 		expect(popup.queryByText('tracks could not be read yet')).toBeNull();
 	});
@@ -118,9 +129,14 @@ describe('Popup view', () => {
 	});
 
 	it('renders the done state', () => {
-		const popup = renderPopupView({ state: 'done', skippedTrackCount: 0 });
+		const popup = renderPopupView({
+			state: 'done',
+			trackCount: 10,
+			skippedTrackCount: 0,
+		});
 
 		expect(popup.getByRole('button', { name: '💚 Ready to go' })).toBeTruthy();
+		expect(popup.getByText('Export ready! 10 tracks collected.')).toBeTruthy();
 	});
 
 	it('renders the done state with skipped tracks warning', () => {
@@ -130,6 +146,19 @@ describe('Popup view', () => {
 		});
 
 		expect(popup.getByText('3 tracks could not be read')).toBeTruthy();
+	});
+
+	it('renders the login-required state', () => {
+		const popup = renderPopupView({
+			state: 'login-required',
+			errorMessage: 'Please log in to SoundCloud, then try again.',
+		});
+
+		const alert = popup.getByRole('alert');
+		expect(alert.textContent).toContain(
+			'Please log in to SoundCloud, then try again.',
+		);
+		expect(popup.getByRole('button', { name: 'Try again' })).toBeTruthy();
 	});
 
 	it('renders the error state', () => {
@@ -180,7 +209,7 @@ describe('Popup view', () => {
 	it('updates the rendered output when the state signal changes', async () => {
 		const popup = renderPopupView({ state: 'initial' });
 
-		expect(popup.queryByText('preparing 7 tracks…')).toBeNull();
+		expect(popup.queryByText('Collecting likes… (7 found)')).toBeNull();
 		expect(popup.getByText('Waiting for order')).toBeTruthy();
 
 		popup.setTrackCount(7);
@@ -190,6 +219,6 @@ describe('Popup view', () => {
 		await Promise.resolve();
 
 		expect(popup.queryByText('Waiting for order')).toBeNull();
-		expect(popup.getByText('preparing 7 tracks…')).toBeTruthy();
+		expect(popup.getByText('Collecting likes… (7 found)')).toBeTruthy();
 	});
 });

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Effect, Layer, ManagedRuntime } from 'effect';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { GetStateResponse } from '@/common/model/request-message';
 
 import { HeartLoggerLive } from '@/common/infrastructure/logger';
@@ -100,9 +101,9 @@ describe('Popup viewmodel', () => {
 	it('syncState sets login-required error when cookie is missing', async () => {
 		getStateMock.mockImplementationOnce(() =>
 			Effect.succeed({
-				status: 'error',
+				status: 'login-required',
 				trackCount: 0,
-				errorMessage: 'Please log in to SoundCloud, then try again.',
+				errorMessage: LOGIN_REQUIRED_MESSAGE,
 			}),
 		);
 		const runtime = makeTestRuntime();
@@ -110,19 +111,17 @@ describe('Popup viewmodel', () => {
 
 		await runtime.runPromise(vm.effects.syncState);
 
-		expect(vm.state()).toBe('error');
-		expect(vm.errorMessage()).toBe(
-			'Please log in to SoundCloud, then try again.',
-		);
+		expect(vm.state()).toBe('login-required');
+		expect(vm.errorMessage()).toBe(LOGIN_REQUIRED_MESSAGE);
 	});
 
 	it('retryAfterError re-runs getState when sync returned error (e.g. login required)', async () => {
 		getStateMock
 			.mockImplementationOnce(() =>
 				Effect.succeed({
-					status: 'error',
+					status: 'login-required',
 					trackCount: 0,
-					errorMessage: 'Please log in to SoundCloud, then try again.',
+					errorMessage: LOGIN_REQUIRED_MESSAGE,
 				}),
 			)
 			.mockImplementation(() =>
@@ -200,12 +199,22 @@ describe('Popup viewmodel', () => {
 		expect(vm.trackCount()).toBe(0);
 	});
 
-	it('loading transitions to processing on first collecting update', async () => {
+	it('loading transitions to checking-login then processing on collecting update', async () => {
 		const runtime = makeTestRuntime();
 		const vm = createPopupViewModel();
 
 		await runtime.runPromise(vm.effects.startCollection);
 		expect(vm.state()).toBe('loading');
+
+		triggerStateUpdate({
+			status: 'checking-login',
+			trackCount: 0,
+			errorMessage: undefined,
+			skippedTrackCount: undefined,
+		});
+
+		expect(vm.state()).toBe('checking-login');
+		expect(vm.trackCount()).toBe(0);
 
 		triggerStateUpdate({
 			status: 'collecting',

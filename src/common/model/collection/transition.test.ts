@@ -6,6 +6,8 @@ import {
 	initialCollectionState,
 	transition,
 } from '@/common/model/collection';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
+import { ErrorState } from '@/common/model/collection/states/error-state';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
@@ -61,15 +63,33 @@ describe('collection-transition', () => {
 			const result = transition(
 				collectingRequested,
 				LoginRequired({
-					message: 'Please log in to SoundCloud, then try again.',
+					message: LOGIN_REQUIRED_MESSAGE,
 					reason: 'Missing _soundcloud_session cookie',
 				}),
 			);
 
 			expect(result.state).toMatchObject({
 				_tag: 'Error',
-				message: 'Please log in to SoundCloud, then try again.',
+				message: LOGIN_REQUIRED_MESSAGE,
 			});
+		});
+
+		it('GetStateResponse status is checking-login when CollectingRequested', () => {
+			const collectingRequested = transition(
+				initialCollectionState,
+				StartCollection(),
+			).state;
+			const response = collectionStateToGetStateResponse(collectingRequested);
+			expect(response.status).toBe('checking-login');
+			expect(response.trackCount).toBe(0);
+		});
+
+		it('GetStateResponse status is login-required for login ErrorState', () => {
+			const response = collectionStateToGetStateResponse(
+				ErrorState({ message: LOGIN_REQUIRED_MESSAGE }),
+			);
+			expect(response.status).toBe('login-required');
+			expect(response.errorMessage).toBe(LOGIN_REQUIRED_MESSAGE);
 		});
 
 		it('GetStateResponse trackCount equals state.tracks.length when Collecting', () => {

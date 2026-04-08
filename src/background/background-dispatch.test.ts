@@ -5,6 +5,7 @@ import {
 	dispatchEffect,
 	handleMessageEffect,
 } from '@/background/background-dispatch';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import { initialCollectionState } from '@/common/model/collection/transition';
 import { isCollecting } from '@/common/model/collection/states/collecting';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
@@ -51,7 +52,7 @@ function makeCheckLoginAwareRunner(
 					cookie === null
 						? dispatchEffect(
 								LoginRequired({
-									message: 'Please log in to SoundCloud, then try again.',
+									message: LOGIN_REQUIRED_MESSAGE,
 									reason: 'Missing login cookie',
 								}),
 							)
@@ -191,9 +192,9 @@ describe('background dispatch', () => {
 		);
 
 		expect(response).toMatchObject({
-			status: 'error',
+			status: 'login-required',
 			trackCount: 0,
-			errorMessage: 'Please log in to SoundCloud, then try again.',
+			errorMessage: LOGIN_REQUIRED_MESSAGE,
 		});
 		expect(recordedCommands.map((command) => command._tag)).toEqual([
 			'CheckLogin',
@@ -218,7 +219,7 @@ describe('background dispatch', () => {
 			Effect.tap((response: GetStateResponse) =>
 				Effect.sync(() => {
 					expect(response).toMatchObject({
-						status: 'collecting',
+						status: 'checking-login',
 						trackCount: 0,
 					});
 				}),

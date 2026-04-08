@@ -1,6 +1,7 @@
 export interface ErrorBlockProps {
 	readonly message: string;
 	readonly onRetry: () => void;
+	readonly variant?: 'login-required' | 'generic';
 }
 
 export function ErrorBlock(props: ErrorBlockProps) {
@@ -11,11 +12,12 @@ export function ErrorBlock(props: ErrorBlockProps) {
 				class="rounded bg-rose-500 px-4 py-2 text-white hover:bg-rose-600"
 				onClick={() => props.onRetry()}
 			>
-				❤️ Try again
+				{props.variant === 'login-required' ? 'Try again' : '❤️ Try again'}
 			</button>
 
 			<p class="break-words text-center text-rose-600 text-sm" role="alert">
-				💔 {props.message}
+				{props.variant === 'login-required' ? '🔐 ' : '💔 '}
+				{props.message}
 			</p>
 		</div>
 	);

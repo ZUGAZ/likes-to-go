@@ -36,6 +36,7 @@ import {
 	isErrorState,
 } from '@/common/model/collection/states/error-state';
 import { Idle, isIdle } from '@/common/model/collection/states/idle';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { Track } from '@/common/model/track';
 
 const LIKES_URL = 'https://soundcloud.com/you/likes';
@@ -88,7 +89,7 @@ export function transition(
 		}
 		if (isLoginRequired(event)) {
 			const newState = ErrorState({
-				message: 'Please log in to SoundCloud, then try again.',
+				message: LOGIN_REQUIRED_MESSAGE,
 			});
 			return {
 				state: newState,
@@ -128,7 +129,7 @@ export function transition(
 		}
 		if (isLoginRequired(event)) {
 			const newState = ErrorState({
-				message: 'Please log in to SoundCloud, then try again.',
+				message: LOGIN_REQUIRED_MESSAGE,
 			});
 			return {
 				state: newState,

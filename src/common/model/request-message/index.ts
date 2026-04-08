@@ -19,7 +19,10 @@ export {
 } from './request-message';
 export type { RequestMessage } from './request-message';
 
-export { GetStateResponseSchema } from './get-state-response';
+export {
+	CollectionStatusSchema,
+	GetStateResponseSchema,
+} from './get-state-response';
 export type {
 	CollectionStatus,
 	GetStateResponse,

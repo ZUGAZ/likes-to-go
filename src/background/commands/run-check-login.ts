@@ -1,9 +1,8 @@
 import { getSoundcloudLoginCookie } from '@/common/infrastructure/soundcloud-login-cookie';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
 import { Effect } from 'effect';
-
-const LOGIN_REQUIRED_MESSAGE = 'Please log in to SoundCloud, then try again.';
 
 export function runCheckLogin(): Effect.Effect<LoginVerified, LoginRequired> {
 	return getSoundcloudLoginCookie().pipe(

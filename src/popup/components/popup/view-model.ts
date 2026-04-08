@@ -54,7 +54,7 @@ export function createPopupViewModel(): PopupViewModel {
 			setState(model.state);
 			setTrackCount(model.trackCount);
 			setErrorMessage(
-				model.state === 'error'
+				model.state === 'error' || model.state === 'login-required'
 					? (model.errorMessage ?? 'Something went wrong')
 					: undefined,
 			);

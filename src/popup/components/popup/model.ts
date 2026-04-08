@@ -1,11 +1,13 @@
-export type PopupCollectionStatus = 'idle' | 'collecting' | 'done' | 'error';
+import type { CollectionStatus } from '@/common/model/request-message';
 
 export type PopupState =
 	| 'initializing'
 	| 'initial'
 	| 'loading'
+	| 'checking-login'
 	| 'processing'
 	| 'done'
+	| 'login-required'
 	| 'error';
 
 export interface PopupModel {
@@ -15,17 +17,19 @@ export interface PopupModel {
 	readonly skippedTrackCount?: number | undefined;
 }
 
-export function mapStatusToPopupState(
-	status: PopupCollectionStatus,
-): PopupState {
+export function mapStatusToPopupState(status: CollectionStatus): PopupState {
 	switch (status) {
 		case 'idle':
 			return 'initial';
+		case 'checking-login':
+			return 'checking-login';
 		case 'collecting':
 			return 'processing';
 		case 'done':
 			return 'done';
-		default:
+		case 'login-required':
+			return 'login-required';
+		case 'error':
 			return 'error';
 	}
 }
