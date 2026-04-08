@@ -49,11 +49,19 @@ class InlineErrorPersisted extends Data.TaggedError('InlineErrorPersisted')<{
 interface LoopState {
 	readonly scanState: CollectionScanState;
 	readonly passesWithNoNewTracks: number;
+	/**
+	 * True when the loading indicator was absent at the end of the previous
+	 * iteration. The next iteration is the final cycle; it runs normally and
+	 * then the loop exits unconditionally, ensuring any content loaded by the
+	 * last scroll is captured before the pipeline stops.
+	 */
+	readonly isFinalCycle: boolean;
 }
 
 const initialLoopState: LoopState = {
 	scanState: initialScanState(),
 	passesWithNoNewTracks: 0,
+	isFinalCycle: false,
 };
 
 /**
@@ -118,17 +126,29 @@ function loopStep(
 		yield* scroller.scrollToBottom();
 		yield* Effect.sleep(WAIT_FOR_NODES_MS);
 
-		const isLoadingIndicatorPresent =
-			yield* scanner.isLoadingIndicatorPresent();
-
-		if (
-			!isLoadingIndicatorPresent &&
-			passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES
-		) {
+		// If this was already the final cycle, stop now.
+		if (current.isFinalCycle) {
 			return undefined;
 		}
 
-		return { scanState: nextState, passesWithNoNewTracks };
+		const isLoadingIndicatorPresent =
+			yield* scanner.isLoadingIndicatorPresent();
+
+		if (!isLoadingIndicatorPresent) {
+			// Loading indicator is absent: schedule one final cycle to capture
+			// any content loaded by the scroll we just performed.
+			return {
+				scanState: nextState,
+				passesWithNoNewTracks,
+				isFinalCycle: true,
+			};
+		}
+
+		if (passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES) {
+			return undefined;
+		}
+
+		return { scanState: nextState, passesWithNoNewTracks, isFinalCycle: false };
 	}).pipe(Effect.withLogSpan('loopStep'));
 }
 

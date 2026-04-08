@@ -192,7 +192,7 @@ function runWithTestClock(
 // ── Tests ───────────────────────────────────────────────────────
 
 describe('collectionPipeline', () => {
-	it('completes after NO_NEW_TRACKS_PASSES consecutive empty batches', async () => {
+	it('completes after NO_NEW_TRACKS_PASSES consecutive empty batches (spinner always present)', async () => {
 		const calls: string[] = [];
 		const batch = makeBatch([fakeTrack, fakeTrack], 2, false);
 		const emptyBatch = makeBatch([], 2, true);
@@ -204,15 +204,10 @@ describe('collectionPipeline', () => {
 			),
 		];
 
-		// The pipeline stops only when:
-		// - spinner is absent AND
-		// - we reached NO_NEW_TRACKS_PASSES consecutive `noNewCards` batches.
-		// Here the first iteration has tracks, then we need 2 consecutive empty
-		// passes; the spinner is absent on the second empty pass.
+		// Spinner stays present throughout — termination is driven solely by
+		// NO_NEW_TRACKS_PASSES consecutive noNewCards passes (path B).
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls, {
-				isLoadingIndicatorPresentResponses: [true, true, false],
-			}),
+			runWithTestClock(batches, calls),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -222,19 +217,16 @@ describe('collectionPipeline', () => {
 		expect(calls).toContain('CollectionComplete');
 	});
 
-	it('terminates when loading indicator is absent after scrolling', async () => {
+	it('runs one final cycle after loading indicator disappears (path A)', async () => {
 		const calls: string[] = [];
+		// Spinner absent on the very first pass — triggers the final cycle
+		// regardless of passesWithNoNewTracks.
 		const batch1 = makeBatch([], 0, true);
-		const batch2 = makeBatch([], 0, true);
-
-		const batches = [batch1, batch2];
+		const batches = [batch1];
 
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
-				advanceCount: 5,
-				// Keep spinner "present" for the first no-new pass, then "absent"
-				// on the second consecutive no-new pass (passesWithNoNewTracks >= 2).
-				isLoadingIndicatorPresentResponses: [true, false],
+				isLoadingIndicatorPresentResponses: [false],
 			}),
 		);
 
@@ -247,19 +239,38 @@ describe('collectionPipeline', () => {
 		expect(calls).toContain('CollectionComplete');
 	});
 
-	it('completes immediately when DOM is empty (all batches are noNewCards)', async () => {
+	it('captures tracks loaded during the final cycle (path A)', async () => {
+		const calls: string[] = [];
+		// Spinner absent on first pass → final cycle → finds a track.
+		const emptyBatch = makeBatch([], 0, true);
+		const finalBatch = makeBatch([fakeTrack], 1, false);
+
+		const batches = [emptyBatch, finalBatch];
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				isLoadingIndicatorPresentResponses: [false],
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(Completed());
+		expect(calls).toContain('TracksBatch:1');
+		expect(calls).toContain('CollectionComplete');
+	});
+
+	it('completes when DOM is empty after NO_NEW_TRACKS_PASSES passes (path B)', async () => {
 		const calls: string[] = [];
 		const emptyBatch = makeBatch([], 0, true);
 		const batches = Array.from<CollectionBatch>({
 			length: NO_NEW_TRACKS_PASSES,
 		}).fill(emptyBatch);
 
-		// We need 2 consecutive empty passes; spinner absence should happen on
-		// the second pass.
+		// Spinner stays present — termination is driven by the no-new-tracks
+		// heuristic alone (path B).
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls, {
-				isLoadingIndicatorPresentResponses: [true, false],
-			}),
+			runWithTestClock(batches, calls),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -317,7 +328,7 @@ describe('collectionPipeline', () => {
 		);
 	});
 
-	it('sends multiple batches across iterations', async () => {
+	it('sends multiple batches across iterations (path B)', async () => {
 		const calls: string[] = [];
 		const batch1 = makeBatch([fakeTrack], 1, false);
 		const batch2 = makeBatch([fakeTrack, fakeTrack], 3, false);
@@ -331,12 +342,10 @@ describe('collectionPipeline', () => {
 			),
 		];
 
-		// Two initial batches contain tracks, then we need 2 consecutive empty
-		// passes; spinner absence should happen on the second empty pass.
+		// Spinner stays present — pipeline runs until NO_NEW_TRACKS_PASSES
+		// consecutive empty passes, then exits (path B).
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls, {
-				isLoadingIndicatorPresentResponses: [true, true, true, false],
-			}),
+			runWithTestClock(batches, calls),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -354,11 +363,10 @@ describe('collectionPipeline', () => {
 			length: NO_NEW_TRACKS_PASSES,
 		}).fill(emptyBatch);
 
-		// Spinner absence should happen on the second consecutive empty pass.
+		// Spinner stays present — path B terminates after NO_NEW_TRACKS_PASSES
+		// empty passes without ever sending a TracksBatch message.
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls, {
-				isLoadingIndicatorPresentResponses: [true, false],
-			}),
+			runWithTestClock(batches, calls),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -376,16 +384,14 @@ describe('collectionPipeline', () => {
 
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
-				advanceCount: 10,
-				// spinner is present on pass 1, absent on pass 2.
+				advanceCount: 15,
+				// spinner absent on pass 2 → schedules final cycle (pass 3).
 				isLoadingIndicatorPresentResponses: [true, false],
-				// inline error is present initially, clears after 2 clicks.
-				// Call order:
-				//  - iteration 1 initial check: true
-				//  - after retry attempt 1: true
-				//  - after retry attempt 2: false
-				//  - iteration 2 initial check: false
-				isErrorIndicatorPresentResponses: [true, true, false, false],
+				// inline error call order across all three passes:
+				//  pass 1 – initial check: true, retry 1: true, retry 2: false
+				//  pass 2 – initial check: false
+				//  pass 3 (final cycle) – initial check: false
+				isErrorIndicatorPresentResponses: [true, true, false, false, false],
 				clickRetryCalls,
 			}),
 		);
