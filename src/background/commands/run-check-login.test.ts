@@ -1,9 +1,10 @@
-import { Cause, Effect, Exit, Option } from 'effect';
+import { Cause, Exit, Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { runCheckLogin } from '@/background/commands/run-check-login';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
+import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
 
 declare const chrome: typeof globalThis.chrome;
 
@@ -34,7 +35,7 @@ describe('runCheckLogin', () => {
 			expirationDate: 1,
 			hostOnly: false,
 			httpOnly: true,
-			name: '_soundcloud_session',
+			name: 'connect_session',
 			path: '/',
 			sameSite: 'no_restriction',
 			secure: true,
@@ -43,14 +44,14 @@ describe('runCheckLogin', () => {
 			value: 'session',
 		});
 
-		const exit = await Effect.runPromiseExit(runCheckLogin());
+		const exit = await runPromiseExitWithSilentLogger(runCheckLogin());
 		expect(exit).toEqual(Exit.succeed(LoginVerified()));
 	});
 
 	it('fails with LoginRequired when cookie is missing', async () => {
 		getCookieMock.mockResolvedValueOnce(null);
 
-		const exit = await Effect.runPromiseExit(runCheckLogin());
+		const exit = await runPromiseExitWithSilentLogger(runCheckLogin());
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (!Exit.isFailure(exit)) return;

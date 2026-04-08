@@ -1,6 +1,7 @@
-import { Cause, Effect, Exit, Option } from 'effect';
+import { Cause, Exit, Option } from 'effect';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runCreateTab } from '@/background/commands/run-create-tab';
+import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
 import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
 
@@ -36,7 +37,7 @@ describe('runCreateTab', () => {
 			id: 123,
 		});
 
-		const exit = await Effect.runPromiseExit(
+		const exit = await runPromiseExitWithSilentLogger(
 			runCreateTab('https://example.com'),
 		);
 
@@ -53,7 +54,7 @@ describe('runCreateTab', () => {
 	it('fails when chrome.tabs.create rejects', async () => {
 		createTabMock.mockRejectedValueOnce(new Error('boom'));
 
-		const exit = await Effect.runPromiseExit(
+		const exit = await runPromiseExitWithSilentLogger(
 			runCreateTab('https://example.com'),
 		);
 

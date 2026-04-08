@@ -1,22 +1,29 @@
-import { Effect } from 'effect';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runCloseTab } from '@/background/commands/run-close-tab';
-
-declare const chrome: typeof globalThis.chrome;
+import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
 
 describe('runCloseTab', () => {
+	const removeMock = vi.fn<(tabId: number) => Promise<void>>();
+
 	beforeEach(() => {
-		(globalThis as any).chrome = {
-			tabs: {
-				remove: vi.fn(),
+		removeMock.mockReset();
+		removeMock.mockResolvedValue(undefined);
+
+		Object.defineProperty(globalThis, 'chrome', {
+			configurable: true,
+			writable: true,
+			value: {
+				tabs: {
+					remove: removeMock,
+				},
 			},
-		};
+		});
 	});
 
 	it('calls chrome.tabs.remove and succeeds', async () => {
-		const exit = await Effect.runPromiseExit(runCloseTab(123));
+		const exit = await runPromiseExitWithSilentLogger(runCloseTab(123));
 
-		expect(chrome.tabs.remove).toHaveBeenCalledWith(123);
+		expect(removeMock).toHaveBeenCalledWith(123);
 		expect(exit._tag).toBe('Success');
 		if (exit._tag === 'Success') {
 			expect(exit.value).toBeUndefined();

@@ -16,6 +16,7 @@ import {
 	collectionPipeline,
 	type CollectionOutcome,
 } from '@/content/model/collection-pipeline';
+import { silentLoggerLayer } from '@/test/effect-log-test';
 import { Effect, Exit, Fiber, Layer, TestClock, TestContext } from 'effect';
 import { describe, expect, it } from 'vitest';
 
@@ -41,11 +42,16 @@ function makeBatch(
 	};
 }
 
+interface ScanBatchMetrics {
+	scanBatchCalls: number;
+}
+
 function makeDomScannerStub(
 	batches: readonly CollectionBatch[],
 	isLoadingIndicatorPresentResponses?: readonly boolean[],
 	isErrorIndicatorPresentResponses?: readonly boolean[],
 	clickRetryCalls?: string[],
+	scanBatchMetrics?: ScanBatchMetrics,
 ) {
 	let callIndex = 0;
 	let loadingIndicatorCallIndex = 0;
@@ -53,6 +59,9 @@ function makeDomScannerStub(
 	return Layer.succeed(DomScannerTag, {
 		scanBatch: (state: CollectionScanState) =>
 			Effect.sync(() => {
+				if (scanBatchMetrics !== undefined) {
+					scanBatchMetrics.scanBatchCalls += 1;
+				}
 				const entry = batches[callIndex];
 				const batch =
 					entry !== undefined
@@ -116,6 +125,7 @@ function makeTestLayer(
 	isLoadingIndicatorPresentResponses?: readonly boolean[],
 	isErrorIndicatorPresentResponses?: readonly boolean[],
 	clickRetryCalls?: string[],
+	scanBatchMetrics?: ScanBatchMetrics,
 ): Layer.Layer<DomScannerTag | BackgroundSenderTag | ScrollerTag> {
 	return Layer.mergeAll(
 		makeDomScannerStub(
@@ -123,6 +133,7 @@ function makeTestLayer(
 			isLoadingIndicatorPresentResponses,
 			isErrorIndicatorPresentResponses,
 			clickRetryCalls,
+			scanBatchMetrics,
 		),
 		makeBackgroundSenderStub(calls),
 		scrollerStub,
@@ -144,6 +155,7 @@ function runWithTestClock(
 		isLoadingIndicatorPresentResponses?: readonly boolean[];
 		isErrorIndicatorPresentResponses?: readonly boolean[];
 		clickRetryCalls?: string[];
+		scanBatchMetrics?: ScanBatchMetrics;
 	},
 ): Effect.Effect<{
 	fiber: Fiber.RuntimeFiber<CollectionOutcome>;
@@ -156,6 +168,7 @@ function runWithTestClock(
 					opts.isLoadingIndicatorPresentResponses,
 					opts.isErrorIndicatorPresentResponses,
 					opts.clickRetryCalls,
+					opts.scanBatchMetrics,
 				),
 				opts.senderLayer,
 				scrollerStub,
@@ -166,11 +179,14 @@ function runWithTestClock(
 				opts?.isLoadingIndicatorPresentResponses,
 				opts?.isErrorIndicatorPresentResponses,
 				opts?.clickRetryCalls,
+				opts?.scanBatchMetrics,
 			);
+
+	const pipelineLayer = Layer.mergeAll(serviceLayer, silentLoggerLayer);
 
 	return Effect.gen(function* () {
 		const fiber = yield* Effect.fork(
-			collectionPipeline.pipe(Effect.provide(serviceLayer)),
+			collectionPipeline.pipe(Effect.provide(pipelineLayer)),
 		);
 
 		const advanceCount = opts?.advanceCount ?? 20;
@@ -219,6 +235,7 @@ describe('collectionPipeline', () => {
 
 	it('runs one final cycle after loading indicator disappears (path A)', async () => {
 		const calls: string[] = [];
+		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
 		// Spinner absent on the very first pass — triggers the final cycle
 		// regardless of passesWithNoNewTracks.
 		const batch1 = makeBatch([], 0, true);
@@ -227,12 +244,14 @@ describe('collectionPipeline', () => {
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
 				isLoadingIndicatorPresentResponses: [false],
+				scanBatchMetrics,
 			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
 		expect(value).toEqual(Completed());
+		expect(scanBatchMetrics.scanBatchCalls).toBe(2);
 
 		const batchCalls = calls.filter((c) => c.startsWith('TracksBatch'));
 		expect(batchCalls).toHaveLength(0);
@@ -241,6 +260,7 @@ describe('collectionPipeline', () => {
 
 	it('captures tracks loaded during the final cycle (path A)', async () => {
 		const calls: string[] = [];
+		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
 		// Spinner absent on first pass → final cycle → finds a track.
 		const emptyBatch = makeBatch([], 0, true);
 		const finalBatch = makeBatch([fakeTrack], 1, false);
@@ -250,12 +270,14 @@ describe('collectionPipeline', () => {
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
 				isLoadingIndicatorPresentResponses: [false],
+				scanBatchMetrics,
 			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
 		expect(value).toEqual(Completed());
+		expect(scanBatchMetrics.scanBatchCalls).toBe(2);
 		expect(calls).toContain('TracksBatch:1');
 		expect(calls).toContain('CollectionComplete');
 	});

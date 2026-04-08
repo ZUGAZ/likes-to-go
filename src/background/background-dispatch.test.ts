@@ -17,6 +17,7 @@ import {
 	StartCollectionRequest,
 	type GetStateResponse,
 } from '@/common/model/request-message';
+import { silentLoggerLayer } from '@/test/effect-log-test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 function makeStubCommandRunner(
@@ -45,7 +46,7 @@ function makeCheckLoginAwareRunner(
 			return Effect.promise(() =>
 				getCookie({
 					url: 'https://soundcloud.com',
-					name: '_soundcloud_session',
+					name: 'connect_session',
 				}),
 			).pipe(
 				Effect.flatMap((cookie) =>
@@ -77,7 +78,7 @@ describe('background dispatch', () => {
 			expirationDate: 1,
 			hostOnly: false,
 			httpOnly: true,
-			name: '_soundcloud_session',
+			name: 'connect_session',
 			path: '/',
 			sameSite: 'no_restriction',
 			secure: true,
@@ -104,7 +105,11 @@ describe('background dispatch', () => {
 			Ref.make(initialCollectionState),
 		);
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(stateRefLayer, runnerLayer);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
@@ -148,7 +153,11 @@ describe('background dispatch', () => {
 			recordedCommands,
 			getCookieMock,
 		);
-		const testLayer = Layer.mergeAll(stateRefLayer, runnerLayer);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
 
 		const program = handleMessageEffect(
 			GetStateRequest(),
@@ -182,7 +191,11 @@ describe('background dispatch', () => {
 			recordedCommands,
 			getCookieMock,
 		);
-		const testLayer = Layer.mergeAll(stateRefLayer, runnerLayer);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
 
 		const response = await Effect.runPromise(
 			handleMessageEffect(
@@ -209,7 +222,11 @@ describe('background dispatch', () => {
 			Ref.make(initialCollectionState),
 		);
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(stateRefLayer, runnerLayer);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
 
 		const program = handleMessageEffect(
 			StartCollectionRequest(),

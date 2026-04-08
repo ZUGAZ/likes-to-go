@@ -64,7 +64,7 @@ describe('collection-transition', () => {
 				collectingRequested,
 				LoginRequired({
 					message: LOGIN_REQUIRED_MESSAGE,
-					reason: 'Missing _soundcloud_session cookie',
+					reason: 'Missing login cookie',
 				}),
 			);
 
@@ -122,6 +122,39 @@ describe('collection-transition', () => {
 				initialCollectionState,
 			);
 			expect(response.trackCount).toBe(0);
+		});
+
+		it('Idle + LoginRequired transitions to login ErrorState and notifies popup', () => {
+			const result = transition(
+				initialCollectionState,
+				LoginRequired({
+					message: LOGIN_REQUIRED_MESSAGE,
+					reason: 'User nav selector not found in page DOM',
+				}),
+			);
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				message: LOGIN_REQUIRED_MESSAGE,
+			});
+			expect(result.commands).toHaveLength(1);
+			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+		});
+
+		it('CollectingRequested + TabCreated transitions to Collecting and notifies popup', () => {
+			const collectingRequested = transition(
+				initialCollectionState,
+				StartCollection(),
+			).state;
+			const result = transition(collectingRequested, TabCreated({ tabId: 7 }));
+
+			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.state).toMatchObject({
+				_tag: 'Collecting',
+				tabId: 7,
+				tracks: [],
+				skippedTrackCount: 0,
+			});
 		});
 	});
 });

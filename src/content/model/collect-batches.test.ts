@@ -26,6 +26,13 @@ const singleCardHtml = `
 	</li>
 `;
 
+/** Artwork container required for scan overlay (`applyScannedOverlay`); optional for track decode. */
+const artworkBlock = `
+		<div class="playableTile__artwork">
+			<div class="sc-artwork image__full"></div>
+		</div>
+`;
+
 /** Two cards so we can test incremental batch (first batch both, then no new). */
 const twoCardsHtml = `
 	<li class="badgeList__item">
@@ -39,6 +46,28 @@ const twoCardsHtml = `
 	<li class="badgeList__item">
 		<div class="audibleTile">
 			<a class="audibleTile__artworkLink" href="https://soundcloud.com/artist-two/track-b"></a>
+			<a class="playableTile__mainHeading">Track B</a>
+			<a class="playableTile__usernameHeading">Artist Two</a>
+		</div>
+		<span class="playbackTimeline__duration">1:00</span>
+	</li>
+`;
+
+/** Same as twoCardsHtml but includes artwork containers for overlay assertions. */
+const twoCardsWithArtworkHtml = `
+	<li class="badgeList__item">
+		<div class="audibleTile">
+			<a class="audibleTile__artworkLink" href="https://soundcloud.com/artist-one/track-a"></a>
+			${artworkBlock}
+			<a class="playableTile__mainHeading">Track A</a>
+			<a class="playableTile__usernameHeading">Artist One</a>
+		</div>
+		<span class="playbackTimeline__duration">2:30</span>
+	</li>
+	<li class="badgeList__item">
+		<div class="audibleTile">
+			<a class="audibleTile__artworkLink" href="https://soundcloud.com/artist-two/track-b"></a>
+			${artworkBlock}
 			<a class="playableTile__mainHeading">Track B</a>
 			<a class="playableTile__usernameHeading">Artist Two</a>
 		</div>
@@ -139,5 +168,42 @@ describe('collectBatch', () => {
 		expect(state2.previousValidCount).toBe(1);
 		expect(state2.totalParsedCount).toBe(1);
 		expect(state2.totalSkippedCount).toBe(0);
+	});
+
+	it('applies a single heart overlay per scanned card and does not duplicate on rescan', () => {
+		const root = createListRoot(twoCardsWithArtworkHtml);
+		const state0 = initialScanState();
+		const { nextState: state1 } = collectBatch(root, baseUrl, state0);
+
+		const artworks = root.querySelectorAll('.playableTile__artwork');
+		expect(artworks).toHaveLength(2);
+		for (const el of Array.from(artworks)) {
+			expect(el.hasAttribute('data-ltg-scanned')).toBe(true);
+			const overlays = Array.from(el.children).filter(
+				(ch) => ch.textContent === '❤',
+			);
+			expect(overlays).toHaveLength(1);
+		}
+
+		collectBatch(root, baseUrl, state1);
+
+		for (const el of Array.from(
+			root.querySelectorAll('.playableTile__artwork'),
+		)) {
+			const overlays = Array.from(el.children).filter(
+				(ch) => ch.textContent === '❤',
+			);
+			expect(overlays).toHaveLength(1);
+		}
+	});
+
+	it('does not add debug-style outlines on list items (overlay only)', () => {
+		const root = createListRoot(twoCardsWithArtworkHtml);
+		collectBatch(root, baseUrl, initialScanState());
+		for (const li of Array.from(root.querySelectorAll('li.badgeList__item'))) {
+			const o = li.getAttribute('style') ?? '';
+			expect(o).not.toContain('outline');
+			expect(o).not.toContain('border');
+		}
 	});
 });

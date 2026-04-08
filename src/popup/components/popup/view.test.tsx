@@ -8,6 +8,7 @@ vi.mock('solid-transition-group', () => ({
 	),
 }));
 
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { PopupState } from '@/popup/components/popup/model';
 import { PopupView } from '@/popup/components/popup/view';
 
@@ -148,17 +149,28 @@ describe('Popup view', () => {
 		expect(popup.getByText('3 tracks could not be read')).toBeTruthy();
 	});
 
-	it('renders the login-required state', () => {
+	it('renders login-required with lock icon prefix and custom message', () => {
 		const popup = renderPopupView({
 			state: 'login-required',
 			errorMessage: 'Please log in to SoundCloud, then try again.',
 		});
 
 		const alert = popup.getByRole('alert');
+		expect(alert.textContent).toContain('🔐');
 		expect(alert.textContent).toContain(
 			'Please log in to SoundCloud, then try again.',
 		);
 		expect(popup.getByRole('button', { name: 'Try again' })).toBeTruthy();
+	});
+
+	it('renders login-required with default message when errorMessage is undefined', () => {
+		const popup = renderPopupView({
+			state: 'login-required',
+			errorMessage: undefined,
+		});
+
+		const alert = popup.getByRole('alert');
+		expect(alert.textContent).toContain(LOGIN_REQUIRED_MESSAGE);
 	});
 
 	it('renders the error state', () => {

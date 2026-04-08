@@ -4,9 +4,9 @@ import { Effect, Layer, ManagedRuntime } from 'effect';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { GetStateResponse } from '@/common/model/request-message';
 
-import { HeartLoggerLive } from '@/common/infrastructure/logger';
 import { createPopupViewModel } from '@/popup/components/popup/view-model';
 import type { PopupEnv } from '@/popup/runtime/popup-env';
+import { silentLoggerLayer } from '@/test/effect-log-test';
 
 const { stopListeningMock, listenForStateUpdatesMock, triggerStateUpdate } =
 	vi.hoisted(() => {
@@ -58,7 +58,7 @@ vi.mock('@/common/infrastructure/chrome-messaging', () => ({
 }));
 
 const makeTestRuntime = () =>
-	ManagedRuntime.make<PopupEnv, never>(Layer.mergeAll(HeartLoggerLive));
+	ManagedRuntime.make<PopupEnv, never>(Layer.mergeAll(silentLoggerLayer));
 
 describe('Popup viewmodel', () => {
 	beforeEach(() => {
@@ -225,5 +225,39 @@ describe('Popup viewmodel', () => {
 
 		expect(vm.state()).toBe('processing');
 		expect(vm.trackCount()).toBe(3);
+	});
+
+	it('state update with status done maps to done state', async () => {
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		triggerStateUpdate({
+			status: 'done',
+			trackCount: 12,
+			errorMessage: undefined,
+			skippedTrackCount: undefined,
+		});
+
+		expect(vm.state()).toBe('done');
+		expect(vm.trackCount()).toBe(12);
+	});
+
+	it('collecting update propagates skippedTrackCount', async () => {
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		triggerStateUpdate({
+			status: 'collecting',
+			trackCount: 5,
+			errorMessage: undefined,
+			skippedTrackCount: 2,
+		});
+
+		expect(vm.state()).toBe('processing');
+		expect(vm.skippedTrackCount()).toBe(2);
 	});
 });
