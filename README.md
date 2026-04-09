@@ -18,62 +18,90 @@ That's it. Your likes, your file, your hard drive.
 
 ### Chrome Web Store
 
-_Coming soon._
+Coming soon. The listing link will be added here when published.
 
-### Dev mode (sideloading)
+### Dev mode (sideload)
 
-1. Download the latest `.zip` from [Releases](https://github.com/ZUGAZ/likes-to-go/releases)
-2. Unzip it
-3. Open `chrome://extensions/` and enable **Developer mode**
-4. Click **Load unpacked** and select the unzipped folder
+1. Download the latest `.zip` from [Releases](https://github.com/ZUGAZ/likes-to-go/releases).
+2. Unzip it.
+3. Open `chrome://extensions/` and enable **Developer mode**.
+4. Click **Load unpacked** and select the unzipped folder.
 
 ## 🚀 Usage
 
-1. Go to [soundcloud.com/you/likes](https://soundcloud.com/you/likes) (you need to be logged in)
-2. Click the Likes to Go extension icon
-3. Hit **Export** and wait for the magic ☕
+1. Click the Likes to Go toolbar icon.
+2. Click **❤️ Likes to go**.
+3. Wait for collection to complete, then click **💚 Ready to go** to download.
 
-_Screenshots coming soon._
+## Screenshots
 
-## 📄 Output format
+### Initial
 
-Your likes are saved as a JSON file with this structure:
+![Popup initial state](docs/screenshots/popup-initial.svg)
+
+### Processing
+
+![Popup processing state](docs/screenshots/popup-processing.svg)
+
+### Done
+
+![Popup done state](docs/screenshots/popup-done.svg)
+
+## Output format
+
+The export payload currently follows `format_version: 1`:
 
 ```json
 {
 	"format_version": 1,
-	"exported_at": "2026-02-18T12:00:00Z",
+	"exported_at": "2026-04-09T10:00:00.000Z",
 	"source_url": "https://soundcloud.com/you/likes",
-	"user": "username",
-	"track_count": 342,
+	"user": "myusername",
+	"track_count": 2,
 	"tracks": [
 		{
 			"title": "Track Name",
 			"artist": "Artist Name",
-			"user_url": "https://soundcloud.com/artist-name",
 			"url": "https://soundcloud.com/artist/track-name",
-			"artwork_url": "https://i1.sndcdn.com/artworks-...-large.jpg"
+			"artwork_url": "https://i1.sndcdn.com/artworks-example-large.jpg",
+			"user_url": "https://soundcloud.com/artist"
+		},
+		{
+			"title": "Second Track",
+			"artist": "Another Artist",
+			"url": "https://soundcloud.com/another/second-track"
 		}
 	]
 }
 ```
 
-`format_version` allows future schema changes without breaking your tools.
+Field notes:
 
-## 🔒 Privacy
+- `format_version`: schema version for forward compatibility
+- `exported_at`: ISO timestamp when the export is created
+- `source_url`: source likes page URL
+- `user`: SoundCloud username (empty string when not available)
+- `track_count`: number of exported tracks
+- `tracks`: array of exported track records
+  - `title` (string)
+  - `artist` (string)
+  - `url` (string)
+  - `artwork_url` (optional string)
+  - `user_url` (optional string)
 
-- **No data leaves your browser.** Everything runs locally in your Chrome session.
-- **No accounts.** No sign-up, no login, no API keys.
-- **No servers.** Zero network requests to anywhere except SoundCloud itself.
-- **No analytics.** No tracking, no telemetry, no "anonymous usage data."
-- **No audio.** Only metadata (titles, artists, URLs). No audio is accessed or downloaded.
+## Privacy
 
-## ⚖️ License
+- Your data stays in your browser session.
+- No accounts, no sign-up flow, and no external backend.
+- No analytics or telemetry.
+- Only track metadata is exported; audio is never downloaded.
 
-[MIT](LICENSE) -- do whatever you want with it.
+## License
 
-**Disclaimer:** This tool is for personal data backup. You are responsible for your own compliance with SoundCloud's Terms of Use.
+Released under [MIT](LICENSE).
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Check out [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, code standards, and how to get started.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, coding standards, and development workflow.
+
+Disclaimer: This extension is for personal data backup. You are responsible for your own compliance with SoundCloud's Terms of Use.
