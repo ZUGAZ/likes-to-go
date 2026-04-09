@@ -100,6 +100,8 @@ Data is immutable. No classes. Functions and plain objects. Effect handles the s
 
 Strictest config: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noPropertyAccessFromIndexSignature`.
 
+No type assertions in application code (`as`, `as unknown as`, non-null assertions). Prefer narrowing with guards and validated schemas.
+
 ### File naming
 
 kebab-case everything. `track-schema.ts`, `dom-reader.ts`, `popup-state.ts`.
@@ -111,6 +113,14 @@ Prettier with tabs, single quotes, trailing commas. Run `pnpm format` to auto-fi
 ### Linting
 
 ESLint with typescript-eslint (strict type-checked) and eslint-plugin-solid. Run `pnpm lint` to check, `pnpm lint:fix` to auto-fix.
+
+### Validation at boundaries
+
+Treat incoming data as untrusted at boundaries (messages, DOM-reader output, storage, fetch responses, user input). Validate and decode before passing data into model or viewmodel code.
+
+### Tagged errors
+
+Prefer explicit tagged/discriminated error values over ad-hoc thrown errors so failure modes stay typed and testable.
 
 ### Emojis
 
@@ -166,5 +176,5 @@ chore: 🔧 wxt config for dev server
 
 - Semantic versioning: `MAJOR.MINOR.PATCH`
 - Development: `0.x.0` series
-- Automated by [release-please](https://github.com/googleapis/release-please) (GitHub Action)
+- Automated with [release-please](https://github.com/googleapis/release-please) once configured
 - Each release includes a `.zip` for sideloading
