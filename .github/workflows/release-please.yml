@@ -16,8 +16,57 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run release-please
+        id: release
         uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Checkout release tag
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag_name }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Build extension
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: pnpm build
+
+      - name: Create chrome-mv3 release zip
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        id: create_zip
+        run: |
+          VERSION="${TAG_NAME#v}"
+          ZIP_NAME="likes-to-go-browser-extension-${VERSION}.zip"
+          cd .output/chrome-mv3
+          zip -r "../../${ZIP_NAME}" .
+          echo "zip_name=${ZIP_NAME}" >> "${GITHUB_OUTPUT}"
+        env:
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+
+      - name: Upload zip asset
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag_name }}
+          files: ${{ steps.create_zip.outputs.zip_name }}
+          fail_on_unmatched_files: true

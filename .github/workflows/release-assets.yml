@@ -1,8 +1,6 @@
 name: Release Assets
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -20,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}
+          ref: ${{ inputs.tag }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -43,16 +41,17 @@ jobs:
       - name: Create chrome-mv3 release zip
         id: create_zip
         run: |
-          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
+          VERSION="${TAG_NAME#v}"
           ZIP_NAME="likes-to-go-browser-extension-${VERSION}.zip"
           cd .output/chrome-mv3
           zip -r "../../${ZIP_NAME}" .
           echo "zip_name=${ZIP_NAME}" >> "${GITHUB_OUTPUT}"
+        env:
+          TAG_NAME: ${{ inputs.tag }}
 
       - name: Upload zip asset
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}
+          tag_name: ${{ inputs.tag }}
           files: ${{ steps.create_zip.outputs.zip_name }}
           fail_on_unmatched_files: true

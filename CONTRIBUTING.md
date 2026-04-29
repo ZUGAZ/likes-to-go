@@ -193,8 +193,8 @@ Release flow:
 1. Merge conventional-commit PRs into `main`.
 2. Wait for **Release Please** to open/update a release PR.
 3. Review the release PR title/version/changelog and merge it.
-4. Confirm a GitHub Release and tag are created.
-5. Confirm **Release Assets** builds and uploads a zip created from `.output/chrome-mv3/*`.
+4. Confirm **Release Please** creates the GitHub Release, tag, and extension zip asset.
+5. If the zip upload fails, manually run **Release Assets** with the release tag to retry the asset upload.
 
 #### Maintainer verification checklist
 
