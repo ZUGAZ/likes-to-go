@@ -176,5 +176,21 @@ chore: 🔧 wxt config for dev server
 
 - Semantic versioning: `MAJOR.MINOR.PATCH`
 - Development: `0.x.0` series
-- Automated with [release-please](https://github.com/googleapis/release-please) once configured
-- Each release includes a `.zip` for sideloading
+- Automated with [release-please](https://github.com/googleapis/release-please) on `main`
+- `CHANGELOG.md` is maintained by release automation
+- Each GitHub Release should include a `.zip` for sideloading
+
+#### First release and ongoing flow
+
+1. Merge conventional-commit PRs into `main`.
+2. Wait for **Release Please** to open/update a release PR.
+3. Review the release PR title/version/changelog and merge it.
+4. Confirm a GitHub Release and tag are created.
+5. Confirm **Release Assets** builds and uploads a zip created from `.output/chrome-mv3/*`.
+
+#### Maintainer verification checklist
+
+- Release PR is opened and version bump matches commit history.
+- `CHANGELOG.md` updates are present in the release PR.
+- A tag (for example `v0.6.0`) exists after merge.
+- The corresponding GitHub Release includes a downloadable extension zip.
