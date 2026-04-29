@@ -182,6 +182,14 @@ chore: 🔧 wxt config for dev server
 
 #### First release and ongoing flow
 
+Before the first automated release, maintainers must enable GitHub Actions to open pull requests:
+
+1. In repository settings, go to **Actions** -> **General** -> **Workflow permissions**.
+2. Select **Read and write permissions**.
+3. Enable **Allow GitHub Actions to create and approve pull requests**.
+
+Release flow:
+
 1. Merge conventional-commit PRs into `main`.
 2. Wait for **Release Please** to open/update a release PR.
 3. Review the release PR title/version/changelog and merge it.
