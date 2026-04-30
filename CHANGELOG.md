@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v1.0.0...likes-to-go-v1.0.1) (2026-04-30)
+
+
+### Bug Fixes
+
+* 🐛 strip full package prefix from release-please tag for zip name ([6047043](https://github.com/ZUGAZ/likes-to-go/commit/6047043f15091ddab1f91291f48241abb8e56c4f))
+* 🧹 resolve final QA lint warnings ([61cf8c2](https://github.com/ZUGAZ/likes-to-go/commit/61cf8c2537b5269cf59a735cd02c8233edbd29ba))
+
 ## 1.0.0 (2026-04-29)
 
 
