@@ -53,7 +53,7 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         id: create_zip
         run: |
-          VERSION="${TAG_NAME#v}"
+          VERSION="${TAG_NAME#likes-to-go-v}"
           ZIP_NAME="likes-to-go-browser-extension-${VERSION}.zip"
           mv .output/likes-to-go-*-chrome.zip "${ZIP_NAME}"
           echo "zip_name=${ZIP_NAME}" >> "${GITHUB_OUTPUT}"
