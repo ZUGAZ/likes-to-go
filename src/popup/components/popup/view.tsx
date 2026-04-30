@@ -35,7 +35,7 @@ export function PopupView(props: PopupViewProps) {
 							<button
 								type="button"
 								class="rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800 ring-1 ring-rose-200/40"
-								onClick={props.onStart}
+								onClick={() => props.onStart()}
 							>
 								❤️ Likes to go
 							</button>
@@ -61,7 +61,7 @@ export function PopupView(props: PopupViewProps) {
 							<button
 								type="button"
 								class="rounded border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100"
-								onClick={props.onCancel}
+								onClick={() => props.onCancel()}
 							>
 								Cancel order
 							</button>
@@ -84,7 +84,7 @@ export function PopupView(props: PopupViewProps) {
 							<button
 								type="button"
 								class="rounded border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100"
-								onClick={props.onCancel}
+								onClick={() => props.onCancel()}
 							>
 								Cancel order
 							</button>
@@ -96,7 +96,7 @@ export function PopupView(props: PopupViewProps) {
 							<button
 								type="button"
 								class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-								onClick={props.onDownload}
+								onClick={() => props.onDownload()}
 							>
 								💚 Ready to go
 							</button>
