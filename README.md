@@ -33,20 +33,6 @@ Coming soon. The listing link will be added here when published.
 2. Click **❤️ Likes to go**.
 3. Wait for collection to complete, then click **💚 Ready to go** to download.
 
-## Screenshots
-
-### Initial
-
-![Popup initial state](docs/screenshots/popup-initial.svg)
-
-### Processing
-
-![Popup processing state](docs/screenshots/popup-processing.svg)
-
-### Done
-
-![Popup done state](docs/screenshots/popup-done.svg)
-
 ## Output format
 
 The export payload currently follows `format_version: 1`:

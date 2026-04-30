@@ -42,9 +42,3 @@ Likes to Go processes SoundCloud page data locally in the browser to create a us
 - `assets/icons/icon-32.png` (32x32)
 - `assets/icons/icon-48.png` (48x48)
 - `assets/icons/icon-128.png` (128x128, CWS listing icon)
-
-### 📸 Screenshots
-
-- `assets/screenshots/screenshot-01-initial-1280x800.png`
-- `assets/screenshots/screenshot-02-processing-1280x800.png`
-- `assets/screenshots/screenshot-03-done-1280x800.png`
