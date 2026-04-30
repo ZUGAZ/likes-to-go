@@ -96,6 +96,10 @@ Field notes:
 - No analytics or telemetry.
 - Only track metadata is exported; audio is never downloaded.
 
+## Support
+
+Have a question or found a problem while exporting your likes? [Open a GitHub issue](https://github.com/ZUGAZ/likes-to-go/issues/new).
+
 ## License
 
 Released under [MIT](LICENSE).
