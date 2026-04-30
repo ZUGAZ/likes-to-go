@@ -33,16 +33,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build extension
-        run: pnpm build
+      - name: Package extension
+        run: pnpm package
 
-      - name: Create chrome-mv3 release zip
+      - name: Rename release zip
         id: create_zip
         run: |
           VERSION="${TAG_NAME#v}"
           ZIP_NAME="likes-to-go-browser-extension-${VERSION}.zip"
-          cd .output/chrome-mv3
-          zip -r "../../${ZIP_NAME}" .
+          mv .output/likes-to-go-*-chrome.zip "${ZIP_NAME}"
           echo "zip_name=${ZIP_NAME}" >> "${GITHUB_OUTPUT}"
         env:
           TAG_NAME: ${{ inputs.tag }}

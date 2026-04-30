@@ -45,18 +45,17 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         run: pnpm install --frozen-lockfile
 
-      - name: Build extension
+      - name: Package extension
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        run: pnpm build
+        run: pnpm package
 
-      - name: Create chrome-mv3 release zip
+      - name: Rename release zip
         if: ${{ steps.release.outputs.release_created == 'true' }}
         id: create_zip
         run: |
           VERSION="${TAG_NAME#v}"
           ZIP_NAME="likes-to-go-browser-extension-${VERSION}.zip"
-          cd .output/chrome-mv3
-          zip -r "../../${ZIP_NAME}" .
+          mv .output/likes-to-go-*-chrome.zip "${ZIP_NAME}"
           echo "zip_name=${ZIP_NAME}" >> "${GITHUB_OUTPUT}"
         env:
           TAG_NAME: ${{ steps.release.outputs.tag_name }}
