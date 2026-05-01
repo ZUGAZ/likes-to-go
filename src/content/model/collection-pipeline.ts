@@ -128,6 +128,7 @@ function loopStep(
 
 		// If this was already the final cycle, stop now.
 		if (current.isFinalCycle) {
+			yield* Effect.log('final cycle, stopping pipeline');
 			return undefined;
 		}
 
@@ -135,6 +136,7 @@ function loopStep(
 			yield* scanner.isLoadingIndicatorPresent();
 
 		if (!isLoadingIndicatorPresent) {
+			yield* Effect.log('loading indicator is absent, scheduling final cycle');
 			// Loading indicator is absent: schedule one final cycle to capture
 			// any content loaded by the scroll we just performed.
 			return {
@@ -145,6 +147,7 @@ function loopStep(
 		}
 
 		if (passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES) {
+			yield* Effect.log('no new tracks, stopping pipeline');
 			return undefined;
 		}
 
