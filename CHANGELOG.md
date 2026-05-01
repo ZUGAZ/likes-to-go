@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v1.0.1...likes-to-go-v1.1.0) (2026-05-01)
+
+
+### Features
+
+* 🛠️ add logging for pipeline final cycle and loading indicator checks ([d018a8c](https://github.com/ZUGAZ/likes-to-go/commit/d018a8c2cc65cd73182180d53e5dedf9f2431a9a))
+
 ## [1.0.1](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v1.0.0...likes-to-go-v1.0.1) (2026-04-30)
 
 
