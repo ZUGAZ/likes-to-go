@@ -9,6 +9,7 @@ import {
 	runDownloadExport,
 	runSendCancelToTab,
 	runSendStartToTab,
+	runSelectCollectionTab,
 } from '@/background/commands';
 import type { CollectionCommand } from '@/common/model/collection/command';
 import { isCheckLogin } from '@/common/model/collection/commands/check-login';
@@ -16,6 +17,7 @@ import { isCloseTab } from '@/common/model/collection/commands/close-tab';
 import { isCreateTab } from '@/common/model/collection/commands/create-tab';
 import { isDownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
 import { isNotifyPopup } from '@/common/model/collection/commands/notify-popup';
+import { isSelectCollectionTab } from '@/common/model/collection/commands/select-collection-tab';
 import { isSendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
 import { isSendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import { Context, Effect } from 'effect';
@@ -51,6 +53,13 @@ export function runCommand(
 			);
 		} else if (isCheckLogin(cmd)) {
 			yield* runCheckLogin().pipe(
+				Effect.matchEffect({
+					onSuccess: dispatchEffect,
+					onFailure: dispatchEffect,
+				}),
+			);
+		} else if (isSelectCollectionTab(cmd)) {
+			yield* runSelectCollectionTab().pipe(
 				Effect.matchEffect({
 					onSuccess: dispatchEffect,
 					onFailure: dispatchEffect,

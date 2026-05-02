@@ -1,0 +1,20 @@
+import { taggedStruct } from '@/common/model/tagged-struct';
+import { Data, Schema } from 'effect';
+
+export const CollectionTabSelectedSchema = taggedStruct(
+	'CollectionTabSelected',
+	{
+		tabId: Schema.Number,
+		shouldStartImmediately: Schema.Boolean,
+	},
+);
+
+export type CollectionTabSelected = Schema.Schema.Type<
+	typeof CollectionTabSelectedSchema
+>;
+
+export const CollectionTabSelected = Data.tagged<CollectionTabSelected>(
+	'CollectionTabSelected',
+);
+
+export const isCollectionTabSelected = Schema.is(CollectionTabSelectedSchema);

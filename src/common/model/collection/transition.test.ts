@@ -14,6 +14,7 @@ import { LoginVerified } from '@/common/model/collection/events/login-verified';
 import { GetStateRequested } from '@/common/model/collection/events/get-state-requested';
 import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
+import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { TrackSchema } from '@/common/model/track';
 
 function validTrack(
@@ -44,14 +45,14 @@ describe('collection-transition', () => {
 			expect(result.commands[0]).toMatchObject({ _tag: 'CheckLogin' });
 		});
 
-		it('CollectingRequested + LoginVerified emits CreateTab', () => {
+		it('CollectingRequested + LoginVerified emits SelectCollectionTab', () => {
 			const collectingRequested = transition(
 				initialCollectionState,
 				StartCollection(),
 			).state;
 
 			const result = transition(collectingRequested, LoginVerified());
-			expect(result.commands[0]).toMatchObject({ _tag: 'CreateTab' });
+			expect(result.commands[0]).toMatchObject({ _tag: 'SelectCollectionTab' });
 		});
 
 		it('CollectingRequested + LoginRequired transitions to ErrorState', () => {
@@ -148,6 +149,55 @@ describe('collection-transition', () => {
 			).state;
 			const result = transition(collectingRequested, TabCreated({ tabId: 7 }));
 
+			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.state).toMatchObject({
+				_tag: 'Collecting',
+				tabId: 7,
+				tracks: [],
+				skippedTrackCount: 0,
+			});
+		});
+
+		it('CollectingRequested + CollectionTabSelected starts immediately when selected tab is ready', () => {
+			const collectingRequested = transition(
+				initialCollectionState,
+				StartCollection(),
+			).state;
+			const result = transition(
+				collectingRequested,
+				CollectionTabSelected({
+					tabId: 7,
+					shouldStartImmediately: true,
+				}),
+			);
+
+			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.commands[1]).toMatchObject({
+				_tag: 'SendStartToTab',
+				tabId: 7,
+			});
+			expect(result.state).toMatchObject({
+				_tag: 'Collecting',
+				tabId: 7,
+				tracks: [],
+				skippedTrackCount: 0,
+			});
+		});
+
+		it('CollectingRequested + CollectionTabSelected waits for tab completion when selected tab is not ready', () => {
+			const collectingRequested = transition(
+				initialCollectionState,
+				StartCollection(),
+			).state;
+			const result = transition(
+				collectingRequested,
+				CollectionTabSelected({
+					tabId: 7,
+					shouldStartImmediately: false,
+				}),
+			);
+
+			expect(result.commands).toHaveLength(1);
 			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
 			expect(result.state).toMatchObject({
 				_tag: 'Collecting',

@@ -1,13 +1,14 @@
 import type { CollectionCommand } from '@/common/model/collection/command';
 import { CheckLogin } from '@/common/model/collection/commands/check-login';
 import { CloseTab } from '@/common/model/collection/commands/close-tab';
-import { CreateTab } from '@/common/model/collection/commands/create-tab';
 import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
 import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
+import { SelectCollectionTab } from '@/common/model/collection/commands/select-collection-tab';
 import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
 import { SendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import type { CollectionEvent } from '@/common/model/collection/event';
 import { isCancelCollectionEvent } from '@/common/model/collection/events/cancel-collection';
+import { isCollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { isCollectionCompleteEvent } from '@/common/model/collection/events/collection-complete';
 import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
 import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
@@ -38,8 +39,6 @@ import {
 import { Idle, isIdle } from '@/common/model/collection/states/idle';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { Track } from '@/common/model/track';
-
-const LIKES_URL = 'https://soundcloud.com/you/likes';
 
 export interface TransitionResult {
 	state: CollectionState;
@@ -103,6 +102,22 @@ export function transition(
 	}
 
 	if (isCollectingRequested(current)) {
+		if (isCollectionTabSelected(event)) {
+			const newState = Collecting({
+				tabId: event.tabId,
+				tracks: [],
+				skippedTrackCount: 0,
+			});
+			return {
+				state: newState,
+				commands: [
+					NotifyPopup({ state: newState }),
+					...(event.shouldStartImmediately
+						? [SendStartToTab({ tabId: event.tabId })]
+						: []),
+				],
+			};
+		}
 		if (isTabCreated(event)) {
 			const newState = Collecting({
 				tabId: event.tabId,
@@ -124,7 +139,7 @@ export function transition(
 		if (isLoginVerified(event)) {
 			return {
 				state: current,
-				commands: [CreateTab({ url: LIKES_URL })],
+				commands: [SelectCollectionTab()],
 			};
 		}
 		if (isLoginRequired(event)) {

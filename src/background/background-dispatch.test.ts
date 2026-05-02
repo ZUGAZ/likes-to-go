@@ -11,7 +11,7 @@ import { isCollecting } from '@/common/model/collection/states/collecting';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
-import { TabCreated } from '@/common/model/collection/events/tab-created';
+import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import {
 	GetStateRequest,
 	StartCollectionRequest,
@@ -98,7 +98,7 @@ describe('background dispatch', () => {
 		});
 	});
 
-	it('dispatchEffect(StartCollection) emits CheckLogin, then LoginVerified emits CreateTab; TabCreated yields Collecting', async () => {
+	it('dispatchEffect(StartCollection) emits CheckLogin, then LoginVerified selects a tab; CollectionTabSelected yields Collecting', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
 		const stateRefLayer = Layer.effect(
 			StateRefTag,
@@ -114,7 +114,12 @@ describe('background dispatch', () => {
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
 			yield* dispatchEffect(LoginVerified());
-			yield* dispatchEffect(TabCreated({ tabId: 42 }));
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					tabId: 42,
+					shouldStartImmediately: false,
+				}),
+			);
 			const ref = yield* StateRefTag;
 			return yield* Ref.get(ref);
 		}).pipe(Effect.provide(testLayer));
@@ -122,8 +127,8 @@ describe('background dispatch', () => {
 		const state = await Effect.runPromise(program);
 
 		// StartCollection -> [NotifyPopup, CheckLogin]
-		// LoginVerified -> [CreateTab]
-		// TabCreated -> [NotifyPopup]
+		// LoginVerified -> [SelectCollectionTab]
+		// CollectionTabSelected -> [NotifyPopup]
 		// Total: 4
 		expect(recordedCommands.length).toBe(4);
 		expect(recordedCommands[0]).toMatchObject({ _tag: 'NotifyPopup' });
@@ -131,8 +136,7 @@ describe('background dispatch', () => {
 			_tag: 'CheckLogin',
 		});
 		expect(recordedCommands[2]).toMatchObject({
-			_tag: 'CreateTab',
-			url: 'https://soundcloud.com/you/likes',
+			_tag: 'SelectCollectionTab',
 		});
 		expect(recordedCommands[3]).toMatchObject({ _tag: 'NotifyPopup' });
 
@@ -215,7 +219,7 @@ describe('background dispatch', () => {
 		]);
 	});
 
-	it('handleMessageEffect(StartCollectionRequest) dispatches and returns state after runner yields TabCreated', async () => {
+	it('handleMessageEffect(StartCollectionRequest) dispatches and returns state while checking login', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
 		const stateRefLayer = Layer.effect(
 			StateRefTag,
