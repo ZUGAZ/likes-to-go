@@ -1,12 +1,5 @@
 import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
-import {
-	TRACK_CARD,
-	TRACK_LIST_CONTAINER,
-	isLoadingIndicatorPresent,
-	isUserLoggedIn,
-} from '@/common/infrastructure/selectors';
 import { sendToBackgroundEffect } from '@/common/infrastructure/send-to-background';
-import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import {
 	CollectionErrorRequest,
 	LoginRequiredRequest,
@@ -19,78 +12,49 @@ import {
 	type CollectionOutcome,
 	OutcomeError,
 } from '@/content/model/collection-pipeline';
+import {
+	CollectionPageLoginRequired,
+	UnsupportedCollectionPage,
+	detectSupportedCollectionPage,
+} from '@/content/model/page-detection';
 import type { ContentEnv } from '@/content/runtime/content-env';
 import { Effect, Either, Exit, Fiber, Runtime } from 'effect';
-
-const WAIT_FOR_TRACK_LIST_CONTAINER_MS = 15_000;
-
-/**
- * Uses URL as a hint to choose between two failure messages after the DOM
- * gate fails — the decision to stop is always DOM-based, not URL-based.
- */
-function unsupportedPageMessage(): string {
-	const isKnownCollectionPath = /\/you\/(likes|tracks|reposts|playlists)/.test(
-		location.pathname,
-	);
-	return isKnownCollectionPath
-		? 'Could not find your likes list — the page structure may have changed.'
-		: "This SoundCloud page doesn't have a likes list.";
-}
-
-/**
- * Returns true when the container exists but has no track cards and the
- * loading spinner is absent — meaning the list is genuinely empty rather
- * than still loading.
- */
-function isTrackListEmpty(container: Element): boolean {
-	return (
-		container.querySelector(TRACK_CARD) === null &&
-		!isLoadingIndicatorPresent(document)
-	);
-}
 
 export interface ContentScriptCtx {
 	readonly isValid: boolean;
 	readonly onInvalidated: (cb: () => void) => () => void;
 }
 
-function findTrackListContainer(): Element | null {
-	return document.querySelector(TRACK_LIST_CONTAINER);
-}
+type DetectionFailureRequest =
+	| ReturnType<typeof CollectionErrorRequest>
+	| ReturnType<typeof LoginRequiredRequest>;
 
-function waitForTrackListContainer(): Promise<Element> {
-	const currentRoot = findTrackListContainer();
-	if (currentRoot !== null) {
-		return Promise.resolve(currentRoot);
+function pageDetectionErrorToRequest(
+	error: UnsupportedCollectionPage | CollectionPageLoginRequired,
+): DetectionFailureRequest {
+	if (error instanceof CollectionPageLoginRequired) {
+		return LoginRequiredRequest({
+			message: error.message,
+			reason: error.reason,
+		});
 	}
 
-	return new Promise((resolve, reject) => {
-		const observer = new MutationObserver(() => {
-			const root = findTrackListContainer();
-			if (root === null) return;
-
-			observer.disconnect();
-			window.clearTimeout(timeoutId);
-			resolve(root);
-		});
-
-		const timeoutId = window.setTimeout(() => {
-			observer.disconnect();
-			reject(new Error('Track list container did not appear in time'));
-		}, WAIT_FOR_TRACK_LIST_CONTAINER_MS);
-
-		observer.observe(document, {
-			childList: true,
-			subtree: true,
-		});
-
-		const observedRoot = findTrackListContainer();
-		if (observedRoot === null) return;
-
-		observer.disconnect();
-		window.clearTimeout(timeoutId);
-		resolve(observedRoot);
+	return CollectionErrorRequest({
+		message: error.message,
+		reason: error.reason,
 	});
+}
+
+function reportDetectionFailure(
+	request: DetectionFailureRequest,
+): Effect.Effect<CollectionOutcome> {
+	return Effect.log('content page detection failed', request.reason).pipe(
+		Effect.zipRight(sendToBackgroundEffect(request)),
+		Effect.as(OutcomeError({ message: request.message })),
+		Effect.catchAll(() =>
+			Effect.succeed(OutcomeError({ message: request.message })),
+		),
+	);
 }
 
 export function createContentMessageHandler(
@@ -127,60 +91,17 @@ export function createContentMessageHandler(
 			const program = Effect.gen(function* () {
 				yield* Effect.log('StartCollection received');
 
-				const root = yield* Effect.tryPromise({
-					try: waitForTrackListContainer,
-					catch: () =>
-						CollectionErrorRequest({
-							message: unsupportedPageMessage(),
-							reason:
-								'Track list container selector did not match any elements before timeout',
-						}),
-				}).pipe(
-					Effect.tapError((request) =>
-						Effect.log('content track list not found').pipe(
-							Effect.zipRight(sendToBackgroundEffect(request)),
-							Effect.catchAll(() => Effect.void),
-						),
-					),
-					Effect.mapError((request) =>
-						OutcomeError({ message: request.message }),
-					),
-				);
+				const pageDetection = yield* detectSupportedCollectionPage({
+					pageDocument: document,
+				}).pipe(Effect.either);
 
-				if (isTrackListEmpty(root)) {
-					const request = CollectionErrorRequest({
-						message: 'Your likes list is empty.',
-						reason: 'Track list container found but contains no track cards',
-					});
-
-					return yield* Effect.log('content empty likes list').pipe(
-						Effect.zipRight(sendToBackgroundEffect(request)),
-						Effect.as(OutcomeError({ message: request.message })),
-						Effect.catchAll(() =>
-							Effect.succeed(OutcomeError({ message: request.message })),
-						),
-					);
-				}
-
-				if (!isUserLoggedIn(document)) {
-					const request = LoginRequiredRequest({
-						message: LOGIN_REQUIRED_MESSAGE,
-						reason: 'User nav selector not found in page DOM',
-					});
-
-					return yield* Effect.log(
-						'content login check failed: user nav not found',
-					).pipe(
-						Effect.zipRight(sendToBackgroundEffect(request)),
-						Effect.as(OutcomeError({ message: request.message })),
-						Effect.catchAll(() =>
-							Effect.succeed(OutcomeError({ message: request.message })),
-						),
-					);
-				}
-
-				return yield* collectionPipeline.pipe(
-					Effect.provide(makeCollectionLive(root)),
+				return yield* pageDetection.pipe(
+					Either.match({
+						onLeft: (error) =>
+							reportDetectionFailure(pageDetectionErrorToRequest(error)),
+						onRight: (root) =>
+							collectionPipeline.pipe(Effect.provide(makeCollectionLive(root))),
+					}),
 				);
 			}).pipe(Effect.catchAll(Effect.succeed));
 

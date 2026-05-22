@@ -15,8 +15,12 @@ import { GetStateRequested } from '@/common/model/collection/events/get-state-re
 import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
+import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
+import { CollectionError } from '@/common/model/collection/events/collection-error';
 import { CollectionVisibilityPaused } from '@/common/model/collection/events/collection-visibility-paused';
 import { CollectionVisibilityResumed } from '@/common/model/collection/events/collection-visibility-resumed';
+import { CancelCollection } from '@/common/model/collection/events/cancel-collection';
+import { SendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
 import { SourceSelected } from '@/common/model/collection/events/source-selected';
 import { TrackSchema } from '@/common/model/track';
 import { COLLECTION_VISIBILITY_PAUSED_MESSAGE } from '@/common/model/collection/visibility-paused-message';
@@ -31,6 +35,13 @@ function validTrack(
 		url: 'https://soundcloud.com/artist/track',
 		...overrides,
 	});
+}
+
+function makeCollectingState() {
+	return transition(
+		transition(initialCollectionState, StartCollection()).state,
+		CollectionTabSelected({ tabId: 9 }),
+	).state;
 }
 
 describe('collection-transition', () => {
@@ -160,11 +171,8 @@ describe('collection-transition', () => {
 			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
 		});
 
-		it('Collecting + LoginRequired transitions to ErrorState and closes tab', () => {
-			const collecting = transition(
-				transition(initialCollectionState, StartCollection()).state,
-				CollectionTabSelected({ tabId: 9 }),
-			).state;
+		it('Collecting + LoginRequired transitions to ErrorState without closing tab', () => {
+			const collecting = makeCollectingState();
 
 			const result = transition(
 				collecting,
@@ -178,10 +186,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: LOGIN_REQUIRED_MESSAGE,
 			});
-			expect(result.commands.map((c) => c._tag)).toEqual([
-				'CloseTab',
-				'NotifyPopup',
-			]);
+			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
 		});
 
 		it('CollectingRequested + TabCreated transitions to Collecting and notifies popup', () => {
@@ -225,11 +230,65 @@ describe('collection-transition', () => {
 			});
 		});
 
+		it('Collecting + CollectionComplete transitions to Done without closing tab', () => {
+			const collecting = makeCollectingState();
+
+			const result = transition(collecting, CollectionComplete());
+
+			expect(result.state).toMatchObject({ _tag: 'Done' });
+			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+		});
+
+		it('Collecting + CollectionError transitions to ErrorState without closing tab', () => {
+			const collecting = makeCollectingState();
+
+			const result = transition(
+				collecting,
+				CollectionError({
+					message: 'Could not read your likes list',
+					reason: 'selector missing',
+				}),
+			);
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				message: 'Could not read your likes list',
+			});
+			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+		});
+
+		it('Collecting + SendToTabFailed transitions to ErrorState without closing tab', () => {
+			const collecting = makeCollectingState();
+
+			const result = transition(
+				collecting,
+				SendToTabFailed({
+					message: 'Could not open or talk to the likes page',
+					reason: 'Receiving end does not exist',
+				}),
+			);
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				message: 'Could not open or talk to the likes page',
+			});
+			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+		});
+
+		it('Collecting + CancelCollection cancels content without closing tab', () => {
+			const collecting = makeCollectingState();
+
+			const result = transition(collecting, CancelCollection());
+
+			expect(result.state).toMatchObject({ _tag: 'Idle' });
+			expect(result.commands.map((c) => c._tag)).toEqual([
+				'SendCancelToTab',
+				'NotifyPopup',
+			]);
+		});
+
 		it('Collecting + visibility pause transitions to Paused and notifies popup', () => {
-			const collecting = transition(
-				transition(initialCollectionState, StartCollection()).state,
-				CollectionTabSelected({ tabId: 9 }),
-			).state;
+			const collecting = makeCollectingState();
 
 			const result = transition(collecting, CollectionVisibilityPaused());
 			const response = collectionStateToGetStateResponse(result.state);
@@ -242,10 +301,7 @@ describe('collection-transition', () => {
 		});
 
 		it('Paused + visibility resume transitions back to Collecting and notifies popup', () => {
-			const collecting = transition(
-				transition(initialCollectionState, StartCollection()).state,
-				CollectionTabSelected({ tabId: 9 }),
-			).state;
+			const collecting = makeCollectingState();
 			const paused = transition(collecting, CollectionVisibilityPaused()).state;
 
 			const result = transition(paused, CollectionVisibilityResumed());
@@ -258,10 +314,7 @@ describe('collection-transition', () => {
 		});
 
 		it('Paused + TracksBatch keeps paused status and appends tracks', () => {
-			const collecting = transition(
-				transition(initialCollectionState, StartCollection()).state,
-				CollectionTabSelected({ tabId: 9 }),
-			).state;
+			const collecting = makeCollectingState();
 			const paused = transition(collecting, CollectionVisibilityPaused()).state;
 			const tracks = [validTrack({ url: 'https://soundcloud.com/a/paused' })];
 
@@ -275,6 +328,42 @@ describe('collection-transition', () => {
 			expect(response.trackCount).toBe(1);
 			expect(response.skippedTrackCount).toBe(1);
 			expect(response.message).toBe(COLLECTION_VISIBILITY_PAUSED_MESSAGE);
+		});
+
+		it('Paused + CollectionError transitions to ErrorState without closing tab', () => {
+			const paused = transition(
+				makeCollectingState(),
+				CollectionVisibilityPaused(),
+			).state;
+
+			const result = transition(
+				paused,
+				CollectionError({
+					message: 'Could not read your likes list',
+					reason: 'inline error',
+				}),
+			);
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				message: 'Could not read your likes list',
+			});
+			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+		});
+
+		it('Paused + CancelCollection cancels content without closing tab', () => {
+			const paused = transition(
+				makeCollectingState(),
+				CollectionVisibilityPaused(),
+			).state;
+
+			const result = transition(paused, CancelCollection());
+
+			expect(result.state).toMatchObject({ _tag: 'Idle' });
+			expect(result.commands.map((c) => c._tag)).toEqual([
+				'SendCancelToTab',
+				'NotifyPopup',
+			]);
 		});
 	});
 });

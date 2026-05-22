@@ -132,7 +132,7 @@ describe('createContentMessageHandler', () => {
 		expect(isCollectionError(errParsed.right)).toBe(true);
 		if (!isCollectionError(errParsed.right)) return;
 		expect(errParsed.right.message).toBe(
-			"This SoundCloud page doesn't have a likes list.",
+			'Could not find a supported likes list on this page.',
 		);
 		expect(errParsed.right.reason).toContain('selector');
 	});

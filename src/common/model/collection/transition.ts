@@ -1,7 +1,6 @@
 import type { CollectionCommand } from '@/common/model/collection/command';
 import { CheckLogin } from '@/common/model/collection/commands/check-login';
 import { CheckSource } from '@/common/model/collection/commands/check-source';
-import { CloseTab } from '@/common/model/collection/commands/close-tab';
 import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
 import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
 import { SelectCollectionTab } from '@/common/model/collection/commands/select-collection-tab';
@@ -210,20 +209,14 @@ export function transition(
 			const newState = ErrorState({ message: event.message });
 			return {
 				state: newState,
-				commands: [
-					CloseTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isLoginRequired(event)) {
 			const newState = ErrorState({ message: LOGIN_REQUIRED_MESSAGE });
 			return {
 				state: newState,
-				commands: [
-					CloseTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
@@ -232,7 +225,6 @@ export function transition(
 				state: newState,
 				commands: [
 					SendCancelToTab({ tabId: current.tabId }),
-					CloseTab({ tabId: current.tabId }),
 					NotifyPopup({ state: newState }),
 				],
 			};
@@ -241,10 +233,7 @@ export function transition(
 			const newState = ErrorState({ message: event.message });
 			return {
 				state: newState,
-				commands: [
-					CloseTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isDownloadExportEvent(event)) {
@@ -300,20 +289,14 @@ export function transition(
 			const newState = ErrorState({ message: event.message });
 			return {
 				state: newState,
-				commands: [
-					CloseTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isLoginRequired(event)) {
 			const newState = ErrorState({ message: LOGIN_REQUIRED_MESSAGE });
 			return {
 				state: newState,
-				commands: [
-					CloseTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
@@ -322,7 +305,6 @@ export function transition(
 				state: newState,
 				commands: [
 					SendCancelToTab({ tabId: current.tabId }),
-					CloseTab({ tabId: current.tabId }),
 					NotifyPopup({ state: newState }),
 				],
 			};
@@ -331,10 +313,7 @@ export function transition(
 			const newState = ErrorState({ message: event.message });
 			return {
 				state: newState,
-				commands: [
-					CloseTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isDownloadExportEvent(event)) {
