@@ -10,6 +10,7 @@ declare const chrome: typeof globalThis.chrome;
 describe('runSelectCollectionTab', () => {
 	type TestTab = {
 		readonly id?: number;
+		readonly pendingUrl?: string;
 		readonly url?: string;
 		readonly status?: string;
 	};
@@ -56,6 +57,7 @@ describe('runSelectCollectionTab', () => {
 		if (exit._tag === 'Success') {
 			expect(exit.value).toEqual(
 				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
 					tabId: 123,
 				}),
 			);
@@ -78,6 +80,7 @@ describe('runSelectCollectionTab', () => {
 		if (exit._tag === 'Success') {
 			expect(exit.value).toEqual(
 				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
 					tabId: 123,
 				}),
 			);
@@ -108,6 +111,34 @@ describe('runSelectCollectionTab', () => {
 		if (exit._tag === 'Success') {
 			expect(exit.value).toEqual(
 				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/you/likes',
+					tabId: 456,
+				}),
+			);
+		}
+	});
+
+	it('uses pendingUrl when the created tab url is not available yet', async () => {
+		queryTabsMock.mockResolvedValueOnce([
+			{
+				id: 123,
+				url: 'https://example.com',
+				status: 'complete',
+			},
+		]);
+		createTabMock.mockResolvedValueOnce({
+			id: 456,
+			pendingUrl: 'https://soundcloud.com/you/likes',
+			status: 'loading',
+		});
+
+		const exit = await runPromiseExitWithSilentLogger(runSelectCollectionTab());
+
+		expect(exit._tag).toBe('Success');
+		if (exit._tag === 'Success') {
+			expect(exit.value).toEqual(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/you/likes',
 					tabId: 456,
 				}),
 			);
@@ -132,6 +163,33 @@ describe('runSelectCollectionTab', () => {
 			TabCreateFailed({
 				message: 'Could not select the collection tab',
 				reason: 'Selected tab did not have an id',
+			}),
+		);
+	});
+
+	it('fails when the selected tab has no SoundCloud URL', async () => {
+		queryTabsMock.mockResolvedValueOnce([
+			{
+				id: 123,
+				url: 'https://example.com',
+				status: 'complete',
+			},
+		]);
+		createTabMock.mockResolvedValueOnce({
+			id: 456,
+			status: 'loading',
+		});
+
+		const exit = await runPromiseExitWithSilentLogger(runSelectCollectionTab());
+
+		expect(Exit.isFailure(exit)).toBe(true);
+		if (!Exit.isFailure(exit)) return;
+
+		const failure = exit.cause.pipe(Cause.failureOption, Option.getOrUndefined);
+		expect(failure).toEqual(
+			TabCreateFailed({
+				message: 'Could not select the collection tab',
+				reason: 'Selected tab did not have a SoundCloud URL',
 			}),
 		);
 	});

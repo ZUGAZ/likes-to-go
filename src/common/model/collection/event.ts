@@ -17,6 +17,7 @@ import { CollectionTabSelectedSchema } from '@/common/model/collection/events/co
 import { SourceSelectedEventSchema } from '@/common/model/collection/events/source-selected';
 import { CollectionVisibilityPausedEventSchema } from '@/common/model/collection/events/collection-visibility-paused';
 import { CollectionVisibilityResumedEventSchema } from '@/common/model/collection/events/collection-visibility-resumed';
+import { CollectionSourceInvalidatedEventSchema } from '@/common/model/collection/events/collection-source-invalidated';
 
 export const CollectionEventSchema = Schema.Union(
 	StartCollectionEventSchema,
@@ -36,6 +37,7 @@ export const CollectionEventSchema = Schema.Union(
 	SourceSelectedEventSchema,
 	CollectionVisibilityPausedEventSchema,
 	CollectionVisibilityResumedEventSchema,
+	CollectionSourceInvalidatedEventSchema,
 );
 
 export type CollectionEvent = Schema.Schema.Type<typeof CollectionEventSchema>;

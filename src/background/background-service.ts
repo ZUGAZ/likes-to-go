@@ -1,4 +1,5 @@
 import { registerMessageListener } from '@/background/listeners/message-listener';
+import { registerTabNavigationListener } from '@/background/listeners/tab-navigation-listener';
 import { makeBackgroundRuntime } from '@/background/runtime/background-runtime';
 import { Effect } from 'effect';
 
@@ -12,6 +13,7 @@ export function initBackgroundService(): void {
 		Effect.gen(function* () {
 			const runtime = yield* makeBackgroundRuntime();
 			registerMessageListener(runtime);
+			registerTabNavigationListener(runtime);
 			return yield* Effect.never;
 		}),
 	);

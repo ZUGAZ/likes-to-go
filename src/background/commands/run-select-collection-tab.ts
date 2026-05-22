@@ -10,7 +10,7 @@ const LIKES_URL = 'https://soundcloud.com/you/likes';
 function tabIdToSelected(
 	tab: chrome.tabs.Tab,
 ): Effect.Effect<CollectionTabSelected, TabCreateFailed> {
-	return flow(
+	const tabIdEffect = flow(
 		get('id'),
 		Option.fromNullable,
 		Option.match({
@@ -21,9 +21,28 @@ function tabIdToSelected(
 						reason: 'Selected tab did not have an id',
 					}),
 				),
-			onSome: (tabId) => Effect.succeed(CollectionTabSelected({ tabId })),
+			onSome: Effect.succeed,
 		}),
 	)(tab);
+	const sourceUrlEffect = Option.fromNullable(tab.url ?? tab.pendingUrl).pipe(
+		Option.filter(isSoundCloudUrl),
+		Option.match({
+			onNone: () =>
+				Effect.fail(
+					TabCreateFailed({
+						message: 'Could not select the collection tab',
+						reason: 'Selected tab did not have a SoundCloud URL',
+					}),
+				),
+			onSome: Effect.succeed,
+		}),
+	);
+
+	return Effect.gen(function* () {
+		const tabId = yield* tabIdEffect;
+		const sourceUrl = yield* sourceUrlEffect;
+		return CollectionTabSelected({ sourceUrl, tabId });
+	});
 }
 
 export function runSelectCollectionTab(): Effect.Effect<

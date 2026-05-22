@@ -2,9 +2,12 @@ import {
 	dispatchEffect,
 	handleMessageEffect,
 } from '@/background/background-dispatch';
+import { handleCollectionTabNavigationEffect } from '@/background/collection-tab-navigation';
 import { CommandRunnerTag } from '@/background/command-runner';
 import { StateRefTag } from '@/background/state-ref';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
+import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
+import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
 import { SourceSelected } from '@/common/model/collection/events/source-selected';
@@ -153,6 +156,7 @@ describe('background dispatch', () => {
 			yield* dispatchEffect(LoginVerified());
 			yield* dispatchEffect(
 				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
 					tabId: 42,
 				}),
 			);
@@ -183,8 +187,131 @@ describe('background dispatch', () => {
 		expect(isCollecting(state)).toBe(true);
 		if (isCollecting(state)) {
 			expect(state.tabId).toBe(42);
+			expect(state.sourceUrl).toBe('https://soundcloud.com/artist/track');
 			expect(state.tracks).toEqual([]);
 		}
+	});
+
+	it('handleCollectionTabNavigationEffect cancels when the active collection tab navigates away', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const stateRefLayer = Layer.effect(
+			StateRefTag,
+			Ref.make(initialCollectionState),
+		);
+		const runnerLayer = makeStubCommandRunner(recordedCommands);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
+
+		const program = Effect.gen(function* () {
+			yield* dispatchEffect(StartCollection());
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
+					tabId: 42,
+				}),
+			);
+			yield* handleCollectionTabNavigationEffect(42, 'https://example.com');
+			const ref = yield* StateRefTag;
+			return yield* Ref.get(ref);
+		}).pipe(Effect.provide(testLayer));
+
+		const state = await Effect.runPromise(program);
+
+		expect(state).toMatchObject({
+			_tag: 'Error',
+			message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+		});
+		expect(recordedCommands.map((command) => command._tag)).toEqual([
+			'NotifyPopup',
+			'CheckLogin',
+			'NotifyPopup',
+			'SendStartToTab',
+			'SendCancelToTab',
+			'NotifyPopup',
+		]);
+	});
+
+	it('handleCollectionTabNavigationEffect ignores same-url updates and other tabs', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const stateRefLayer = Layer.effect(
+			StateRefTag,
+			Ref.make(initialCollectionState),
+		);
+		const runnerLayer = makeStubCommandRunner(recordedCommands);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
+
+		const program = Effect.gen(function* () {
+			yield* dispatchEffect(StartCollection());
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
+					tabId: 42,
+				}),
+			);
+			yield* handleCollectionTabNavigationEffect(
+				42,
+				'https://soundcloud.com/artist/track',
+			);
+			yield* handleCollectionTabNavigationEffect(43, 'https://example.com');
+			const ref = yield* StateRefTag;
+			return yield* Ref.get(ref);
+		}).pipe(Effect.provide(testLayer));
+
+		const state = await Effect.runPromise(program);
+
+		expect(isCollecting(state)).toBe(true);
+		expect(recordedCommands.map((command) => command._tag)).toEqual([
+			'NotifyPopup',
+			'CheckLogin',
+			'NotifyPopup',
+			'SendStartToTab',
+		]);
+	});
+
+	it('handleCollectionTabNavigationEffect ignores navigation after normal completion', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const stateRefLayer = Layer.effect(
+			StateRefTag,
+			Ref.make(initialCollectionState),
+		);
+		const runnerLayer = makeStubCommandRunner(recordedCommands);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
+
+		const program = Effect.gen(function* () {
+			yield* dispatchEffect(StartCollection());
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
+					tabId: 42,
+				}),
+			);
+			yield* dispatchEffect(CollectionComplete());
+			yield* handleCollectionTabNavigationEffect(42, 'https://example.com');
+			const ref = yield* StateRefTag;
+			return yield* Ref.get(ref);
+		}).pipe(Effect.provide(testLayer));
+
+		const state = await Effect.runPromise(program);
+
+		expect(state).toMatchObject({ _tag: 'Done' });
+		expect(recordedCommands.map((command) => command._tag)).toEqual([
+			'NotifyPopup',
+			'CheckLogin',
+			'NotifyPopup',
+			'SendStartToTab',
+			'NotifyPopup',
+		]);
 	});
 
 	it('handleMessageEffect(GetStateRequest) returns idle state when ref is Idle', async () => {

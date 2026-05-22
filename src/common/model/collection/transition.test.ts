@@ -22,6 +22,10 @@ import { CollectionVisibilityResumed } from '@/common/model/collection/events/co
 import { CancelCollection } from '@/common/model/collection/events/cancel-collection';
 import { SendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
 import { SourceSelected } from '@/common/model/collection/events/source-selected';
+import {
+	COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+	CollectionSourceInvalidated,
+} from '@/common/model/collection/events/collection-source-invalidated';
 import { TrackSchema } from '@/common/model/track';
 import { COLLECTION_VISIBILITY_PAUSED_MESSAGE } from '@/common/model/collection/visibility-paused-message';
 import { isPaused } from '@/common/model/collection/states/paused';
@@ -40,7 +44,10 @@ function validTrack(
 function makeCollectingState() {
 	return transition(
 		transition(initialCollectionState, StartCollection()).state,
-		CollectionTabSelected({ tabId: 9 }),
+		CollectionTabSelected({
+			sourceUrl: 'https://soundcloud.com/artist/track',
+			tabId: 9,
+		}),
 	).state;
 }
 
@@ -213,6 +220,7 @@ describe('collection-transition', () => {
 			const result = transition(
 				collectingRequested,
 				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
 					tabId: 7,
 				}),
 			);
@@ -224,6 +232,7 @@ describe('collection-transition', () => {
 			});
 			expect(result.state).toMatchObject({
 				_tag: 'Collecting',
+				sourceUrl: 'https://soundcloud.com/artist/track',
 				tabId: 7,
 				tracks: [],
 				skippedTrackCount: 0,
@@ -255,6 +264,31 @@ describe('collection-transition', () => {
 				message: 'Could not read your likes list',
 			});
 			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+		});
+
+		it('Collecting + CollectionSourceInvalidated transitions to ErrorState and cancels content without closing tab', () => {
+			const collecting = makeCollectingState();
+
+			const result = transition(
+				collecting,
+				CollectionSourceInvalidated({
+					message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+					navigatedUrl: 'https://example.com',
+					reason:
+						'Collection tab navigated from https://soundcloud.com/artist/track to https://example.com',
+					selectedUrl: 'https://soundcloud.com/artist/track',
+					tabId: 9,
+				}),
+			);
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+			});
+			expect(result.commands.map((c) => c._tag)).toEqual([
+				'SendCancelToTab',
+				'NotifyPopup',
+			]);
 		});
 
 		it('Collecting + SendToTabFailed transitions to ErrorState without closing tab', () => {
@@ -349,6 +383,34 @@ describe('collection-transition', () => {
 				message: 'Could not read your likes list',
 			});
 			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+		});
+
+		it('Paused + CollectionSourceInvalidated transitions to ErrorState and cancels content without closing tab', () => {
+			const paused = transition(
+				makeCollectingState(),
+				CollectionVisibilityPaused(),
+			).state;
+
+			const result = transition(
+				paused,
+				CollectionSourceInvalidated({
+					message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+					navigatedUrl: 'https://example.com',
+					reason:
+						'Collection tab navigated from https://soundcloud.com/artist/track to https://example.com',
+					selectedUrl: 'https://soundcloud.com/artist/track',
+					tabId: 9,
+				}),
+			);
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+			});
+			expect(result.commands.map((c) => c._tag)).toEqual([
+				'SendCancelToTab',
+				'NotifyPopup',
+			]);
 		});
 
 		it('Paused + CancelCollection cancels content without closing tab', () => {

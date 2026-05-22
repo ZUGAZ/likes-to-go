@@ -4,6 +4,7 @@ import { Data, Schema } from 'effect';
 export const CollectionTabSelectedSchema = taggedStruct(
 	'CollectionTabSelected',
 	{
+		sourceUrl: Schema.String,
 		tabId: Schema.Number,
 	},
 );

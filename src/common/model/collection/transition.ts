@@ -12,6 +12,7 @@ import { isCollectionCompleteEvent } from '@/common/model/collection/events/coll
 import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
 import { isCollectionVisibilityPausedEvent } from '@/common/model/collection/events/collection-visibility-paused';
 import { isCollectionVisibilityResumedEvent } from '@/common/model/collection/events/collection-visibility-resumed';
+import { isCollectionSourceInvalidatedEvent } from '@/common/model/collection/events/collection-source-invalidated';
 import { isCollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
 import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
@@ -114,6 +115,7 @@ export function transition(
 	if (isCollectingRequested(current)) {
 		if (isCollectionTabSelected(event)) {
 			const newState = Collecting({
+				sourceUrl: event.sourceUrl,
 				tabId: event.tabId,
 				tracks: [],
 				skippedTrackCount: 0,
@@ -128,6 +130,7 @@ export function transition(
 		}
 		if (isTabCreated(event)) {
 			const newState = Collecting({
+				sourceUrl: 'https://soundcloud.com/you/likes',
 				tabId: event.tabId,
 				tracks: [],
 				skippedTrackCount: 0,
@@ -172,6 +175,7 @@ export function transition(
 	if (isCollecting(current)) {
 		if (isTracksBatchEvent(event)) {
 			const newState = Collecting({
+				sourceUrl: current.sourceUrl,
 				tabId: current.tabId,
 				tracks: appendTracksDeduped(current.tracks, event.tracks),
 				skippedTrackCount: current.skippedTrackCount + event.skippedTrackCount,
@@ -193,6 +197,7 @@ export function transition(
 		}
 		if (isCollectionVisibilityPausedEvent(event)) {
 			const newState = Paused({
+				sourceUrl: current.sourceUrl,
 				tabId: current.tabId,
 				tracks: current.tracks,
 				skippedTrackCount: current.skippedTrackCount,
@@ -210,6 +215,19 @@ export function transition(
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isCollectionSourceInvalidatedEvent(event)) {
+			if (event.tabId !== current.tabId)
+				return { state: current, commands: [] };
+
+			const newState = ErrorState({ message: event.message });
+			return {
+				state: newState,
+				commands: [
+					SendCancelToTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		if (isLoginRequired(event)) {
@@ -252,6 +270,7 @@ export function transition(
 	if (isPaused(current)) {
 		if (isTracksBatchEvent(event)) {
 			const newState = Paused({
+				sourceUrl: current.sourceUrl,
 				tabId: current.tabId,
 				tracks: appendTracksDeduped(current.tracks, event.tracks),
 				skippedTrackCount: current.skippedTrackCount + event.skippedTrackCount,
@@ -263,6 +282,7 @@ export function transition(
 		}
 		if (isCollectionVisibilityResumedEvent(event)) {
 			const newState = Collecting({
+				sourceUrl: current.sourceUrl,
 				tabId: current.tabId,
 				tracks: current.tracks,
 				skippedTrackCount: current.skippedTrackCount,
@@ -290,6 +310,19 @@ export function transition(
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isCollectionSourceInvalidatedEvent(event)) {
+			if (event.tabId !== current.tabId)
+				return { state: current, commands: [] };
+
+			const newState = ErrorState({ message: event.message });
+			return {
+				state: newState,
+				commands: [
+					SendCancelToTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
 			};
 		}
 		if (isLoginRequired(event)) {

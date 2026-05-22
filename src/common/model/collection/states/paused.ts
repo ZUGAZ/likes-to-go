@@ -3,6 +3,7 @@ import { TrackSchema } from '@/common/model/track';
 import { Data, Schema } from 'effect';
 
 export const PausedStateSchema = taggedStruct('Paused', {
+	sourceUrl: Schema.String,
 	tabId: Schema.Number,
 	tracks: Schema.Array(TrackSchema),
 	skippedTrackCount: Schema.Number,
