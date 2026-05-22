@@ -5,7 +5,6 @@ export const CollectionTabSelectedSchema = taggedStruct(
 	'CollectionTabSelected',
 	{
 		tabId: Schema.Number,
-		shouldStartImmediately: Schema.Boolean,
 	},
 );
 

@@ -20,7 +20,6 @@ import { isLoginVerified } from '@/common/model/collection/events/login-verified
 import { isSendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
 import { isSourceSelected } from '@/common/model/collection/events/source-selected';
 import { isStartCollectionEvent } from '@/common/model/collection/events/start-collection';
-import { isTabComplete } from '@/common/model/collection/events/tab-complete';
 import { isTabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
 import { isTabCreated } from '@/common/model/collection/events/tab-created';
 import { isTracksBatchEvent } from '@/common/model/collection/events/tracks-batch';
@@ -121,9 +120,7 @@ export function transition(
 				state: newState,
 				commands: [
 					NotifyPopup({ state: newState }),
-					...(event.shouldStartImmediately
-						? [SendStartToTab({ tabId: event.tabId })]
-						: []),
+					SendStartToTab({ tabId: event.tabId }),
 				],
 			};
 		}
@@ -211,12 +208,6 @@ export function transition(
 					CloseTab({ tabId: current.tabId }),
 					NotifyPopup({ state: newState }),
 				],
-			};
-		}
-		if (isTabComplete(event) && event.tabId === current.tabId) {
-			return {
-				state: current,
-				commands: [SendStartToTab({ tabId: current.tabId })],
 			};
 		}
 		if (isSendToTabFailed(event)) {

@@ -13,7 +13,7 @@ pnpm lint-staged
 
 # 3. Run ESLint on staged JS/TS files (lint-staged already ran Prettier)
 echo "Running ESLint on staged JS/TS files..."
-mapfile -t staged_files < <(git diff --cached --name-only)
+mapfile -t staged_files < <(git diff --cached --name-only --diff-filter=ACMR)
 
 lint_files=()
 for file in "${staged_files[@]}"; do

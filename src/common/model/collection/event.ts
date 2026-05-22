@@ -8,7 +8,6 @@ import { CollectionCompleteEventSchema } from '@/common/model/collection/events/
 import { CollectionErrorEventSchema } from '@/common/model/collection/events/collection-error';
 import { CancelCollectionEventSchema } from '@/common/model/collection/events/cancel-collection';
 import { DownloadExportEventSchema } from '@/common/model/collection/events/download-export-event';
-import { TabCompleteSchema } from '@/common/model/collection/events/tab-complete';
 import { SendToTabFailedSchema } from '@/common/model/collection/events/send-to-tab-failed';
 import { DownloadFailedSchema } from '@/common/model/collection/events/download-failed';
 import { LoginVerifiedEventSchema } from '@/common/model/collection/events/login-verified';
@@ -26,7 +25,6 @@ export const CollectionEventSchema = Schema.Union(
 	CollectionErrorEventSchema,
 	CancelCollectionEventSchema,
 	DownloadExportEventSchema,
-	TabCompleteSchema,
 	SendToTabFailedSchema,
 	DownloadFailedSchema,
 	LoginVerifiedEventSchema,

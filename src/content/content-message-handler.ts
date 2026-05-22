@@ -15,13 +15,55 @@ import { makeCollectionLive } from '@/content/infrastructure/collection-services
 import {
 	collectionPipeline,
 	type CollectionOutcome,
+	OutcomeError,
 } from '@/content/model/collection-pipeline';
 import type { ContentEnv } from '@/content/runtime/content-env';
 import { Effect, Either, Exit, Fiber, Runtime } from 'effect';
 
+const WAIT_FOR_TRACK_LIST_CONTAINER_MS = 15_000;
+
 export interface ContentScriptCtx {
 	readonly isValid: boolean;
 	readonly onInvalidated: (cb: () => void) => () => void;
+}
+
+function findTrackListContainer(): Element | null {
+	return document.querySelector(TRACK_LIST_CONTAINER);
+}
+
+function waitForTrackListContainer(): Promise<Element> {
+	const currentRoot = findTrackListContainer();
+	if (currentRoot !== null) {
+		return Promise.resolve(currentRoot);
+	}
+
+	return new Promise((resolve, reject) => {
+		const observer = new MutationObserver(() => {
+			const root = findTrackListContainer();
+			if (root === null) return;
+
+			observer.disconnect();
+			window.clearTimeout(timeoutId);
+			resolve(root);
+		});
+
+		const timeoutId = window.setTimeout(() => {
+			observer.disconnect();
+			reject(new Error('Track list container did not appear in time'));
+		}, WAIT_FOR_TRACK_LIST_CONTAINER_MS);
+
+		observer.observe(document, {
+			childList: true,
+			subtree: true,
+		});
+
+		const observedRoot = findTrackListContainer();
+		if (observedRoot === null) return;
+
+		observer.disconnect();
+		window.clearTimeout(timeoutId);
+		resolve(observedRoot);
+	});
 }
 
 export function createContentMessageHandler(
@@ -53,49 +95,54 @@ export function createContentMessageHandler(
 		const msg = parsed.right;
 
 		if (isStartCollection(msg)) {
-			const logStart = Effect.log('StartCollection received');
-
 			interuptFiber();
 
-			const root = document.querySelector(TRACK_LIST_CONTAINER);
-			if (root === null) {
-				const program = Effect.zipRight(
-					Effect.log('content track list not found'),
-					sendToBackgroundEffect(
+			const program = Effect.gen(function* () {
+				yield* Effect.log('StartCollection received');
+
+				const root = yield* Effect.tryPromise({
+					try: waitForTrackListContainer,
+					catch: () =>
 						CollectionErrorRequest({
 							message: 'Track list not found on page',
 							reason:
-								'Track list container selector did not match any elements',
+								'Track list container selector did not match any elements before timeout',
 						}),
+				}).pipe(
+					Effect.tapError((request) =>
+						Effect.log('content track list not found').pipe(
+							Effect.zipRight(sendToBackgroundEffect(request)),
+							Effect.catchAll(() => Effect.void),
+						),
+					),
+					Effect.mapError((request) =>
+						OutcomeError({ message: request.message }),
 					),
 				);
 
-				void Runtime.runPromise(runtime)(program).then(() => sendResponse());
-				return true;
-			}
+				if (!isUserLoggedIn(document)) {
+					const request = LoginRequiredRequest({
+						message: LOGIN_REQUIRED_MESSAGE,
+						reason: 'User nav selector not found in page DOM',
+					});
 
-			if (!isUserLoggedIn(document)) {
-				const program = Effect.zipRight(
-					Effect.log('content login check failed: user nav not found'),
-					sendToBackgroundEffect(
-						LoginRequiredRequest({
-							message: LOGIN_REQUIRED_MESSAGE,
-							reason: 'User nav selector not found in page DOM',
-						}),
-					),
+					return yield* Effect.log(
+						'content login check failed: user nav not found',
+					).pipe(
+						Effect.zipRight(sendToBackgroundEffect(request)),
+						Effect.as(OutcomeError({ message: request.message })),
+						Effect.catchAll(() =>
+							Effect.succeed(OutcomeError({ message: request.message })),
+						),
+					);
+				}
+
+				return yield* collectionPipeline.pipe(
+					Effect.provide(makeCollectionLive(root)),
 				);
+			}).pipe(Effect.catchAll(Effect.succeed));
 
-				void Runtime.runPromise(runtime)(program).then(() => sendResponse());
-				return true;
-			}
-
-			const pipeline = collectionPipeline.pipe(
-				Effect.provide(makeCollectionLive(root)),
-			);
-
-			fiber = Runtime.runFork(runtime)(
-				logStart.pipe(Effect.zipRight(pipeline)),
-			);
+			fiber = Runtime.runFork(runtime)(program);
 
 			void Runtime.runPromise(runtime)(
 				Fiber.await(fiber).pipe(

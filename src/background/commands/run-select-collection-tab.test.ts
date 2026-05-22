@@ -37,12 +37,11 @@ describe('runSelectCollectionTab', () => {
 		});
 	});
 
-	it('selects the active SoundCloud tab when it is loaded', async () => {
+	it('selects the active SoundCloud tab', async () => {
 		queryTabsMock.mockResolvedValueOnce([
 			{
 				id: 123,
 				url: 'https://soundcloud.com/artist/track',
-				status: 'complete',
 			},
 		]);
 
@@ -58,13 +57,12 @@ describe('runSelectCollectionTab', () => {
 			expect(exit.value).toEqual(
 				CollectionTabSelected({
 					tabId: 123,
-					shouldStartImmediately: true,
 				}),
 			);
 		}
 	});
 
-	it('selects the active SoundCloud tab without requiring a likes URL', async () => {
+	it('selects the active SoundCloud tab without checking tab load status', async () => {
 		queryTabsMock.mockResolvedValueOnce([
 			{
 				id: 123,
@@ -81,7 +79,6 @@ describe('runSelectCollectionTab', () => {
 			expect(exit.value).toEqual(
 				CollectionTabSelected({
 					tabId: 123,
-					shouldStartImmediately: false,
 				}),
 			);
 		}
@@ -112,7 +109,6 @@ describe('runSelectCollectionTab', () => {
 			expect(exit.value).toEqual(
 				CollectionTabSelected({
 					tabId: 456,
-					shouldStartImmediately: false,
 				}),
 			);
 		}

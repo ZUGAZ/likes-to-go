@@ -53,6 +53,7 @@ describe('createContentMessageHandler', () => {
 	});
 
 	afterEach(() => {
+		vi.useRealTimers();
 		document.documentElement.innerHTML = '';
 	});
 
@@ -104,7 +105,8 @@ describe('createContentMessageHandler', () => {
 		);
 	});
 
-	it('sends CollectionErrorRequest when track list container is missing', async () => {
+	it('sends CollectionErrorRequest when track list container does not appear before timeout', async () => {
+		vi.useFakeTimers();
 		document.body.innerHTML = '<div>No list</div>';
 
 		const handler = createContentMessageHandler(runtime, ctx);
@@ -117,6 +119,9 @@ describe('createContentMessageHandler', () => {
 		);
 
 		expect(handled).toBe(true);
+		expect(sendResponse).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(15_000);
 		await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledTimes(1));
 
 		expect(sendMessageMock).toHaveBeenCalledTimes(1);

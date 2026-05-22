@@ -7,15 +7,9 @@ import { get } from 'effect/Struct';
 
 const LIKES_URL = 'https://soundcloud.com/you/likes';
 
-function isReadyToStart(tab: chrome.tabs.Tab): boolean {
-	return tab.status === 'complete';
-}
-
 function tabIdToSelected(
-	shouldStartImmediately: boolean,
-): (
 	tab: chrome.tabs.Tab,
-) => Effect.Effect<CollectionTabSelected, TabCreateFailed> {
+): Effect.Effect<CollectionTabSelected, TabCreateFailed> {
 	return flow(
 		get('id'),
 		Option.fromNullable,
@@ -27,12 +21,9 @@ function tabIdToSelected(
 						reason: 'Selected tab did not have an id',
 					}),
 				),
-			onSome: (tabId) =>
-				Effect.succeed(
-					CollectionTabSelected({ tabId, shouldStartImmediately }),
-				),
+			onSome: (tabId) => Effect.succeed(CollectionTabSelected({ tabId })),
 		}),
-	);
+	)(tab);
 }
 
 export function runSelectCollectionTab(): Effect.Effect<
@@ -67,10 +58,10 @@ export function runSelectCollectionTab(): Effect.Effect<
 		const activeTab = activeTabs[0];
 
 		if (activeTab !== undefined && isSoundCloudUrl(activeTab.url)) {
-			return yield* tabIdToSelected(isReadyToStart(activeTab))(activeTab);
+			return yield* tabIdToSelected(activeTab);
 		}
 
 		const createdTab = yield* createLikesTabEffect;
-		return yield* tabIdToSelected(false)(createdTab);
+		return yield* tabIdToSelected(createdTab);
 	}).pipe(Effect.withLogSpan('runSelectCollectionTab'));
 }

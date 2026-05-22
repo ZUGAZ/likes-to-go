@@ -154,7 +154,6 @@ describe('background dispatch', () => {
 			yield* dispatchEffect(
 				CollectionTabSelected({
 					tabId: 42,
-					shouldStartImmediately: false,
 				}),
 			);
 			const ref = yield* StateRefTag;
@@ -165,9 +164,9 @@ describe('background dispatch', () => {
 
 		// StartCollection -> [NotifyPopup, CheckLogin]
 		// LoginVerified -> [SelectCollectionTab]
-		// CollectionTabSelected -> [NotifyPopup]
-		// Total: 4
-		expect(recordedCommands.length).toBe(4);
+		// CollectionTabSelected -> [NotifyPopup, SendStartToTab]
+		// Total: 5
+		expect(recordedCommands.length).toBe(5);
 		expect(recordedCommands[0]).toMatchObject({ _tag: 'NotifyPopup' });
 		expect(recordedCommands[1]).toMatchObject({
 			_tag: 'CheckLogin',
@@ -176,6 +175,10 @@ describe('background dispatch', () => {
 			_tag: 'SelectCollectionTab',
 		});
 		expect(recordedCommands[3]).toMatchObject({ _tag: 'NotifyPopup' });
+		expect(recordedCommands[4]).toMatchObject({
+			_tag: 'SendStartToTab',
+			tabId: 42,
+		});
 
 		expect(isCollecting(state)).toBe(true);
 		if (isCollecting(state)) {

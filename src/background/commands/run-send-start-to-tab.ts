@@ -4,6 +4,15 @@ import { SendToTabFailed } from '@/common/model/collection/events/send-to-tab-fa
 import { StartCollectionRequest } from '@/common/model/request-message';
 import { Effect } from 'effect';
 
+const SEND_START_RETRY_DELAYS_MS: readonly number[] = [200, 400, 800, 1600];
+
+function isMissingContentScriptReceiver(error: SendToTabFailed): boolean {
+	return (
+		error.reason.includes('Receiving end does not exist') ||
+		error.reason.includes('Could not establish connection')
+	);
+}
+
 export function runSendStartToTab(
 	tabId: number,
 ): Effect.Effect<void, SendToTabFailed> {
@@ -26,9 +35,29 @@ export function runSendStartToTab(
 		),
 	});
 
+	const sendWithRetry = (
+		delaysMs: readonly number[],
+	): Effect.Effect<void, SendToTabFailed> =>
+		sendEffect.pipe(
+			Effect.catchAll((error) => {
+				const [delayMs, ...remainingDelaysMs] = delaysMs;
+				if (!isMissingContentScriptReceiver(error) || delayMs === undefined) {
+					return Effect.fail(error);
+				}
+
+				return Effect.log('background SendStartToTab retry', {
+					tabId,
+					delayMs,
+				}).pipe(
+					Effect.zipRight(Effect.sleep(delayMs)),
+					Effect.zipRight(sendWithRetry(remainingDelaysMs)),
+				);
+			}),
+		);
+
 	return Effect.gen(function* () {
 		yield* Effect.log('background SendStartToTab', tabId);
 		yield* focusTabEffect;
-		yield* sendEffect;
+		yield* sendWithRetry(SEND_START_RETRY_DELAYS_MS);
 	}).pipe(Effect.withLogSpan('runSendStartToTab'));
 }
