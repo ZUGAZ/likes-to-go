@@ -85,6 +85,7 @@ describe('Popup viewmodel', () => {
 		const vm = createPopupViewModel();
 
 		expect(vm.state()).toBe('initializing');
+		expect(vm.source()).toBe('likes-page');
 	});
 
 	it('syncState sets initial state from background', async () => {
@@ -96,6 +97,25 @@ describe('Popup viewmodel', () => {
 		expect(vm.state()).toBe('initial');
 		expect(vm.trackCount()).toBe(0);
 		expect(vm.errorMessage()).toBeUndefined();
+		expect(vm.source()).toBe('likes-page');
+	});
+
+	it('syncState updates source from background', async () => {
+		getStateMock.mockImplementationOnce(() =>
+			Effect.succeed({
+				status: 'idle',
+				trackCount: 0,
+				errorMessage: undefined,
+				source: 'active-soundcloud-tab',
+			}),
+		);
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		expect(vm.state()).toBe('initial');
+		expect(vm.source()).toBe('active-soundcloud-tab');
 	});
 
 	it('syncState sets login-required error when cookie is missing', async () => {
@@ -175,6 +195,7 @@ describe('Popup viewmodel', () => {
 					status: 'idle',
 					trackCount: 0,
 					errorMessage: undefined,
+					source: 'active-soundcloud-tab',
 				}),
 			);
 		const runtime = makeTestRuntime();
@@ -187,6 +208,7 @@ describe('Popup viewmodel', () => {
 
 		expect(vm.state()).toBe('initial');
 		expect(vm.errorMessage()).toBeUndefined();
+		expect(vm.source()).toBe('active-soundcloud-tab');
 	});
 
 	it('startCollection moves to loading state', async () => {

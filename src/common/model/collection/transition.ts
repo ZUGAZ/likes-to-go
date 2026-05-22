@@ -1,5 +1,6 @@
 import type { CollectionCommand } from '@/common/model/collection/command';
 import { CheckLogin } from '@/common/model/collection/commands/check-login';
+import { CheckSource } from '@/common/model/collection/commands/check-source';
 import { CloseTab } from '@/common/model/collection/commands/close-tab';
 import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
 import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
@@ -8,20 +9,22 @@ import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-
 import { SendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import type { CollectionEvent } from '@/common/model/collection/event';
 import { isCancelCollectionEvent } from '@/common/model/collection/events/cancel-collection';
-import { isCollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { isCollectionCompleteEvent } from '@/common/model/collection/events/collection-complete';
 import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
+import { isCollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
 import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
 import { isGetStateRequested } from '@/common/model/collection/events/get-state-requested';
 import { isLoginRequired } from '@/common/model/collection/events/login-required';
 import { isLoginVerified } from '@/common/model/collection/events/login-verified';
 import { isSendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
+import { isSourceSelected } from '@/common/model/collection/events/source-selected';
 import { isStartCollectionEvent } from '@/common/model/collection/events/start-collection';
 import { isTabComplete } from '@/common/model/collection/events/tab-complete';
 import { isTabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
 import { isTabCreated } from '@/common/model/collection/events/tab-created';
 import { isTracksBatchEvent } from '@/common/model/collection/events/tracks-batch';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { CollectionState } from '@/common/model/collection/state';
 import {
 	Collecting,
@@ -37,7 +40,6 @@ import {
 	isErrorState,
 } from '@/common/model/collection/states/error-state';
 import { Idle, isIdle } from '@/common/model/collection/states/idle';
-import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { Track } from '@/common/model/track';
 
 export interface TransitionResult {
@@ -69,7 +71,13 @@ export function transition(
 		if (isGetStateRequested(event)) {
 			return {
 				state: current,
-				commands: [CheckLogin()],
+				commands: [CheckSource(), CheckLogin()],
+			};
+		}
+		if (isSourceSelected(event)) {
+			return {
+				state: Idle({ source: event.source }),
+				commands: [],
 			};
 		}
 		if (isStartCollectionEvent(event)) {
@@ -89,6 +97,7 @@ export function transition(
 		if (isLoginRequired(event)) {
 			const newState = ErrorState({
 				message: LOGIN_REQUIRED_MESSAGE,
+				...(current.source === undefined ? {} : { source: current.source }),
 			});
 			return {
 				state: newState,
@@ -152,7 +161,7 @@ export function transition(
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
-			const newState = Idle();
+			const newState = Idle({});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -194,7 +203,7 @@ export function transition(
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
-			const newState = Idle();
+			const newState = Idle({});
 			return {
 				state: newState,
 				commands: [
@@ -221,7 +230,7 @@ export function transition(
 			};
 		}
 		if (isDownloadExportEvent(event)) {
-			const newState = Idle();
+			const newState = Idle({});
 			return {
 				state: newState,
 				commands: [
@@ -235,7 +244,7 @@ export function transition(
 
 	if (isDone(current)) {
 		if (isDownloadExportEvent(event)) {
-			const newState = Idle();
+			const newState = Idle({});
 			return {
 				state: newState,
 				commands: [
@@ -245,7 +254,7 @@ export function transition(
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
-			const newState = Idle();
+			const newState = Idle({});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -258,7 +267,16 @@ export function transition(
 		if (isGetStateRequested(event)) {
 			return {
 				state: current,
-				commands: [CheckLogin()],
+				commands: [CheckSource(), CheckLogin()],
+			};
+		}
+		if (isSourceSelected(event)) {
+			return {
+				state: ErrorState({
+					message: current.message,
+					source: event.source,
+				}),
+				commands: [],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
@@ -269,7 +287,7 @@ export function transition(
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
-			const newState = Idle();
+			const newState = Idle({});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -283,7 +301,9 @@ export function transition(
 			};
 		}
 		if (isLoginVerified(event)) {
-			const newState = Idle();
+			const newState = Idle({
+				source: current.source,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -295,4 +315,4 @@ export function transition(
 	return { state: current, commands: [] };
 }
 
-export const initialCollectionState: CollectionState = Idle();
+export const initialCollectionState: CollectionState = Idle({});

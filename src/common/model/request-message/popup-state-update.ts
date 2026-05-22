@@ -1,5 +1,6 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { CollectionStatusSchema } from '@/common/model/request-message/get-state-response';
+import { SourceSchema } from '@/common/model/source';
 import { Data, Schema } from 'effect';
 
 export const PopupStateUpdateSchema = taggedStruct('PopupStateUpdate', {
@@ -7,6 +8,7 @@ export const PopupStateUpdateSchema = taggedStruct('PopupStateUpdate', {
 	trackCount: Schema.Number,
 	errorMessage: Schema.optional(Schema.String),
 	skippedTrackCount: Schema.optional(Schema.Number),
+	source: Schema.optional(SourceSchema),
 });
 
 export type PopupStateUpdate = Schema.Schema.Type<

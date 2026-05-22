@@ -1,4 +1,4 @@
-import type { CollectionStatus } from '@/common/model/request-message';
+import type { CollectionStatus, Source } from '@/common/model/request-message';
 
 export type PopupState =
 	| 'initializing'
@@ -10,11 +10,14 @@ export type PopupState =
 	| 'login-required'
 	| 'error';
 
+export type PopupSource = Source;
+
 export interface PopupModel {
 	readonly state: PopupState;
 	readonly trackCount: number;
 	readonly errorMessage: string | undefined;
 	readonly skippedTrackCount?: number | undefined;
+	readonly source: PopupSource;
 }
 
 export function mapStatusToPopupState(status: CollectionStatus): PopupState {
@@ -40,6 +43,7 @@ export function initializingPopupModel(): PopupModel {
 		trackCount: 0,
 		errorMessage: undefined,
 		skippedTrackCount: undefined,
+		source: 'likes-page',
 	};
 }
 
@@ -49,6 +53,7 @@ export function initialPopupModel(): PopupModel {
 		trackCount: 0,
 		errorMessage: undefined,
 		skippedTrackCount: undefined,
+		source: 'likes-page',
 	};
 }
 
@@ -58,6 +63,7 @@ export function processingPopupModel(): PopupModel {
 		trackCount: 0,
 		errorMessage: undefined,
 		skippedTrackCount: undefined,
+		source: 'likes-page',
 	};
 }
 
@@ -67,5 +73,6 @@ export function loadingPopupModel(): PopupModel {
 		trackCount: 0,
 		errorMessage: undefined,
 		skippedTrackCount: undefined,
+		source: 'likes-page',
 	};
 }

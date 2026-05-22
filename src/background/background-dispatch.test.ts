@@ -12,11 +12,14 @@ import { StartCollection } from '@/common/model/collection/events/start-collecti
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
+import { SourceSelected } from '@/common/model/collection/events/source-selected';
 import {
 	GetStateRequest,
 	StartCollectionRequest,
 	type GetStateResponse,
 } from '@/common/model/request-message';
+import { isSoundCloudUrl } from '@/common/model/url/is-soundcloud-url';
+import type { Source } from '@/common/model/source';
 import { silentLoggerLayer } from '@/test/effect-log-test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,10 +39,23 @@ function makeCheckLoginAwareRunner(
 	getCookie: (
 		details: chrome.cookies.CookieDetails,
 	) => Promise<chrome.cookies.Cookie | null>,
+	queryTabs: (queryInfo: chrome.tabs.QueryInfo) => Promise<readonly TestTab[]>,
 ): Layer.Layer<CommandRunnerTag> {
 	return Layer.succeed(CommandRunnerTag, {
 		run: (cmd) => {
 			recordedCommands.push({ ...cmd });
+			if (cmd._tag === 'CheckSource') {
+				return Effect.promise(() =>
+					queryTabs({
+						active: true,
+						currentWindow: true,
+					}),
+				).pipe(
+					Effect.flatMap((tabs) =>
+						dispatchEffect(SourceSelected({ source: tabsToSource(tabs) })),
+					),
+				);
+			}
 			if (cmd._tag !== 'CheckLogin') {
 				return Effect.void;
 			}
@@ -64,15 +80,27 @@ function makeCheckLoginAwareRunner(
 	});
 }
 
+type TestTab = {
+	readonly id?: number;
+	readonly url?: string;
+};
+
+function tabsToSource(tabs: readonly TestTab[]): Source {
+	return isSoundCloudUrl(tabs[0]?.url) ? 'active-soundcloud-tab' : 'likes-page';
+}
+
 describe('background dispatch', () => {
 	type GetCookie = (details: {
 		readonly url: string;
 		readonly name: string;
 	}) => Promise<chrome.cookies.Cookie | null>;
+	type QueryTabs = (queryInfo: chrome.tabs.QueryInfo) => Promise<TestTab[]>;
 	const getCookieMock = vi.fn<GetCookie>();
+	const queryTabsMock = vi.fn<QueryTabs>();
 
 	beforeEach(() => {
 		getCookieMock.mockReset();
+		queryTabsMock.mockReset();
 		getCookieMock.mockResolvedValue({
 			domain: 'soundcloud.com',
 			expirationDate: 1,
@@ -86,6 +114,12 @@ describe('background dispatch', () => {
 			storeId: '0',
 			value: 'session',
 		});
+		queryTabsMock.mockResolvedValue([
+			{
+				id: 1,
+				url: 'https://example.com',
+			},
+		]);
 
 		Object.defineProperty(globalThis, 'chrome', {
 			configurable: true,
@@ -93,6 +127,9 @@ describe('background dispatch', () => {
 			value: {
 				cookies: {
 					get: getCookieMock,
+				},
+				tabs: {
+					query: queryTabsMock,
 				},
 			},
 		});
@@ -156,6 +193,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeCheckLoginAwareRunner(
 			recordedCommands,
 			getCookieMock,
+			queryTabsMock,
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
@@ -173,6 +211,7 @@ describe('background dispatch', () => {
 					expect(response).toMatchObject({
 						status: 'idle',
 						trackCount: 0,
+						source: 'likes-page',
 					});
 				}),
 			),
@@ -180,8 +219,51 @@ describe('background dispatch', () => {
 
 		await Effect.runPromise(program);
 
-		expect(recordedCommands.length).toBe(1);
-		expect(recordedCommands[0]).toMatchObject({ _tag: 'CheckLogin' });
+		expect(recordedCommands.map((command) => command._tag)).toEqual([
+			'CheckSource',
+			'CheckLogin',
+		]);
+	});
+
+	it('handleMessageEffect(GetStateRequest) reports active SoundCloud tab source', async () => {
+		queryTabsMock.mockResolvedValueOnce([
+			{
+				id: 1,
+				url: 'https://soundcloud.com/artist/track',
+			},
+		]);
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const stateRefLayer = Layer.effect(
+			StateRefTag,
+			Ref.make(initialCollectionState),
+		);
+		const runnerLayer = makeCheckLoginAwareRunner(
+			recordedCommands,
+			getCookieMock,
+			queryTabsMock,
+		);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
+		const sender: chrome.runtime.MessageSender = {};
+
+		const response = await Effect.runPromise(
+			handleMessageEffect(GetStateRequest(), sender).pipe(
+				Effect.provide(testLayer),
+			),
+		);
+
+		expect(response).toMatchObject({
+			status: 'idle',
+			trackCount: 0,
+			source: 'active-soundcloud-tab',
+		});
+		expect(queryTabsMock).toHaveBeenCalledWith({
+			active: true,
+			currentWindow: true,
+		});
 	});
 
 	it('handleMessageEffect(GetStateRequest) returns login error when cookie is missing', async () => {
@@ -194,6 +276,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeCheckLoginAwareRunner(
 			recordedCommands,
 			getCookieMock,
+			queryTabsMock,
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
@@ -214,6 +297,7 @@ describe('background dispatch', () => {
 			errorMessage: LOGIN_REQUIRED_MESSAGE,
 		});
 		expect(recordedCommands.map((command) => command._tag)).toEqual([
+			'CheckSource',
 			'CheckLogin',
 			'NotifyPopup',
 		]);

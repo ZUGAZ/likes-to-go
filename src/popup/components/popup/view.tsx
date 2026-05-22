@@ -1,6 +1,6 @@
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import { ErrorBlock } from '@/popup/components/error-block/error-block';
-import type { PopupState } from '@/popup/components/popup/model';
+import type { PopupSource, PopupState } from '@/popup/components/popup/model';
 import { ProcessingHeart } from '@/popup/components/processing-heart/processing-heart';
 import { Match, Show, Switch, type Accessor } from 'solid-js';
 import { Transition } from 'solid-transition-group';
@@ -10,10 +10,20 @@ interface PopupViewProps {
 	trackCount: Accessor<number>;
 	errorMessage: Accessor<string | undefined>;
 	skippedTrackCount: Accessor<number>;
+	source: Accessor<PopupSource>;
 	onStart: () => void;
 	onRetryFromError: () => void;
 	onCancel: () => void;
 	onDownload: () => void;
+}
+
+function sourceCopy(source: PopupSource): string {
+	switch (source) {
+		case 'active-soundcloud-tab':
+			return 'Will collect from current SoundCloud tab';
+		case 'likes-page':
+			return 'Will open your likes page';
+	}
 }
 
 export function PopupView(props: PopupViewProps) {
@@ -39,7 +49,9 @@ export function PopupView(props: PopupViewProps) {
 							>
 								❤️ Likes to go
 							</button>
-							<p class="text-neutral-600">Waiting for order</p>
+							<p class="text-center text-neutral-600">
+								{sourceCopy(props.source())}
+							</p>
 						</div>
 					</Match>
 

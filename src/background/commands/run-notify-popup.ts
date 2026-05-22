@@ -16,6 +16,7 @@ export function runNotifyPopup(state: CollectionState): Effect.Effect<void> {
 		...(response.skippedTrackCount === undefined
 			? {}
 			: { skippedTrackCount: response.skippedTrackCount }),
+		...(response.source === undefined ? {} : { source: response.source }),
 	});
 
 	return Effect.tryPromise({

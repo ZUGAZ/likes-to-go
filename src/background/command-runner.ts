@@ -4,6 +4,7 @@ import {
 } from '@/background/background-dispatch';
 import {
 	runCheckLogin,
+	runCheckSource,
 	runCloseTab,
 	runCreateTab,
 	runDownloadExport,
@@ -13,6 +14,7 @@ import {
 } from '@/background/commands';
 import type { CollectionCommand } from '@/common/model/collection/command';
 import { isCheckLogin } from '@/common/model/collection/commands/check-login';
+import { isCheckSource } from '@/common/model/collection/commands/check-source';
 import { isCloseTab } from '@/common/model/collection/commands/close-tab';
 import { isCreateTab } from '@/common/model/collection/commands/create-tab';
 import { isDownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
@@ -58,6 +60,8 @@ export function runCommand(
 					onFailure: dispatchEffect,
 				}),
 			);
+		} else if (isCheckSource(cmd)) {
+			yield* runCheckSource().pipe(Effect.flatMap(dispatchEffect));
 		} else if (isSelectCollectionTab(cmd)) {
 			yield* runSelectCollectionTab().pipe(
 				Effect.matchEffect({

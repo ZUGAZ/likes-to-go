@@ -23,6 +23,7 @@ export function PopupContainer() {
 			trackCount={vm.trackCount}
 			errorMessage={vm.errorMessage}
 			skippedTrackCount={vm.skippedTrackCount}
+			source={vm.source}
 			onStart={vm.actions.startCollection}
 			onRetryFromError={vm.actions.retryAfterError}
 			onCancel={vm.actions.cancelCollection}

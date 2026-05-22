@@ -4,4 +4,5 @@ export { runSendStartToTab } from '@/background/commands/run-send-start-to-tab';
 export { runSendCancelToTab } from '@/background/commands/run-send-cancel-to-tab';
 export { runDownloadExport } from '@/background/commands/run-download-export';
 export { runCheckLogin } from '@/background/commands/run-check-login';
+export { runCheckSource } from '@/background/commands/run-check-source';
 export { runSelectCollectionTab } from '@/background/commands/run-select-collection-tab';

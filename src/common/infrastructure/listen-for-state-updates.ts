@@ -1,11 +1,12 @@
 import { isPopupStateUpdate } from '@/common/model/request-message/popup-state-update';
-import type { CollectionStatus } from '@/common/model/request-message';
+import type { CollectionStatus, Source } from '@/common/model/request-message';
 
 export interface StateUpdatePayload {
 	readonly status: CollectionStatus;
 	readonly trackCount: number;
 	readonly errorMessage?: string | undefined;
 	readonly skippedTrackCount?: number | undefined;
+	readonly source?: Source | undefined;
 }
 
 export function listenForStateUpdates(
@@ -21,6 +22,7 @@ export function listenForStateUpdates(
 			trackCount: message.trackCount,
 			errorMessage: message.errorMessage,
 			skippedTrackCount: message.skippedTrackCount,
+			source: message.source,
 		});
 	};
 

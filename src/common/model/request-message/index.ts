@@ -28,3 +28,5 @@ export type {
 	GetStateResponse,
 	MessageResponse,
 } from './get-state-response';
+export { SourceSchema } from '@/common/model/source';
+export type { Source } from '@/common/model/source';

@@ -9,7 +9,7 @@ vi.mock('solid-transition-group', () => ({
 }));
 
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
-import type { PopupState } from '@/popup/components/popup/model';
+import type { PopupSource, PopupState } from '@/popup/components/popup/model';
 import { PopupView } from '@/popup/components/popup/view';
 
 const unmountFns: Array<() => void> = [];
@@ -26,6 +26,7 @@ function renderPopupView(
 		trackCount: number;
 		skippedTrackCount: number;
 		errorMessage: string | undefined;
+		source: PopupSource;
 	}>,
 ) {
 	const [state, setState] = createSignal<PopupState>(
@@ -40,6 +41,9 @@ function renderPopupView(
 	const [errorMessage, setErrorMessage] = createSignal<string | undefined>(
 		inputs?.errorMessage,
 	);
+	const [source, setSource] = createSignal<PopupSource>(
+		inputs?.source ?? 'likes-page',
+	);
 
 	const onStart = vi.fn();
 	const onRetryFromError = vi.fn();
@@ -52,6 +56,7 @@ function renderPopupView(
 			trackCount={trackCount}
 			skippedTrackCount={skippedTrackCount}
 			errorMessage={errorMessage}
+			source={source}
 			onStart={onStart}
 			onRetryFromError={onRetryFromError}
 			onCancel={onCancel}
@@ -67,6 +72,7 @@ function renderPopupView(
 		setTrackCount,
 		setSkippedTrackCount,
 		setErrorMessage,
+		setSource,
 		onStart,
 		onRetryFromError,
 		onCancel,
@@ -79,7 +85,18 @@ describe('Popup view', () => {
 		const popup = renderPopupView({ state: 'initial' });
 
 		expect(popup.getByRole('button', { name: '❤️ Likes to go' })).toBeTruthy();
-		expect(popup.getByText('Waiting for order')).toBeTruthy();
+		expect(popup.getByText('Will open your likes page')).toBeTruthy();
+	});
+
+	it('renders the active SoundCloud tab source', () => {
+		const popup = renderPopupView({
+			state: 'initial',
+			source: 'active-soundcloud-tab',
+		});
+
+		expect(
+			popup.getByText('Will collect from current SoundCloud tab'),
+		).toBeTruthy();
 	});
 
 	it('renders the initializing state', () => {
@@ -222,7 +239,7 @@ describe('Popup view', () => {
 		const popup = renderPopupView({ state: 'initial' });
 
 		expect(popup.queryByText('Collecting likes… (7 found)')).toBeNull();
-		expect(popup.getByText('Waiting for order')).toBeTruthy();
+		expect(popup.getByText('Will open your likes page')).toBeTruthy();
 
 		popup.setTrackCount(7);
 		popup.setSkippedTrackCount(0);
@@ -230,7 +247,7 @@ describe('Popup view', () => {
 
 		await Promise.resolve();
 
-		expect(popup.queryByText('Waiting for order')).toBeNull();
+		expect(popup.queryByText('Will open your likes page')).toBeNull();
 		expect(popup.getByText('Collecting likes… (7 found)')).toBeTruthy();
 	});
 });

@@ -20,6 +20,7 @@ import {
 	loadingPopupModel,
 	mapStatusToPopupState,
 	type PopupModel,
+	type PopupSource,
 	type PopupState,
 } from '@/popup/components/popup/model';
 
@@ -28,6 +29,7 @@ export interface PopupViewModel {
 	readonly trackCount: () => number;
 	readonly errorMessage: () => string | undefined;
 	readonly skippedTrackCount: () => number;
+	readonly source: () => PopupSource;
 	readonly effects: {
 		readonly syncState: ViewModelEffect;
 		readonly retryAfterError: ViewModelEffect;
@@ -48,6 +50,8 @@ export function createPopupViewModel(): PopupViewModel {
 	const [skippedTrackCount, setSkippedTrackCount] = createSignal(
 		boot.skippedTrackCount ?? 0,
 	);
+	const [source, setSource] = createSignal<PopupSource>(boot.source);
+	let currentSource = boot.source;
 
 	const applyModel = (model: PopupModel): void => {
 		batch(() => {
@@ -59,6 +63,8 @@ export function createPopupViewModel(): PopupViewModel {
 					: undefined,
 			);
 			setSkippedTrackCount(model.skippedTrackCount ?? 0);
+			currentSource = model.source;
+			setSource(model.source);
 		});
 	};
 
@@ -68,6 +74,7 @@ export function createPopupViewModel(): PopupViewModel {
 			trackCount: response.trackCount,
 			errorMessage: response.errorMessage,
 			skippedTrackCount: response.skippedTrackCount,
+			source: response.source ?? currentSource,
 		});
 	};
 
@@ -93,6 +100,7 @@ export function createPopupViewModel(): PopupViewModel {
 						trackCount: 0,
 						errorMessage: err.message,
 						skippedTrackCount: undefined,
+						source: currentSource,
 					});
 				}),
 			),
@@ -124,6 +132,7 @@ export function createPopupViewModel(): PopupViewModel {
 		trackCount,
 		errorMessage,
 		skippedTrackCount,
+		source,
 		effects: {
 			syncState,
 			retryAfterError,

@@ -1,4 +1,5 @@
 import { Schema } from 'effect';
+import { SourceSchema } from '@/common/model/source';
 
 const COLLECTION_STATUSES = [
 	'idle',
@@ -18,6 +19,7 @@ export const GetStateResponseSchema = Schema.Struct({
 	trackCount: Schema.Number,
 	errorMessage: Schema.optional(Schema.String),
 	skippedTrackCount: Schema.optional(Schema.Number),
+	source: Schema.optional(SourceSchema),
 });
 
 export type GetStateResponse = Schema.Schema.Type<

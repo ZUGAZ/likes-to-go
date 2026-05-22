@@ -15,6 +15,7 @@ import { GetStateRequested } from '@/common/model/collection/events/get-state-re
 import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
+import { SourceSelected } from '@/common/model/collection/events/source-selected';
 import { TrackSchema } from '@/common/model/track';
 
 function validTrack(
@@ -37,12 +38,24 @@ describe('collection-transition', () => {
 			expect(result.commands[1]).toMatchObject({ _tag: 'CheckLogin' });
 		});
 
-		it('Idle + GetStateRequested emits CheckLogin without state change', () => {
+		it('Idle + GetStateRequested emits source and login checks without state change', () => {
 			const result = transition(initialCollectionState, GetStateRequested());
 
 			expect(result.state).toEqual(initialCollectionState);
-			expect(result.commands).toHaveLength(1);
-			expect(result.commands[0]).toMatchObject({ _tag: 'CheckLogin' });
+			expect(result.commands.map((command) => command._tag)).toEqual([
+				'CheckSource',
+				'CheckLogin',
+			]);
+		});
+
+		it('Idle + SourceSelected stores source for get-state response', () => {
+			const result = transition(
+				initialCollectionState,
+				SourceSelected({ source: 'active-soundcloud-tab' }),
+			);
+
+			const response = collectionStateToGetStateResponse(result.state);
+			expect(response.source).toBe('active-soundcloud-tab');
 		});
 
 		it('CollectingRequested + LoginVerified emits SelectCollectionTab', () => {
@@ -123,6 +136,7 @@ describe('collection-transition', () => {
 				initialCollectionState,
 			);
 			expect(response.trackCount).toBe(0);
+			expect(response.source).toBeUndefined();
 		});
 
 		it('Idle + LoginRequired transitions to login ErrorState and notifies popup', () => {

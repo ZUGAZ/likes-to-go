@@ -1,29 +1,11 @@
 import { catchError } from '@/common/model/catch-error';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { TabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
+import { isSoundCloudUrl } from '@/common/model/url/is-soundcloud-url';
 import { Effect, flow, Option } from 'effect';
 import { get } from 'effect/Struct';
 
 const LIKES_URL = 'https://soundcloud.com/you/likes';
-const SOUNDCLOUD_HOSTNAME = 'soundcloud.com';
-
-function parseUrl(rawUrl: string): URL | undefined {
-	try {
-		return new URL(rawUrl);
-	} catch {
-		return undefined;
-	}
-}
-
-function isSoundCloudUrl(rawUrl: string | undefined): boolean {
-	if (rawUrl === undefined) return false;
-
-	const url = parseUrl(rawUrl);
-	return (
-		url?.hostname === SOUNDCLOUD_HOSTNAME &&
-		(url.protocol === 'https:' || url.protocol === 'http:')
-	);
-}
 
 function isReadyToStart(tab: chrome.tabs.Tab): boolean {
 	return tab.status === 'complete';
