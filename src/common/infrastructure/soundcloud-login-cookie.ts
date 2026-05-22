@@ -2,7 +2,7 @@ import { errorToReason } from '@/common/model/error-to-reason';
 import { Data, Effect } from 'effect';
 
 const SOUNDCLOUD_LIKES_URL = 'https://soundcloud.com';
-const SESSION_COOKIE_NAME = '_soundcloud_session';
+const SESSION_COOKIE_NAME = 'oauth_token';
 
 export class GetSoundcloudLoginCookieFailed extends Data.TaggedError(
 	'GetSoundcloudLoginCookieFailed',
@@ -24,5 +24,10 @@ export function getSoundcloudLoginCookie(): Effect.Effect<
 			new GetSoundcloudLoginCookieFailed({
 				reason: errorToReason(err),
 			}),
-	}).pipe(Effect.withLogSpan('getSoundcloudLoginCookie'));
+	}).pipe(
+		Effect.tap(() =>
+			Effect.log('Getting SoundCloud login cookie', SESSION_COOKIE_NAME),
+		),
+		Effect.withLogSpan('getSoundcloudLoginCookie'),
+	);
 }

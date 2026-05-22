@@ -78,7 +78,7 @@ describe('createContentMessageHandler', () => {
 
 	it('sends LoginRequiredRequest when track list exists but user nav is absent', async () => {
 		document.body.innerHTML =
-			'<div class="lazyLoadingList__list"><ul><li>card</li></ul></div>';
+			'<div class="lazyLoadingList__list"><div class="badgeList__item">card</div></div>';
 
 		const handler = createContentMessageHandler(runtime, ctx);
 		const sendResponse = vi.fn();
@@ -131,7 +131,9 @@ describe('createContentMessageHandler', () => {
 		if (Either.isLeft(errParsed)) return;
 		expect(isCollectionError(errParsed.right)).toBe(true);
 		if (!isCollectionError(errParsed.right)) return;
-		expect(errParsed.right.message).toBe('Track list not found on page');
+		expect(errParsed.right.message).toBe(
+			"This SoundCloud page doesn't have a likes list.",
+		);
 		expect(errParsed.right.reason).toContain('selector');
 	});
 });

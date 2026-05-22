@@ -1,6 +1,8 @@
 import { parseRequestMessage } from '@/common/infrastructure/parse-request-message';
 import {
+	TRACK_CARD,
 	TRACK_LIST_CONTAINER,
+	isLoadingIndicatorPresent,
 	isUserLoggedIn,
 } from '@/common/infrastructure/selectors';
 import { sendToBackgroundEffect } from '@/common/infrastructure/send-to-background';
@@ -21,6 +23,31 @@ import type { ContentEnv } from '@/content/runtime/content-env';
 import { Effect, Either, Exit, Fiber, Runtime } from 'effect';
 
 const WAIT_FOR_TRACK_LIST_CONTAINER_MS = 15_000;
+
+/**
+ * Uses URL as a hint to choose between two failure messages after the DOM
+ * gate fails — the decision to stop is always DOM-based, not URL-based.
+ */
+function unsupportedPageMessage(): string {
+	const isKnownCollectionPath = /\/you\/(likes|tracks|reposts|playlists)/.test(
+		location.pathname,
+	);
+	return isKnownCollectionPath
+		? 'Could not find your likes list — the page structure may have changed.'
+		: "This SoundCloud page doesn't have a likes list.";
+}
+
+/**
+ * Returns true when the container exists but has no track cards and the
+ * loading spinner is absent — meaning the list is genuinely empty rather
+ * than still loading.
+ */
+function isTrackListEmpty(container: Element): boolean {
+	return (
+		container.querySelector(TRACK_CARD) === null &&
+		!isLoadingIndicatorPresent(document)
+	);
+}
 
 export interface ContentScriptCtx {
 	readonly isValid: boolean;
@@ -104,7 +131,7 @@ export function createContentMessageHandler(
 					try: waitForTrackListContainer,
 					catch: () =>
 						CollectionErrorRequest({
-							message: 'Track list not found on page',
+							message: unsupportedPageMessage(),
 							reason:
 								'Track list container selector did not match any elements before timeout',
 						}),
@@ -119,6 +146,21 @@ export function createContentMessageHandler(
 						OutcomeError({ message: request.message }),
 					),
 				);
+
+				if (isTrackListEmpty(root)) {
+					const request = CollectionErrorRequest({
+						message: 'Your likes list is empty.',
+						reason: 'Track list container found but contains no track cards',
+					});
+
+					return yield* Effect.log('content empty likes list').pipe(
+						Effect.zipRight(sendToBackgroundEffect(request)),
+						Effect.as(OutcomeError({ message: request.message })),
+						Effect.catchAll(() =>
+							Effect.succeed(OutcomeError({ message: request.message })),
+						),
+					);
+				}
 
 				if (!isUserLoggedIn(document)) {
 					const request = LoginRequiredRequest({

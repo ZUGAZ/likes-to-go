@@ -24,5 +24,12 @@ export default defineConfig({
 			},
 			extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
 		},
+		server: {
+			watch: {
+				usePolling: true,
+				interval: 1000,
+				binaryInterval: 1000,
+			},
+		},
 	}),
 });

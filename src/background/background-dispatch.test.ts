@@ -1,26 +1,26 @@
-import { Effect, Layer, Ref } from 'effect';
-import { CommandRunnerTag } from '@/background/command-runner';
-import { StateRefTag } from '@/background/state-ref';
 import {
 	dispatchEffect,
 	handleMessageEffect,
 } from '@/background/background-dispatch';
-import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
-import { initialCollectionState } from '@/common/model/collection/transition';
-import { isCollecting } from '@/common/model/collection/states/collecting';
-import { StartCollection } from '@/common/model/collection/events/start-collection';
+import { CommandRunnerTag } from '@/background/command-runner';
+import { StateRefTag } from '@/background/state-ref';
+import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { LoginVerified } from '@/common/model/collection/events/login-verified';
-import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { SourceSelected } from '@/common/model/collection/events/source-selected';
+import { StartCollection } from '@/common/model/collection/events/start-collection';
+import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
+import { isCollecting } from '@/common/model/collection/states/collecting';
+import { initialCollectionState } from '@/common/model/collection/transition';
 import {
 	GetStateRequest,
 	StartCollectionRequest,
 	type GetStateResponse,
 } from '@/common/model/request-message';
-import { isSoundCloudUrl } from '@/common/model/url/is-soundcloud-url';
 import type { Source } from '@/common/model/source';
+import { isSoundCloudUrl } from '@/common/model/url/is-soundcloud-url';
 import { silentLoggerLayer } from '@/test/effect-log-test';
+import { Effect, Layer, Ref } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 function makeStubCommandRunner(
@@ -62,7 +62,7 @@ function makeCheckLoginAwareRunner(
 			return Effect.promise(() =>
 				getCookie({
 					url: 'https://soundcloud.com',
-					name: '_soundcloud_session',
+					name: 'oauth_token',
 				}),
 			).pipe(
 				Effect.flatMap((cookie) =>
@@ -106,7 +106,7 @@ describe('background dispatch', () => {
 			expirationDate: 1,
 			hostOnly: false,
 			httpOnly: true,
-			name: '_soundcloud_session',
+			name: 'oauth_token',
 			path: '/',
 			sameSite: 'no_restriction',
 			secure: true,
