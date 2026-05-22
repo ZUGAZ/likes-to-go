@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.1.0](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v1.0.1...likes-to-go-v1.1.0) (2026-05-22)
+
+
+### Features
+
+* ✨ cancel collection on tab navigation ([9122760](https://github.com/ZUGAZ/likes-to-go/commit/9122760824ca61f07a416d834f9ac882f16e7aac))
+* ✨ detect collectable SoundCloud pages from DOM ([1ebb150](https://github.com/ZUGAZ/likes-to-go/commit/1ebb150df4e3a6a7da6f6da1f2659846e003b537))
+* ✨ focus selected tab before collection ([1ead88c](https://github.com/ZUGAZ/likes-to-go/commit/1ead88c1da8700cea7d9f3aef2b7b6098d8b885b))
+* ✨ select active SoundCloud tab for collection ([eec2e51](https://github.com/ZUGAZ/likes-to-go/commit/eec2e51dd71bb62b06654df8d22d60d49a46054d))
+* ✨ show source status in popup before collection starts ([f02b9b8](https://github.com/ZUGAZ/likes-to-go/commit/f02b9b8135111445a28874ef13b269c23443ad8f))
+* 🛠️ add logging for pipeline final cycle and loading indicator checks ([d018a8c](https://github.com/ZUGAZ/likes-to-go/commit/d018a8c2cc65cd73182180d53e5dedf9f2431a9a))
+
+
+### Bug Fixes
+
+* 🐛 fail collection when zero tracks are collected ([b2aa2ce](https://github.com/ZUGAZ/likes-to-go/commit/b2aa2ce2341160d587ed09097c6437184bfcc5d8))
+* 🐛 pause collection in hidden tabs ([b91978d](https://github.com/ZUGAZ/likes-to-go/commit/b91978d58b76b69d25a65fa761031c933283aee8))
+* 🐛 preserve navigation errors and recover on try again ([e216caa](https://github.com/ZUGAZ/likes-to-go/commit/e216caa0c427b073b83916d5ad19a300dfd2f9dc))
+* 🐛 start collection without tab-complete delay ([c961edc](https://github.com/ZUGAZ/likes-to-go/commit/c961edc65d8883ba85a958789ecdacde2323ffe7))
+* 🐛 update SoundCloud session cookie name and improve error handling for empty likes list ([77e6f18](https://github.com/ZUGAZ/likes-to-go/commit/77e6f1848e8d8da1d9779c43eac373a3db5f1e82))
+* 🐛 use reliable SoundCloud session cookie ([b33b22d](https://github.com/ZUGAZ/likes-to-go/commit/b33b22d89873fa1b6ef2bf4d53748f58d1b63076))
+
 ## [1.0.1](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v1.0.0...likes-to-go-v1.0.1) (2026-04-30)
 
 
