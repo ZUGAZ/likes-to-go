@@ -16,6 +16,10 @@ import {
 	initialScanState,
 	type CollectionScanState,
 } from '@/content/model/collect-batches';
+import {
+	EMPTY_LIKES_LIST_MESSAGE,
+	UNREADABLE_LIKES_LIST_MESSAGE,
+} from '@/content/model/collection-error-messages';
 import { Data, Effect, Schema } from 'effect';
 
 const CompletedSchema = taggedStruct('Completed');
@@ -60,6 +64,10 @@ interface LoopState {
 	readonly isFinalCycle: boolean;
 }
 
+type LoopStepOutcome =
+	| { readonly _tag: 'Continue'; readonly state: LoopState }
+	| { readonly _tag: 'Stop'; readonly scanState: CollectionScanState };
+
 const initialLoopState: LoopState = {
 	scanState: initialScanState(),
 	passesWithNoNewTracks: 0,
@@ -67,14 +75,38 @@ const initialLoopState: LoopState = {
 	isFinalCycle: false,
 };
 
+function stopLoop(scanState: CollectionScanState): LoopStepOutcome {
+	return { _tag: 'Stop', scanState };
+}
+
+function continueLoop(state: LoopState): LoopStepOutcome {
+	return { _tag: 'Continue', state };
+}
+
+function zeroTrackCompletionMessage(scanState: CollectionScanState): string {
+	if (scanState.totalParsedCount > 0) {
+		return UNREADABLE_LIKES_LIST_MESSAGE;
+	}
+
+	return EMPTY_LIKES_LIST_MESSAGE;
+}
+
+function zeroTrackCompletionReason(scanState: CollectionScanState): string {
+	if (scanState.totalParsedCount > 0) {
+		return 'track cards found but none passed validation';
+	}
+
+	return 'collection pipeline finished with no valid tracks';
+}
+
 /**
  * One iteration of the collection loop: scan a batch, send it, scroll, wait.
- * Returns the next LoopState (used by Effect.iterate) or `undefined` to signal termination.
+ * Returns Continue with next LoopState or Stop with final scan state.
  */
 function loopStep(
 	current: LoopState,
 ): Effect.Effect<
-	LoopState | undefined,
+	LoopStepOutcome,
 	SendToBackgroundFailed | InlineErrorPersisted,
 	DomScannerTag | BackgroundSenderTag | ScrollerTag | DocumentVisibilityTag
 > {
@@ -130,7 +162,7 @@ function loopStep(
 		// If this was already the final cycle, stop now.
 		if (current.isFinalCycle) {
 			yield* Effect.log('final cycle, stopping pipeline');
-			return undefined;
+			return stopLoop(nextState);
 		}
 
 		const isLoadingIndicatorPresent =
@@ -161,45 +193,45 @@ function loopStep(
 			yield* Effect.log('loading indicator is absent, scheduling final cycle');
 			// Loading indicator is absent: schedule one final cycle to capture
 			// any content loaded by the scroll we just performed.
-			return {
+			return continueLoop({
 				scanState: nextState,
 				passesWithNoNewTracks,
 				isVisibilityPaused,
 				isFinalCycle: true,
-			};
+			});
 		}
 
 		if (isVisibilityPaused) {
 			yield* Effect.log('visibility pause active, continuing pipeline');
-			return {
+			return continueLoop({
 				scanState: nextState,
 				passesWithNoNewTracks,
 				isVisibilityPaused,
 				isFinalCycle: false,
-			};
+			});
 		}
 
 		if (hasJustResumed) {
 			yield* Effect.log('visibility resumed, resetting empty-pass counter');
-			return {
+			return continueLoop({
 				scanState: nextState,
 				passesWithNoNewTracks,
 				isVisibilityPaused,
 				isFinalCycle: false,
-			};
+			});
 		}
 
 		if (passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES) {
 			yield* Effect.log('no new tracks, stopping pipeline');
-			return undefined;
+			return stopLoop(nextState);
 		}
 
-		return {
+		return continueLoop({
 			scanState: nextState,
 			passesWithNoNewTracks,
 			isVisibilityPaused,
 			isFinalCycle: false,
-		};
+		});
 	}).pipe(Effect.withLogSpan('loopStep'));
 }
 
@@ -207,7 +239,8 @@ function loopStep(
  * The full collection pipeline. Loops until natural termination (no new tracks)
  * or fiber interruption (cancel / ctx invalidation).
  *
- * On natural completion, sends CollectionComplete to background.
+ * On natural completion with at least one valid track, sends CollectionComplete.
+ * On zero valid tracks, sends CollectionError and returns Error outcome.
  * On SendToBackgroundFailed, sends CollectionError and returns Error outcome.
  * Fiber interruption is handled by the caller (message handler) — this effect
  * is interruptible by default.
@@ -219,10 +252,24 @@ export const collectionPipeline: Effect.Effect<
 > = Effect.gen(function* () {
 	const sender = yield* BackgroundSenderTag;
 
-	yield* Effect.iterate(initialLoopState, {
-		while: (s): s is LoopState => s !== undefined,
-		body: loopStep,
-	});
+	let current: LoopState = initialLoopState;
+	let finalScanState: CollectionScanState = initialScanState();
+	let outcome = yield* loopStep(current);
+
+	while (outcome._tag === 'Continue') {
+		current = outcome.state;
+		outcome = yield* loopStep(current);
+	}
+
+	finalScanState = outcome.scanState;
+
+	if (finalScanState.previousValidCount === 0) {
+		const message = zeroTrackCompletionMessage(finalScanState);
+		const reason = zeroTrackCompletionReason(finalScanState);
+		yield* Effect.log('zero valid tracks collected, sending CollectionError');
+		yield* sender.sendError(message, reason);
+		return OutcomeError({ message });
+	}
 
 	yield* Effect.log('sending CollectionComplete');
 	yield* sender.sendComplete();
@@ -233,7 +280,7 @@ export const collectionPipeline: Effect.Effect<
 	Effect.catchTag('SendToBackgroundFailed', (err) =>
 		Effect.gen(function* () {
 			const sender = yield* BackgroundSenderTag;
-			const message = 'Could not read your likes list';
+			const message = UNREADABLE_LIKES_LIST_MESSAGE;
 			yield* sender.sendError(message, err.reason).pipe(Effect.ignore);
 			return OutcomeError({ message });
 		}),
@@ -241,7 +288,7 @@ export const collectionPipeline: Effect.Effect<
 	Effect.catchTag('InlineErrorPersisted', (err) =>
 		Effect.gen(function* () {
 			const sender = yield* BackgroundSenderTag;
-			const message = 'Could not read your likes list';
+			const message = UNREADABLE_LIKES_LIST_MESSAGE;
 			yield* sender.sendError(message, err.reason).pipe(Effect.ignore);
 			return OutcomeError({ message });
 		}),

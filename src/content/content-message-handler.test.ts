@@ -5,6 +5,7 @@ import {
 	isLoginRequired,
 	StartCollectionRequest,
 } from '@/common/model/request-message';
+import { UNSUPPORTED_COLLECTION_PAGE_MESSAGE } from '@/content/model/collection-error-messages';
 import { createContentMessageHandler } from '@/content/content-message-handler';
 import { Either, ManagedRuntime, Runtime } from 'effect';
 import {
@@ -131,9 +132,7 @@ describe('createContentMessageHandler', () => {
 		if (Either.isLeft(errParsed)) return;
 		expect(isCollectionError(errParsed.right)).toBe(true);
 		if (!isCollectionError(errParsed.right)) return;
-		expect(errParsed.right.message).toBe(
-			'Could not find a supported likes list on this page.',
-		);
+		expect(errParsed.right.message).toBe(UNSUPPORTED_COLLECTION_PAGE_MESSAGE);
 		expect(errParsed.right.reason).toContain('selector');
 	});
 });

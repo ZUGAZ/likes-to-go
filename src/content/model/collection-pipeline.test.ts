@@ -12,6 +12,10 @@ import type {
 	CollectionScanState,
 } from '@/content/model/collect-batches';
 import {
+	EMPTY_LIKES_LIST_MESSAGE,
+	UNREADABLE_LIKES_LIST_MESSAGE,
+} from '@/content/model/collection-error-messages';
+import {
 	Completed,
 	OutcomeError,
 	collectionPipeline,
@@ -261,7 +265,7 @@ describe('collectionPipeline', () => {
 		expect(calls).toContain('CollectionComplete');
 	});
 
-	it('runs one final cycle after loading indicator disappears (path A)', async () => {
+	it('errors after final cycle when no valid tracks were collected (path A)', async () => {
 		const calls: string[] = [];
 		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
 		// Spinner absent on the very first pass — triggers the final cycle
@@ -278,12 +282,15 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual(Completed());
+		expect(value).toEqual(OutcomeError({ message: EMPTY_LIKES_LIST_MESSAGE }));
 		expect(scanBatchMetrics.scanBatchCalls).toBe(2);
 
 		const batchCalls = calls.filter((c) => c.startsWith('TracksBatch'));
 		expect(batchCalls).toHaveLength(0);
-		expect(calls).toContain('CollectionComplete');
+		expect(calls).toContain(
+			`CollectionError:${EMPTY_LIKES_LIST_MESSAGE}:collection pipeline finished with no valid tracks`,
+		);
+		expect(calls).not.toContain('CollectionComplete');
 	});
 
 	it('captures tracks loaded during the final cycle (path A)', async () => {
@@ -310,7 +317,7 @@ describe('collectionPipeline', () => {
 		expect(calls).toContain('CollectionComplete');
 	});
 
-	it('completes when DOM is empty after NO_NEW_TRACKS_PASSES passes (path B)', async () => {
+	it('errors when DOM is empty after NO_NEW_TRACKS_PASSES passes (path B)', async () => {
 		const calls: string[] = [];
 		const emptyBatch = makeBatch([], 0, true);
 		const batches = Array.from<CollectionBatch>({
@@ -325,10 +332,13 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual(Completed());
+		expect(value).toEqual(OutcomeError({ message: EMPTY_LIKES_LIST_MESSAGE }));
 		const batchCalls = calls.filter((c) => c.startsWith('TracksBatch'));
 		expect(batchCalls).toHaveLength(0);
-		expect(calls).toContain('CollectionComplete');
+		expect(calls).not.toContain('CollectionComplete');
+		expect(calls).toContain(
+			`CollectionError:${EMPTY_LIKES_LIST_MESSAGE}:collection pipeline finished with no valid tracks`,
+		);
 	});
 
 	it('does not count empty passes while document is hidden and spinner is present', async () => {
@@ -373,14 +383,14 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual(Completed());
+		expect(value).toEqual(OutcomeError({ message: EMPTY_LIKES_LIST_MESSAGE }));
 		expect(
 			calls.filter((c) => c === 'CollectionVisibilityPaused'),
 		).toHaveLength(1);
 		expect(
 			calls.filter((c) => c === 'CollectionVisibilityResumed'),
 		).toHaveLength(1);
-		expect(calls).toContain('CollectionComplete');
+		expect(calls).not.toContain('CollectionComplete');
 	});
 
 	it('does not complete on the same pass that visibility resumes', async () => {
@@ -400,10 +410,10 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual(Completed());
+		expect(value).toEqual(OutcomeError({ message: EMPTY_LIKES_LIST_MESSAGE }));
 		expect(scanBatchMetrics.scanBatchCalls).toBe(5);
 		expect(calls).toContain('CollectionVisibilityResumed');
-		expect(calls).toContain('CollectionComplete');
+		expect(calls).not.toContain('CollectionComplete');
 	});
 
 	it('is interrupted when fiber is interrupted (simulates cancel)', async () => {
@@ -448,10 +458,10 @@ describe('collectionPipeline', () => {
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
 		expect(value).toEqual(
-			OutcomeError({ message: 'Could not read your likes list' }),
+			OutcomeError({ message: UNREADABLE_LIKES_LIST_MESSAGE }),
 		);
 		expect(calls).toContain(
-			'CollectionError:Could not read your likes list:channel closed',
+			`CollectionError:${UNREADABLE_LIKES_LIST_MESSAGE}:channel closed`,
 		);
 	});
 
@@ -497,8 +507,41 @@ describe('collectionPipeline', () => {
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(OutcomeError({ message: EMPTY_LIKES_LIST_MESSAGE }));
 		const batchCalls = calls.filter((c) => c.startsWith('TracksBatch'));
 		expect(batchCalls).toHaveLength(0);
+		expect(calls).not.toContain('CollectionComplete');
+	});
+
+	it('errors when cards were parsed but none passed validation', async () => {
+		const calls: string[] = [];
+		const unreadableBatch: CollectionBatch = {
+			tracks: [],
+			parsedCount: 3,
+			skippedCount: 3,
+			totalValidCount: 0,
+			noNewCards: true,
+		};
+		const batches = Array.from<CollectionBatch>({
+			length: NO_NEW_TRACKS_PASSES,
+		}).fill(unreadableBatch);
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				isLoadingIndicatorPresentResponses: [true, true],
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(
+			OutcomeError({ message: UNREADABLE_LIKES_LIST_MESSAGE }),
+		);
+		expect(calls).toContain(
+			`CollectionError:${UNREADABLE_LIKES_LIST_MESSAGE}:track cards found but none passed validation`,
+		);
+		expect(calls).not.toContain('CollectionComplete');
 	});
 
 	it('retries inline error and continues when it clears', async () => {
@@ -525,11 +568,11 @@ describe('collectionPipeline', () => {
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
-		expect(value).toEqual(Completed());
+		expect(value).toEqual(OutcomeError({ message: EMPTY_LIKES_LIST_MESSAGE }));
 
 		expect(clickRetryCalls).toHaveLength(2);
-		expect(calls).toContain('CollectionComplete');
-		expect(calls.some((c) => c.startsWith('CollectionError:'))).toBe(false);
+		expect(calls).not.toContain('CollectionComplete');
+		expect(calls.some((c) => c.startsWith('CollectionError:'))).toBe(true);
 	});
 
 	it('fails with OutcomeError after MAX_ERROR_RETRIES when inline error persists', async () => {
@@ -558,12 +601,12 @@ describe('collectionPipeline', () => {
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
 		expect(value).toEqual(
-			OutcomeError({ message: 'Could not read your likes list' }),
+			OutcomeError({ message: UNREADABLE_LIKES_LIST_MESSAGE }),
 		);
 
 		expect(clickRetryCalls).toHaveLength(MAX_ERROR_RETRIES);
 		expect(calls).toContain(
-			`CollectionError:Could not read your likes list:inline error persists after retries`,
+			`CollectionError:${UNREADABLE_LIKES_LIST_MESSAGE}:inline error persists after retries`,
 		);
 		expect(calls).not.toContain('CollectionComplete');
 	});

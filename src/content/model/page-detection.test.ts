@@ -1,7 +1,12 @@
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import {
+	EMPTY_LIKES_LIST_MESSAGE,
+	UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
+} from '@/content/model/collection-error-messages';
+import {
 	CollectionPageLoginRequired,
 	UnsupportedCollectionPage,
+	WAIT_FOR_LIST_TO_SETTLE_MS,
 	detectSupportedCollectionPage,
 } from '@/content/model/page-detection';
 import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
@@ -96,25 +101,81 @@ describe('detectSupportedCollectionPage', () => {
 
 		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
 		expect(failure).toMatchObject({
-			message: 'Your likes list is empty.',
+			message: EMPTY_LIKES_LIST_MESSAGE,
 			reason: 'Track list container found but contains no track cards',
 		});
 	});
 
-	it('keeps waiting when an empty list still has a loading indicator', async () => {
+	it('fails with empty-list message when spinner clears and no cards appear', async () => {
 		document.body.innerHTML = [
 			'<div class="header__userNav">User Menu</div>',
 			'<div class="lazyLoadingList__list"></div>',
 			'<div class="loading regular m-padded">Loading</div>',
 		].join('');
 
-		const exit = await runPromiseExitWithSilentLogger(
+		const exitPromise = runPromiseExitWithSilentLogger(
 			detectSupportedCollectionPage({
 				pageDocument: document,
 			}),
 		);
 
+		document.querySelector('.loading.regular.m-padded')?.remove();
+		const failure = detectionFailure(await exitPromise);
+
+		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
+		expect(failure).toMatchObject({
+			message: EMPTY_LIKES_LIST_MESSAGE,
+			reason: 'Track list container found but contains no track cards',
+		});
+	});
+
+	it('succeeds when cards appear after spinner clears', async () => {
+		document.body.innerHTML = [
+			'<div class="header__userNav">User Menu</div>',
+			'<div class="lazyLoadingList__list"></div>',
+			'<div class="loading regular m-padded">Loading</div>',
+		].join('');
+
+		const exitPromise = runPromiseExitWithSilentLogger(
+			detectSupportedCollectionPage({
+				pageDocument: document,
+			}),
+		);
+
+		document.querySelector('.loading.regular.m-padded')?.remove();
+		const list = document.querySelector('.lazyLoadingList__list');
+		list?.insertAdjacentHTML(
+			'beforeend',
+			'<div class="badgeList__item">card</div>',
+		);
+
+		const exit = await exitPromise;
 		expect(Exit.isSuccess(exit)).toBe(true);
+	});
+
+	it('fails when loading indicator does not settle before timeout', async () => {
+		vi.useFakeTimers();
+		document.body.innerHTML = [
+			'<div class="header__userNav">User Menu</div>',
+			'<div class="lazyLoadingList__list"></div>',
+			'<div class="loading regular m-padded">Loading</div>',
+		].join('');
+
+		const exitPromise = runPromiseExitWithSilentLogger(
+			detectSupportedCollectionPage({
+				pageDocument: document,
+				settleTimeoutMs: 1,
+			}),
+		);
+
+		await vi.advanceTimersByTimeAsync(WAIT_FOR_LIST_TO_SETTLE_MS);
+		const failure = detectionFailure(await exitPromise);
+
+		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
+		expect(failure).toMatchObject({
+			message: UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
+			reason: 'Track list loading indicator did not settle before timeout',
+		});
 	});
 
 	it('fails with a missing-list message when the page lacks supported collection DOM', async () => {
@@ -133,7 +194,7 @@ describe('detectSupportedCollectionPage', () => {
 
 		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
 		expect(failure).toMatchObject({
-			message: 'Could not find a supported likes list on this page.',
+			message: UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
 			reason:
 				'Track list container selector did not match any elements before timeout',
 		});
