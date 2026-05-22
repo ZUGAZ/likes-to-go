@@ -25,7 +25,7 @@ function renderPopupView(
 		state: PopupState;
 		trackCount: number;
 		skippedTrackCount: number;
-		errorMessage: string | undefined;
+		message: string | undefined;
 		source: PopupSource;
 	}>,
 ) {
@@ -38,8 +38,8 @@ function renderPopupView(
 	const [skippedTrackCount, setSkippedTrackCount] = createSignal<number>(
 		inputs?.skippedTrackCount ?? 0,
 	);
-	const [errorMessage, setErrorMessage] = createSignal<string | undefined>(
-		inputs?.errorMessage,
+	const [message, setMessage] = createSignal<string | undefined>(
+		inputs?.message,
 	);
 	const [source, setSource] = createSignal<PopupSource>(
 		inputs?.source ?? 'likes-page',
@@ -55,7 +55,7 @@ function renderPopupView(
 			state={state}
 			trackCount={trackCount}
 			skippedTrackCount={skippedTrackCount}
-			errorMessage={errorMessage}
+			message={message}
 			source={source}
 			onStart={onStart}
 			onRetryFromError={onRetryFromError}
@@ -71,7 +71,7 @@ function renderPopupView(
 		setState,
 		setTrackCount,
 		setSkippedTrackCount,
-		setErrorMessage,
+		setMessage,
 		setSource,
 		onStart,
 		onRetryFromError,
@@ -146,6 +146,21 @@ describe('Popup view', () => {
 		expect(popup.getByText('2 tracks could not be read yet')).toBeTruthy();
 	});
 
+	it('renders the paused state with a visibility pause message', () => {
+		const popup = renderPopupView({
+			state: 'paused',
+			trackCount: 5,
+			message:
+				'Collection paused — SoundCloud tab is hidden. Please focus it to resume.',
+		});
+
+		expect(
+			popup.getByText(
+				'Collection paused — SoundCloud tab is hidden. Please focus it to resume.',
+			),
+		).toBeTruthy();
+	});
+
 	it('renders the done state', () => {
 		const popup = renderPopupView({
 			state: 'done',
@@ -169,7 +184,7 @@ describe('Popup view', () => {
 	it('renders login-required with lock icon prefix and custom message', () => {
 		const popup = renderPopupView({
 			state: 'login-required',
-			errorMessage: 'Please log in to SoundCloud, then try again.',
+			message: 'Please log in to SoundCloud, then try again.',
 		});
 
 		const alert = popup.getByRole('alert');
@@ -180,10 +195,10 @@ describe('Popup view', () => {
 		expect(popup.getByRole('button', { name: 'Try again' })).toBeTruthy();
 	});
 
-	it('renders login-required with default message when errorMessage is undefined', () => {
+	it('renders login-required with default message when message is undefined', () => {
 		const popup = renderPopupView({
 			state: 'login-required',
-			errorMessage: undefined,
+			message: undefined,
 		});
 
 		const alert = popup.getByRole('alert');
@@ -193,7 +208,7 @@ describe('Popup view', () => {
 	it('renders the error state', () => {
 		const popup = renderPopupView({
 			state: 'error',
-			errorMessage: 'Boom',
+			message: 'Boom',
 		});
 
 		const alert = popup.getByRole('alert');
@@ -228,7 +243,7 @@ describe('Popup view', () => {
 	it('calls onRetryFromError when clicking Try again in the error state', () => {
 		const popup = renderPopupView({
 			state: 'error',
-			errorMessage: 'Boom',
+			message: 'Boom',
 		});
 
 		fireEvent.click(popup.getByRole('button', { name: '❤️ Try again' }));

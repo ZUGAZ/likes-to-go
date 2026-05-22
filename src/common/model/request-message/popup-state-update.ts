@@ -6,7 +6,7 @@ import { Data, Schema } from 'effect';
 export const PopupStateUpdateSchema = taggedStruct('PopupStateUpdate', {
 	status: CollectionStatusSchema,
 	trackCount: Schema.Number,
-	errorMessage: Schema.optional(Schema.String),
+	message: Schema.optional(Schema.String),
 	skippedTrackCount: Schema.optional(Schema.Number),
 	source: Schema.optional(SourceSchema),
 });

@@ -15,6 +15,8 @@ import { LoginRequiredEventSchema } from '@/common/model/collection/events/login
 import { GetStateRequestedEventSchema } from '@/common/model/collection/events/get-state-requested';
 import { CollectionTabSelectedSchema } from '@/common/model/collection/events/collection-tab-selected';
 import { SourceSelectedEventSchema } from '@/common/model/collection/events/source-selected';
+import { CollectionVisibilityPausedEventSchema } from '@/common/model/collection/events/collection-visibility-paused';
+import { CollectionVisibilityResumedEventSchema } from '@/common/model/collection/events/collection-visibility-resumed';
 
 export const CollectionEventSchema = Schema.Union(
 	StartCollectionEventSchema,
@@ -32,6 +34,8 @@ export const CollectionEventSchema = Schema.Union(
 	GetStateRequestedEventSchema,
 	CollectionTabSelectedSchema,
 	SourceSelectedEventSchema,
+	CollectionVisibilityPausedEventSchema,
+	CollectionVisibilityResumedEventSchema,
 );
 
 export type CollectionEvent = Schema.Schema.Type<typeof CollectionEventSchema>;

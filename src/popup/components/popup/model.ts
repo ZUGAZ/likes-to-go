@@ -6,6 +6,7 @@ export type PopupState =
 	| 'loading'
 	| 'checking-login'
 	| 'processing'
+	| 'paused'
 	| 'done'
 	| 'login-required'
 	| 'error';
@@ -15,7 +16,7 @@ export type PopupSource = Source;
 export interface PopupModel {
 	readonly state: PopupState;
 	readonly trackCount: number;
-	readonly errorMessage: string | undefined;
+	readonly message: string | undefined;
 	readonly skippedTrackCount?: number | undefined;
 	readonly source: PopupSource;
 }
@@ -28,6 +29,8 @@ export function mapStatusToPopupState(status: CollectionStatus): PopupState {
 			return 'checking-login';
 		case 'collecting':
 			return 'processing';
+		case 'paused':
+			return 'paused';
 		case 'done':
 			return 'done';
 		case 'login-required':
@@ -41,7 +44,7 @@ export function initializingPopupModel(): PopupModel {
 	return {
 		state: 'initializing',
 		trackCount: 0,
-		errorMessage: undefined,
+		message: undefined,
 		skippedTrackCount: undefined,
 		source: 'likes-page',
 	};
@@ -51,7 +54,7 @@ export function initialPopupModel(): PopupModel {
 	return {
 		state: 'initial',
 		trackCount: 0,
-		errorMessage: undefined,
+		message: undefined,
 		skippedTrackCount: undefined,
 		source: 'likes-page',
 	};
@@ -61,7 +64,7 @@ export function processingPopupModel(): PopupModel {
 	return {
 		state: 'processing',
 		trackCount: 0,
-		errorMessage: undefined,
+		message: undefined,
 		skippedTrackCount: undefined,
 		source: 'likes-page',
 	};
@@ -71,7 +74,7 @@ export function loadingPopupModel(): PopupModel {
 	return {
 		state: 'loading',
 		trackCount: 0,
-		errorMessage: undefined,
+		message: undefined,
 		skippedTrackCount: undefined,
 		source: 'likes-page',
 	};

@@ -5,6 +5,7 @@ import { isCollectingRequested } from '@/common/model/collection/states/collecti
 import { isDone } from '@/common/model/collection/states/done';
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { isIdle } from '@/common/model/collection/states/idle';
+import { isPaused } from '@/common/model/collection/states/paused';
 import type { CollectionStatus } from '@/common/model/request-message';
 
 export function collectionStateToStatus(
@@ -18,6 +19,9 @@ export function collectionStateToStatus(
 	}
 	if (isCollecting(state)) {
 		return 'collecting';
+	}
+	if (isPaused(state)) {
+		return 'paused';
 	}
 	if (isDone(state)) {
 		return 'done';

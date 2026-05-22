@@ -5,6 +5,7 @@ const COLLECTION_STATUSES = [
 	'idle',
 	'checking-login',
 	'collecting',
+	'paused',
 	'done',
 	'login-required',
 	'error',
@@ -17,7 +18,7 @@ export const CollectionStatusSchema = Schema.Literal(...COLLECTION_STATUSES);
 export const GetStateResponseSchema = Schema.Struct({
 	status: CollectionStatusSchema,
 	trackCount: Schema.Number,
-	errorMessage: Schema.optional(Schema.String),
+	message: Schema.optional(Schema.String),
 	skippedTrackCount: Schema.optional(Schema.Number),
 	source: Schema.optional(SourceSchema),
 });

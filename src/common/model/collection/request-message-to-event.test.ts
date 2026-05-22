@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { requestMessageToCollectionEvent } from '@/common/model/collection/request-message-to-event';
 import {
+	CollectionVisibilityPausedRequest,
+	CollectionVisibilityResumedRequest,
 	GetStateRequest,
 	LoginRequiredRequest,
 	StartCollectionRequest,
@@ -28,5 +30,14 @@ describe('requestMessageToCollectionEvent', () => {
 			message: 'Please log in to SoundCloud',
 			reason: 'User nav selector not found',
 		});
+	});
+
+	it('maps visibility pause and resume requests', () => {
+		expect(
+			requestMessageToCollectionEvent(CollectionVisibilityPausedRequest()),
+		).toMatchObject({ _tag: 'CollectionVisibilityPaused' });
+		expect(
+			requestMessageToCollectionEvent(CollectionVisibilityResumedRequest()),
+		).toMatchObject({ _tag: 'CollectionVisibilityResumed' });
 	});
 });

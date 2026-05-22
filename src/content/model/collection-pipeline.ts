@@ -7,6 +7,7 @@ import {
 } from '@/content/constants';
 import {
 	BackgroundSenderTag,
+	DocumentVisibilityTag,
 	DomScannerTag,
 	ScrollerTag,
 	type SendToBackgroundFailed,
@@ -49,6 +50,7 @@ class InlineErrorPersisted extends Data.TaggedError('InlineErrorPersisted')<{
 interface LoopState {
 	readonly scanState: CollectionScanState;
 	readonly passesWithNoNewTracks: number;
+	readonly isVisibilityPaused: boolean;
 	/**
 	 * True when the loading indicator was absent at the end of the previous
 	 * iteration. The next iteration is the final cycle; it runs normally and
@@ -61,6 +63,7 @@ interface LoopState {
 const initialLoopState: LoopState = {
 	scanState: initialScanState(),
 	passesWithNoNewTracks: 0,
+	isVisibilityPaused: false,
 	isFinalCycle: false,
 };
 
@@ -73,17 +76,15 @@ function loopStep(
 ): Effect.Effect<
 	LoopState | undefined,
 	SendToBackgroundFailed | InlineErrorPersisted,
-	DomScannerTag | BackgroundSenderTag | ScrollerTag
+	DomScannerTag | BackgroundSenderTag | ScrollerTag | DocumentVisibilityTag
 > {
 	return Effect.gen(function* () {
 		const scanner = yield* DomScannerTag;
 		const sender = yield* BackgroundSenderTag;
 		const scroller = yield* ScrollerTag;
+		const visibility = yield* DocumentVisibilityTag;
 
 		const { batch, nextState } = yield* scanner.scanBatch(current.scanState);
-		const passesWithNoNewTracks = batch.noNewCards
-			? current.passesWithNoNewTracks + 1
-			: 0;
 
 		if (batch.skippedCount > 0) {
 			yield* Effect.logWarning(
@@ -134,6 +135,27 @@ function loopStep(
 
 		const isLoadingIndicatorPresent =
 			yield* scanner.isLoadingIndicatorPresent();
+		const isDocumentHidden = yield* visibility.isHidden();
+		const isVisibilityPaused = isDocumentHidden && isLoadingIndicatorPresent;
+		const hasJustResumed = current.isVisibilityPaused && !isVisibilityPaused;
+
+		if (isVisibilityPaused && !current.isVisibilityPaused) {
+			yield* Effect.log('document hidden, notifying visibility pause');
+			yield* sender.sendVisibilityPaused();
+		}
+
+		if (hasJustResumed) {
+			yield* Effect.log('document visible, notifying visibility resume');
+			yield* sender.sendVisibilityResumed();
+		}
+
+		const passesWithNoNewTracks = batch.noNewCards
+			? isVisibilityPaused
+				? current.passesWithNoNewTracks
+				: hasJustResumed
+					? 0
+					: current.passesWithNoNewTracks + 1
+			: 0;
 
 		if (!isLoadingIndicatorPresent) {
 			yield* Effect.log('loading indicator is absent, scheduling final cycle');
@@ -142,7 +164,28 @@ function loopStep(
 			return {
 				scanState: nextState,
 				passesWithNoNewTracks,
+				isVisibilityPaused,
 				isFinalCycle: true,
+			};
+		}
+
+		if (isVisibilityPaused) {
+			yield* Effect.log('visibility pause active, continuing pipeline');
+			return {
+				scanState: nextState,
+				passesWithNoNewTracks,
+				isVisibilityPaused,
+				isFinalCycle: false,
+			};
+		}
+
+		if (hasJustResumed) {
+			yield* Effect.log('visibility resumed, resetting empty-pass counter');
+			return {
+				scanState: nextState,
+				passesWithNoNewTracks,
+				isVisibilityPaused,
+				isFinalCycle: false,
 			};
 		}
 
@@ -151,7 +194,12 @@ function loopStep(
 			return undefined;
 		}
 
-		return { scanState: nextState, passesWithNoNewTracks, isFinalCycle: false };
+		return {
+			scanState: nextState,
+			passesWithNoNewTracks,
+			isVisibilityPaused,
+			isFinalCycle: false,
+		};
 	}).pipe(Effect.withLogSpan('loopStep'));
 }
 
@@ -167,7 +215,7 @@ function loopStep(
 export const collectionPipeline: Effect.Effect<
 	CollectionOutcome,
 	never,
-	DomScannerTag | BackgroundSenderTag | ScrollerTag
+	DomScannerTag | BackgroundSenderTag | ScrollerTag | DocumentVisibilityTag
 > = Effect.gen(function* () {
 	const sender = yield* BackgroundSenderTag;
 

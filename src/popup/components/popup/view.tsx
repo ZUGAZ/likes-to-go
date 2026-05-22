@@ -8,7 +8,7 @@ import { Transition } from 'solid-transition-group';
 interface PopupViewProps {
 	state: Accessor<PopupState>;
 	trackCount: Accessor<number>;
-	errorMessage: Accessor<string | undefined>;
+	message: Accessor<string | undefined>;
 	skippedTrackCount: Accessor<number>;
 	source: Accessor<PopupSource>;
 	onStart: () => void;
@@ -103,6 +103,24 @@ export function PopupView(props: PopupViewProps) {
 						</div>
 					</Match>
 
+					<Match when={props.state() === 'paused'}>
+						<div class="flex flex-col items-center gap-3">
+							<p class="text-center text-amber-700">
+								{props.message() ?? 'Collection paused.'}
+							</p>
+							<p class="text-neutral-700">
+								{props.trackCount()} likes collected so far
+							</p>
+							<button
+								type="button"
+								class="rounded border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100"
+								onClick={() => props.onCancel()}
+							>
+								Cancel order
+							</button>
+						</div>
+					</Match>
+
 					<Match when={props.state() === 'done'}>
 						<div class="flex flex-col items-center gap-2">
 							<button
@@ -125,7 +143,7 @@ export function PopupView(props: PopupViewProps) {
 
 					<Match when={props.state() === 'login-required'}>
 						<ErrorBlock
-							message={props.errorMessage() ?? LOGIN_REQUIRED_MESSAGE}
+							message={props.message() ?? LOGIN_REQUIRED_MESSAGE}
 							onRetry={props.onRetryFromError}
 							variant="login-required"
 						/>
@@ -133,7 +151,7 @@ export function PopupView(props: PopupViewProps) {
 
 					<Match when={props.state() === 'error'}>
 						<ErrorBlock
-							message={props.errorMessage() ?? 'Something went wrong'}
+							message={props.message() ?? 'Something went wrong'}
 							onRetry={props.onRetryFromError}
 							variant="generic"
 						/>

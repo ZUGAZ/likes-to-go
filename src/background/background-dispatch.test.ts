@@ -297,7 +297,7 @@ describe('background dispatch', () => {
 		expect(response).toMatchObject({
 			status: 'login-required',
 			trackCount: 0,
-			errorMessage: LOGIN_REQUIRED_MESSAGE,
+			message: LOGIN_REQUIRED_MESSAGE,
 		});
 		expect(recordedCommands.map((command) => command._tag)).toEqual([
 			'CheckSource',

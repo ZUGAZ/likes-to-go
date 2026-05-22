@@ -27,7 +27,7 @@ import {
 export interface PopupViewModel {
 	readonly state: () => PopupState;
 	readonly trackCount: () => number;
-	readonly errorMessage: () => string | undefined;
+	readonly message: () => string | undefined;
 	readonly skippedTrackCount: () => number;
 	readonly source: () => PopupSource;
 	readonly effects: {
@@ -44,9 +44,7 @@ export function createPopupViewModel(): PopupViewModel {
 	const boot = initializingPopupModel();
 	const [state, setState] = createSignal<PopupState>(boot.state);
 	const [trackCount, setTrackCount] = createSignal(boot.trackCount);
-	const [errorMessage, setErrorMessage] = createSignal<string | undefined>(
-		boot.errorMessage,
-	);
+	const [message, setMessage] = createSignal<string | undefined>(boot.message);
 	const [skippedTrackCount, setSkippedTrackCount] = createSignal(
 		boot.skippedTrackCount ?? 0,
 	);
@@ -57,11 +55,7 @@ export function createPopupViewModel(): PopupViewModel {
 		batch(() => {
 			setState(model.state);
 			setTrackCount(model.trackCount);
-			setErrorMessage(
-				model.state === 'error' || model.state === 'login-required'
-					? (model.errorMessage ?? 'Something went wrong')
-					: undefined,
-			);
+			setMessage(model.message);
 			setSkippedTrackCount(model.skippedTrackCount ?? 0);
 			currentSource = model.source;
 			setSource(model.source);
@@ -72,7 +66,7 @@ export function createPopupViewModel(): PopupViewModel {
 		applyModel({
 			state: mapStatusToPopupState(response.status),
 			trackCount: response.trackCount,
-			errorMessage: response.errorMessage,
+			message: response.message,
 			skippedTrackCount: response.skippedTrackCount,
 			source: response.source ?? currentSource,
 		});
@@ -98,7 +92,7 @@ export function createPopupViewModel(): PopupViewModel {
 					applyModel({
 						state: 'error',
 						trackCount: 0,
-						errorMessage: err.message,
+						message: err.message,
 						skippedTrackCount: undefined,
 						source: currentSource,
 					});
@@ -130,7 +124,7 @@ export function createPopupViewModel(): PopupViewModel {
 	return {
 		state,
 		trackCount,
-		errorMessage,
+		message,
 		skippedTrackCount,
 		source,
 		effects: {

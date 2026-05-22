@@ -2,6 +2,7 @@ import type { Track } from '@/common/model/track';
 import { MAX_ERROR_RETRIES, NO_NEW_TRACKS_PASSES } from '@/content/constants';
 import {
 	BackgroundSenderTag,
+	DocumentVisibilityTag,
 	DomScannerTag,
 	ScrollerTag,
 	SendToBackgroundFailed,
@@ -108,9 +109,29 @@ function makeBackgroundSenderStub(calls: string[]) {
 			Effect.sync(() => {
 				calls.push('CollectionComplete');
 			}),
+		sendVisibilityPaused: () =>
+			Effect.sync(() => {
+				calls.push('CollectionVisibilityPaused');
+			}),
+		sendVisibilityResumed: () =>
+			Effect.sync(() => {
+				calls.push('CollectionVisibilityResumed');
+			}),
 		sendError: (message, reason) =>
 			Effect.sync(() => {
 				calls.push(`CollectionError:${message}:${reason}`);
+			}),
+	});
+}
+
+function makeDocumentVisibilityStub(responses?: readonly boolean[]) {
+	let callIndex = 0;
+	return Layer.succeed(DocumentVisibilityTag, {
+		isHidden: () =>
+			Effect.sync(() => {
+				const response = responses?.[callIndex];
+				callIndex++;
+				return response ?? false;
 			}),
 	});
 }
@@ -126,7 +147,10 @@ function makeTestLayer(
 	isErrorIndicatorPresentResponses?: readonly boolean[],
 	clickRetryCalls?: string[],
 	scanBatchMetrics?: ScanBatchMetrics,
-): Layer.Layer<DomScannerTag | BackgroundSenderTag | ScrollerTag> {
+	documentHiddenResponses?: readonly boolean[],
+): Layer.Layer<
+	DomScannerTag | BackgroundSenderTag | ScrollerTag | DocumentVisibilityTag
+> {
 	return Layer.mergeAll(
 		makeDomScannerStub(
 			batches,
@@ -137,6 +161,7 @@ function makeTestLayer(
 		),
 		makeBackgroundSenderStub(calls),
 		scrollerStub,
+		makeDocumentVisibilityStub(documentHiddenResponses),
 	);
 }
 
@@ -156,6 +181,7 @@ function runWithTestClock(
 		isErrorIndicatorPresentResponses?: readonly boolean[];
 		clickRetryCalls?: string[];
 		scanBatchMetrics?: ScanBatchMetrics;
+		documentHiddenResponses?: readonly boolean[];
 	},
 ): Effect.Effect<{
 	fiber: Fiber.RuntimeFiber<CollectionOutcome>;
@@ -172,6 +198,7 @@ function runWithTestClock(
 				),
 				opts.senderLayer,
 				scrollerStub,
+				makeDocumentVisibilityStub(opts.documentHiddenResponses),
 			)
 		: makeTestLayer(
 				batches,
@@ -180,6 +207,7 @@ function runWithTestClock(
 				opts?.isErrorIndicatorPresentResponses,
 				opts?.clickRetryCalls,
 				opts?.scanBatchMetrics,
+				opts?.documentHiddenResponses,
 			);
 
 	const pipelineLayer = Layer.mergeAll(serviceLayer, silentLoggerLayer);
@@ -303,6 +331,81 @@ describe('collectionPipeline', () => {
 		expect(calls).toContain('CollectionComplete');
 	});
 
+	it('does not count empty passes while document is hidden and spinner is present', async () => {
+		const calls: string[] = [];
+		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
+		const emptyBatch = makeBatch([], 0, true);
+		const batches = Array.from<CollectionBatch>({
+			length: NO_NEW_TRACKS_PASSES + 3,
+		}).fill(emptyBatch);
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				advanceCount: 8,
+				interruptAfterAdvances: 5,
+				documentHiddenResponses: Array.from<boolean>({ length: 20 }).fill(true),
+				scanBatchMetrics,
+			}),
+		);
+
+		expect(Exit.isInterrupted(outcome)).toBe(true);
+		expect(scanBatchMetrics.scanBatchCalls).toBeGreaterThan(
+			NO_NEW_TRACKS_PASSES,
+		);
+		expect(
+			calls.filter((c) => c === 'CollectionVisibilityPaused'),
+		).toHaveLength(1);
+		expect(calls).not.toContain('CollectionComplete');
+	});
+
+	it('resumes empty-pass counting and clears popup message when document becomes visible', async () => {
+		const calls: string[] = [];
+		const emptyBatch = makeBatch([], 0, true);
+		const batches = Array.from<CollectionBatch>({
+			length: NO_NEW_TRACKS_PASSES + 2,
+		}).fill(emptyBatch);
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				documentHiddenResponses: [true, true, false, false],
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(Completed());
+		expect(
+			calls.filter((c) => c === 'CollectionVisibilityPaused'),
+		).toHaveLength(1);
+		expect(
+			calls.filter((c) => c === 'CollectionVisibilityResumed'),
+		).toHaveLength(1);
+		expect(calls).toContain('CollectionComplete');
+	});
+
+	it('does not complete on the same pass that visibility resumes', async () => {
+		const calls: string[] = [];
+		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
+		const emptyBatch = makeBatch([], 0, true);
+		const batches = Array.from<CollectionBatch>({
+			length: NO_NEW_TRACKS_PASSES + 3,
+		}).fill(emptyBatch);
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				documentHiddenResponses: [false, true, false, false, false],
+				scanBatchMetrics,
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(Completed());
+		expect(scanBatchMetrics.scanBatchCalls).toBe(5);
+		expect(calls).toContain('CollectionVisibilityResumed');
+		expect(calls).toContain('CollectionComplete');
+	});
+
 	it('is interrupted when fiber is interrupted (simulates cancel)', async () => {
 		const calls: string[] = [];
 		const neverEmptyBatch = makeBatch([fakeTrack], 1, false);
@@ -330,6 +433,8 @@ describe('collectionPipeline', () => {
 			sendBatch: () =>
 				Effect.fail(new SendToBackgroundFailed({ reason: 'channel closed' })),
 			sendComplete: () => Effect.void,
+			sendVisibilityPaused: () => Effect.void,
+			sendVisibilityResumed: () => Effect.void,
 			sendError: (message, reason) =>
 				Effect.sync(() => {
 					calls.push(`CollectionError:${message}:${reason}`);

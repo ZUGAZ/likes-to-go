@@ -2,6 +2,8 @@ import type { CollectionEvent } from '@/common/model/collection/event';
 import { CancelCollection } from '@/common/model/collection/events/cancel-collection';
 import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
 import { CollectionError } from '@/common/model/collection/events/collection-error';
+import { CollectionVisibilityPaused } from '@/common/model/collection/events/collection-visibility-paused';
+import { CollectionVisibilityResumed } from '@/common/model/collection/events/collection-visibility-resumed';
 import { DownloadExport } from '@/common/model/collection/events/download-export-event';
 import { GetStateRequested } from '@/common/model/collection/events/get-state-requested';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
@@ -12,6 +14,8 @@ import {
 	isCancelCollection,
 	isCollectionComplete,
 	isCollectionError,
+	isCollectionVisibilityPaused,
+	isCollectionVisibilityResumed,
 	isDownloadExport,
 	isGetStateRequest,
 	isLoginRequired,
@@ -35,6 +39,10 @@ export function requestMessageToCollectionEvent(
 			skippedTrackCount: message.skippedTrackCount,
 		});
 	if (isCollectionComplete(message)) return CollectionComplete();
+	if (isCollectionVisibilityPaused(message))
+		return CollectionVisibilityPaused();
+	if (isCollectionVisibilityResumed(message))
+		return CollectionVisibilityResumed();
 	if (isCollectionError(message))
 		return CollectionError({
 			message: message.message,

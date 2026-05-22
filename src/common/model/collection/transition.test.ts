@@ -15,8 +15,12 @@ import { GetStateRequested } from '@/common/model/collection/events/get-state-re
 import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
+import { CollectionVisibilityPaused } from '@/common/model/collection/events/collection-visibility-paused';
+import { CollectionVisibilityResumed } from '@/common/model/collection/events/collection-visibility-resumed';
 import { SourceSelected } from '@/common/model/collection/events/source-selected';
 import { TrackSchema } from '@/common/model/track';
+import { COLLECTION_VISIBILITY_PAUSED_MESSAGE } from '@/common/model/collection/visibility-paused-message';
+import { isPaused } from '@/common/model/collection/states/paused';
 
 function validTrack(
 	overrides: { title?: string; url?: string } = {},
@@ -103,7 +107,7 @@ describe('collection-transition', () => {
 				ErrorState({ message: LOGIN_REQUIRED_MESSAGE }),
 			);
 			expect(response.status).toBe('login-required');
-			expect(response.errorMessage).toBe(LOGIN_REQUIRED_MESSAGE);
+			expect(response.message).toBe(LOGIN_REQUIRED_MESSAGE);
 		});
 
 		it('GetStateResponse trackCount equals state.tracks.length when Collecting', () => {
@@ -156,6 +160,30 @@ describe('collection-transition', () => {
 			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
 		});
 
+		it('Collecting + LoginRequired transitions to ErrorState and closes tab', () => {
+			const collecting = transition(
+				transition(initialCollectionState, StartCollection()).state,
+				CollectionTabSelected({ tabId: 9 }),
+			).state;
+
+			const result = transition(
+				collecting,
+				LoginRequired({
+					message: LOGIN_REQUIRED_MESSAGE,
+					reason: 'User nav selector not found in page DOM',
+				}),
+			);
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				message: LOGIN_REQUIRED_MESSAGE,
+			});
+			expect(result.commands.map((c) => c._tag)).toEqual([
+				'CloseTab',
+				'NotifyPopup',
+			]);
+		});
+
 		it('CollectingRequested + TabCreated transitions to Collecting and notifies popup', () => {
 			const collectingRequested = transition(
 				initialCollectionState,
@@ -195,6 +223,58 @@ describe('collection-transition', () => {
 				tracks: [],
 				skippedTrackCount: 0,
 			});
+		});
+
+		it('Collecting + visibility pause transitions to Paused and notifies popup', () => {
+			const collecting = transition(
+				transition(initialCollectionState, StartCollection()).state,
+				CollectionTabSelected({ tabId: 9 }),
+			).state;
+
+			const result = transition(collecting, CollectionVisibilityPaused());
+			const response = collectionStateToGetStateResponse(result.state);
+
+			expect(isPaused(result.state)).toBe(true);
+			expect(response.status).toBe('paused');
+			expect(response.message).toBe(COLLECTION_VISIBILITY_PAUSED_MESSAGE);
+			expect(result.commands).toHaveLength(1);
+			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+		});
+
+		it('Paused + visibility resume transitions back to Collecting and notifies popup', () => {
+			const collecting = transition(
+				transition(initialCollectionState, StartCollection()).state,
+				CollectionTabSelected({ tabId: 9 }),
+			).state;
+			const paused = transition(collecting, CollectionVisibilityPaused()).state;
+
+			const result = transition(paused, CollectionVisibilityResumed());
+			const response = collectionStateToGetStateResponse(result.state);
+
+			expect(response.status).toBe('collecting');
+			expect(response.message).toBeUndefined();
+			expect(result.commands).toHaveLength(1);
+			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+		});
+
+		it('Paused + TracksBatch keeps paused status and appends tracks', () => {
+			const collecting = transition(
+				transition(initialCollectionState, StartCollection()).state,
+				CollectionTabSelected({ tabId: 9 }),
+			).state;
+			const paused = transition(collecting, CollectionVisibilityPaused()).state;
+			const tracks = [validTrack({ url: 'https://soundcloud.com/a/paused' })];
+
+			const result = transition(
+				paused,
+				TracksBatch({ tracks, skippedTrackCount: 1 }),
+			);
+			const response = collectionStateToGetStateResponse(result.state);
+
+			expect(response.status).toBe('paused');
+			expect(response.trackCount).toBe(1);
+			expect(response.skippedTrackCount).toBe(1);
+			expect(response.message).toBe(COLLECTION_VISIBILITY_PAUSED_MESSAGE);
 		});
 	});
 });

@@ -28,7 +28,7 @@ export function registerRuntimeListener(
 				sendResponse({
 					status: 'error',
 					trackCount: 0,
-					errorMessage: parsed.left.reason,
+					message: parsed.left.reason,
 				});
 				return;
 			}
@@ -38,7 +38,7 @@ export function registerRuntimeListener(
 					sendResponse({
 						status: 'error',
 						trackCount: 0,
-						errorMessage: errorToReason(err),
+						message: errorToReason(err),
 					});
 				});
 			return true; // keep channel open for async response

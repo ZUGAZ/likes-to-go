@@ -21,7 +21,7 @@ export function PopupContainer() {
 		<PopupView
 			state={vm.state}
 			trackCount={vm.trackCount}
-			errorMessage={vm.errorMessage}
+			message={vm.message}
 			skippedTrackCount={vm.skippedTrackCount}
 			source={vm.source}
 			onStart={vm.actions.startCollection}

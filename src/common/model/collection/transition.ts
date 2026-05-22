@@ -11,6 +11,8 @@ import type { CollectionEvent } from '@/common/model/collection/event';
 import { isCancelCollectionEvent } from '@/common/model/collection/events/cancel-collection';
 import { isCollectionCompleteEvent } from '@/common/model/collection/events/collection-complete';
 import { isCollectionErrorEvent } from '@/common/model/collection/events/collection-error';
+import { isCollectionVisibilityPausedEvent } from '@/common/model/collection/events/collection-visibility-paused';
+import { isCollectionVisibilityResumedEvent } from '@/common/model/collection/events/collection-visibility-resumed';
 import { isCollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
 import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
@@ -39,6 +41,7 @@ import {
 	isErrorState,
 } from '@/common/model/collection/states/error-state';
 import { Idle, isIdle } from '@/common/model/collection/states/idle';
+import { Paused, isPaused } from '@/common/model/collection/states/paused';
 import type { Track } from '@/common/model/track';
 
 export interface TransitionResult {
@@ -189,8 +192,122 @@ export function transition(
 				commands: [NotifyPopup({ state: newState })],
 			};
 		}
+		if (isCollectionVisibilityPausedEvent(event)) {
+			const newState = Paused({
+				tabId: current.tabId,
+				tracks: current.tracks,
+				skippedTrackCount: current.skippedTrackCount,
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isCollectionVisibilityResumedEvent(event)) {
+			return { state: current, commands: [] };
+		}
 		if (isCollectionErrorEvent(event)) {
 			const newState = ErrorState({ message: event.message });
+			return {
+				state: newState,
+				commands: [
+					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
+			};
+		}
+		if (isLoginRequired(event)) {
+			const newState = ErrorState({ message: LOGIN_REQUIRED_MESSAGE });
+			return {
+				state: newState,
+				commands: [
+					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
+			};
+		}
+		if (isCancelCollectionEvent(event)) {
+			const newState = Idle({});
+			return {
+				state: newState,
+				commands: [
+					SendCancelToTab({ tabId: current.tabId }),
+					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
+			};
+		}
+		if (isSendToTabFailed(event)) {
+			const newState = ErrorState({ message: event.message });
+			return {
+				state: newState,
+				commands: [
+					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
+			};
+		}
+		if (isDownloadExportEvent(event)) {
+			const newState = Idle({});
+			return {
+				state: newState,
+				commands: [
+					DownloadExportCommand({ tracks: current.tracks }),
+					NotifyPopup({ state: newState }),
+				],
+			};
+		}
+		return { state: current, commands: [] };
+	}
+
+	if (isPaused(current)) {
+		if (isTracksBatchEvent(event)) {
+			const newState = Paused({
+				tabId: current.tabId,
+				tracks: appendTracksDeduped(current.tracks, event.tracks),
+				skippedTrackCount: current.skippedTrackCount + event.skippedTrackCount,
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isCollectionVisibilityResumedEvent(event)) {
+			const newState = Collecting({
+				tabId: current.tabId,
+				tracks: current.tracks,
+				skippedTrackCount: current.skippedTrackCount,
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isCollectionVisibilityPausedEvent(event)) {
+			return { state: current, commands: [] };
+		}
+		if (isCollectionCompleteEvent(event)) {
+			const newState = Done({
+				tracks: current.tracks,
+				skippedTrackCount: current.skippedTrackCount,
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isCollectionErrorEvent(event)) {
+			const newState = ErrorState({ message: event.message });
+			return {
+				state: newState,
+				commands: [
+					CloseTab({ tabId: current.tabId }),
+					NotifyPopup({ state: newState }),
+				],
+			};
+		}
+		if (isLoginRequired(event)) {
+			const newState = ErrorState({ message: LOGIN_REQUIRED_MESSAGE });
 			return {
 				state: newState,
 				commands: [

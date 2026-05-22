@@ -40,7 +40,7 @@ const { getStateMock } = vi.hoisted(() => ({
 		Effect.succeed({
 			status: 'idle',
 			trackCount: 0,
-			errorMessage: undefined,
+			message: undefined,
 		}),
 	),
 }));
@@ -52,7 +52,7 @@ vi.mock('@/common/infrastructure/chrome-messaging', () => ({
 		Effect.succeed({
 			status: 'idle',
 			trackCount: 0,
-			errorMessage: undefined,
+			message: undefined,
 		}),
 	listenForStateUpdates: listenForStateUpdatesMock,
 }));
@@ -68,7 +68,7 @@ describe('Popup viewmodel', () => {
 			Effect.succeed({
 				status: 'idle',
 				trackCount: 0,
-				errorMessage: undefined,
+				message: undefined,
 			}),
 		);
 	});
@@ -96,7 +96,7 @@ describe('Popup viewmodel', () => {
 
 		expect(vm.state()).toBe('initial');
 		expect(vm.trackCount()).toBe(0);
-		expect(vm.errorMessage()).toBeUndefined();
+		expect(vm.message()).toBeUndefined();
 		expect(vm.source()).toBe('likes-page');
 	});
 
@@ -105,7 +105,7 @@ describe('Popup viewmodel', () => {
 			Effect.succeed({
 				status: 'idle',
 				trackCount: 0,
-				errorMessage: undefined,
+				message: undefined,
 				source: 'active-soundcloud-tab',
 			}),
 		);
@@ -123,7 +123,7 @@ describe('Popup viewmodel', () => {
 			Effect.succeed({
 				status: 'login-required',
 				trackCount: 0,
-				errorMessage: LOGIN_REQUIRED_MESSAGE,
+				message: LOGIN_REQUIRED_MESSAGE,
 			}),
 		);
 		const runtime = makeTestRuntime();
@@ -132,7 +132,7 @@ describe('Popup viewmodel', () => {
 		await runtime.runPromise(vm.effects.syncState);
 
 		expect(vm.state()).toBe('login-required');
-		expect(vm.errorMessage()).toBe(LOGIN_REQUIRED_MESSAGE);
+		expect(vm.message()).toBe(LOGIN_REQUIRED_MESSAGE);
 	});
 
 	it('retryAfterError re-runs getState when sync returned error (e.g. login required)', async () => {
@@ -141,14 +141,14 @@ describe('Popup viewmodel', () => {
 				Effect.succeed({
 					status: 'login-required',
 					trackCount: 0,
-					errorMessage: LOGIN_REQUIRED_MESSAGE,
+					message: LOGIN_REQUIRED_MESSAGE,
 				}),
 			)
 			.mockImplementation(() =>
 				Effect.succeed({
 					status: 'error',
 					trackCount: 0,
-					errorMessage: 'Still need login.',
+					message: 'Still need login.',
 				}),
 			);
 		const runtime = makeTestRuntime();
@@ -161,7 +161,7 @@ describe('Popup viewmodel', () => {
 
 		expect(getStateMock).toHaveBeenCalledTimes(2);
 		expect(vm.state()).toBe('error');
-		expect(vm.errorMessage()).toBe('Still need login.');
+		expect(vm.message()).toBe('Still need login.');
 	});
 
 	it('syncState sets error when getState fails', async () => {
@@ -169,7 +169,7 @@ describe('Popup viewmodel', () => {
 			Effect.succeed({
 				status: 'error',
 				trackCount: 0,
-				errorMessage: 'Could not reach the extension. Channel closed',
+				message: 'Could not reach the extension. Channel closed',
 			}),
 		);
 		const runtime = makeTestRuntime();
@@ -178,7 +178,7 @@ describe('Popup viewmodel', () => {
 		await runtime.runPromise(vm.effects.syncState);
 
 		expect(vm.state()).toBe('error');
-		expect(vm.errorMessage()).toContain('Channel closed');
+		expect(vm.message()).toContain('Channel closed');
 	});
 
 	it('retryAfterError re-runs sync from initializing when sync failed', async () => {
@@ -187,14 +187,14 @@ describe('Popup viewmodel', () => {
 				Effect.succeed({
 					status: 'error',
 					trackCount: 0,
-					errorMessage: 'Could not reach the extension. first failure',
+					message: 'Could not reach the extension. first failure',
 				}),
 			)
 			.mockImplementation(() =>
 				Effect.succeed({
 					status: 'idle',
 					trackCount: 0,
-					errorMessage: undefined,
+					message: undefined,
 					source: 'active-soundcloud-tab',
 				}),
 			);
@@ -207,7 +207,7 @@ describe('Popup viewmodel', () => {
 		await runtime.runPromise(vm.effects.retryAfterError);
 
 		expect(vm.state()).toBe('initial');
-		expect(vm.errorMessage()).toBeUndefined();
+		expect(vm.message()).toBeUndefined();
 		expect(vm.source()).toBe('active-soundcloud-tab');
 	});
 
@@ -231,7 +231,7 @@ describe('Popup viewmodel', () => {
 		triggerStateUpdate({
 			status: 'checking-login',
 			trackCount: 0,
-			errorMessage: undefined,
+			message: undefined,
 			skippedTrackCount: undefined,
 		});
 
@@ -241,7 +241,7 @@ describe('Popup viewmodel', () => {
 		triggerStateUpdate({
 			status: 'collecting',
 			trackCount: 3,
-			errorMessage: undefined,
+			message: undefined,
 			skippedTrackCount: undefined,
 		});
 
@@ -258,7 +258,7 @@ describe('Popup viewmodel', () => {
 		triggerStateUpdate({
 			status: 'done',
 			trackCount: 12,
-			errorMessage: undefined,
+			message: undefined,
 			skippedTrackCount: undefined,
 		});
 
@@ -275,11 +275,41 @@ describe('Popup viewmodel', () => {
 		triggerStateUpdate({
 			status: 'collecting',
 			trackCount: 5,
-			errorMessage: undefined,
+			message: undefined,
 			skippedTrackCount: 2,
 		});
 
 		expect(vm.state()).toBe('processing');
 		expect(vm.skippedTrackCount()).toBe(2);
+	});
+
+	it('paused update applies message and collecting update clears it', async () => {
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		triggerStateUpdate({
+			status: 'paused',
+			trackCount: 5,
+			message:
+				'Collection paused — SoundCloud tab is hidden. Please focus it to resume.',
+			skippedTrackCount: undefined,
+		});
+
+		expect(vm.state()).toBe('paused');
+		expect(vm.message()).toBe(
+			'Collection paused — SoundCloud tab is hidden. Please focus it to resume.',
+		);
+
+		triggerStateUpdate({
+			status: 'collecting',
+			trackCount: 5,
+			message: undefined,
+			skippedTrackCount: undefined,
+		});
+
+		expect(vm.state()).toBe('processing');
+		expect(vm.message()).toBeUndefined();
 	});
 });

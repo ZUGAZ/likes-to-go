@@ -7,12 +7,10 @@ import { errorToReason } from '@/common/model/error-to-reason';
 
 export function runNotifyPopup(state: CollectionState): Effect.Effect<void> {
 	const response = collectionStateToGetStateResponse(state);
-	const message = PopupStateUpdate({
+	const update = PopupStateUpdate({
 		status: response.status,
 		trackCount: response.trackCount,
-		...(response.errorMessage === undefined
-			? {}
-			: { errorMessage: response.errorMessage }),
+		...(response.message === undefined ? {} : { message: response.message }),
 		...(response.skippedTrackCount === undefined
 			? {}
 			: { skippedTrackCount: response.skippedTrackCount }),
@@ -20,12 +18,12 @@ export function runNotifyPopup(state: CollectionState): Effect.Effect<void> {
 	});
 
 	return Effect.tryPromise({
-		try: () => chrome.runtime.sendMessage(message),
+		try: () => chrome.runtime.sendMessage(update),
 		catch: (err: unknown) =>
 			PopupStateUpdate({
 				status: response.status,
 				trackCount: response.trackCount,
-				errorMessage: errorToReason(err),
+				message: errorToReason(err),
 			}),
 	}).pipe(Effect.ignore);
 }

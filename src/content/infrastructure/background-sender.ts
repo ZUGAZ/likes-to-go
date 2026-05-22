@@ -6,6 +6,8 @@ import {
 import {
 	CollectionCompleteRequest,
 	CollectionErrorRequest,
+	CollectionVisibilityPausedRequest,
+	CollectionVisibilityResumedRequest,
 	TracksBatchRequest,
 } from '@/common/model/request-message';
 import type { Track } from '@/common/model/track';
@@ -20,6 +22,14 @@ export interface BackgroundSender {
 		args: TracksBatchPayload,
 	) => Effect.Effect<void, SendToBackgroundFailed>;
 	readonly sendComplete: () => Effect.Effect<void, SendToBackgroundFailed>;
+	readonly sendVisibilityPaused: () => Effect.Effect<
+		void,
+		SendToBackgroundFailed
+	>;
+	readonly sendVisibilityResumed: () => Effect.Effect<
+		void,
+		SendToBackgroundFailed
+	>;
 	readonly sendError: (
 		message: string,
 		reason: string,
@@ -39,6 +49,14 @@ export const BackgroundSenderLive: Layer.Layer<BackgroundSenderTag> =
 			).pipe(Effect.asVoid),
 		sendComplete: () =>
 			sendToBackgroundEffect(CollectionCompleteRequest()).pipe(Effect.asVoid),
+		sendVisibilityPaused: () =>
+			sendToBackgroundEffect(CollectionVisibilityPausedRequest()).pipe(
+				Effect.asVoid,
+			),
+		sendVisibilityResumed: () =>
+			sendToBackgroundEffect(CollectionVisibilityResumedRequest()).pipe(
+				Effect.asVoid,
+			),
 		sendError: (message, reason) =>
 			sendToBackgroundEffect(CollectionErrorRequest({ message, reason })).pipe(
 				Effect.asVoid,

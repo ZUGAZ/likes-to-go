@@ -23,13 +23,13 @@ function transportErrorToGetStateResponse(
 		return {
 			status: 'error',
 			trackCount: 0,
-			errorMessage: `Could not reach the extension. ${err.reason}`,
+			message: `Could not reach the extension. ${err.reason}`,
 		};
 	}
 	return {
 		status: 'error',
 		trackCount: 0,
-		errorMessage: `Could not read extension state. ${err.reason}`,
+		message: `Could not read extension state. ${err.reason}`,
 	};
 }
 

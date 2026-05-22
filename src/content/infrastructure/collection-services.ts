@@ -7,6 +7,10 @@ import {
 	DomScannerTag,
 	makeDomScannerLive,
 } from '@/content/infrastructure/dom-scanner';
+import {
+	DocumentVisibilityLive,
+	DocumentVisibilityTag,
+} from '@/content/infrastructure/document-visibility';
 import { ScrollerLive, ScrollerTag } from '@/content/infrastructure/scroller';
 
 export {
@@ -18,14 +22,21 @@ export {
 	DomScannerTag,
 	type DomScanner,
 } from '@/content/infrastructure/dom-scanner';
+export {
+	DocumentVisibilityTag,
+	type DocumentVisibility,
+} from '@/content/infrastructure/document-visibility';
 export { ScrollerTag, type Scroller } from '@/content/infrastructure/scroller';
 
 export function makeCollectionLive(
 	root: Element,
-): Layer.Layer<DomScannerTag | BackgroundSenderTag | ScrollerTag> {
+): Layer.Layer<
+	DomScannerTag | BackgroundSenderTag | ScrollerTag | DocumentVisibilityTag
+> {
 	return Layer.mergeAll(
 		makeDomScannerLive(root),
 		BackgroundSenderLive,
 		ScrollerLive,
+		DocumentVisibilityLive,
 	);
 }

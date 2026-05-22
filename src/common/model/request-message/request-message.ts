@@ -10,6 +10,12 @@ export const TracksBatchSchema = taggedStruct('TracksBatch', {
 	skippedTrackCount: Schema.Number,
 });
 export const CollectionCompleteSchema = taggedStruct('CollectionComplete');
+export const CollectionVisibilityPausedSchema = taggedStruct(
+	'CollectionVisibilityPaused',
+);
+export const CollectionVisibilityResumedSchema = taggedStruct(
+	'CollectionVisibilityResumed',
+);
 export const CollectionErrorSchema = taggedStruct('CollectionError', {
 	message: Schema.String,
 	reason: Schema.String,
@@ -26,6 +32,8 @@ export const RequestMessageSchema = Schema.Union(
 	StartCollectionSchema,
 	TracksBatchSchema,
 	CollectionCompleteSchema,
+	CollectionVisibilityPausedSchema,
+	CollectionVisibilityResumedSchema,
 	CollectionErrorSchema,
 	CancelCollectionSchema,
 	DownloadExportSchema,
@@ -50,6 +58,20 @@ type CollectionCompleteRequest = Schema.Schema.Type<
 >;
 export const CollectionCompleteRequest =
 	Data.tagged<CollectionCompleteRequest>('CollectionComplete');
+
+type CollectionVisibilityPausedRequest = Schema.Schema.Type<
+	typeof CollectionVisibilityPausedSchema
+>;
+export const CollectionVisibilityPausedRequest =
+	Data.tagged<CollectionVisibilityPausedRequest>('CollectionVisibilityPaused');
+
+type CollectionVisibilityResumedRequest = Schema.Schema.Type<
+	typeof CollectionVisibilityResumedSchema
+>;
+export const CollectionVisibilityResumedRequest =
+	Data.tagged<CollectionVisibilityResumedRequest>(
+		'CollectionVisibilityResumed',
+	);
 
 type CollectionErrorRequest = Schema.Schema.Type<typeof CollectionErrorSchema>;
 export const CollectionErrorRequest =
@@ -78,6 +100,12 @@ export const isGetStateRequest = Schema.is(GetStateSchema);
 export const isStartCollection = Schema.is(StartCollectionSchema);
 export const isTracksBatch = Schema.is(TracksBatchSchema);
 export const isCollectionComplete = Schema.is(CollectionCompleteSchema);
+export const isCollectionVisibilityPaused = Schema.is(
+	CollectionVisibilityPausedSchema,
+);
+export const isCollectionVisibilityResumed = Schema.is(
+	CollectionVisibilityResumedSchema,
+);
 export const isCollectionError = Schema.is(CollectionErrorSchema);
 export const isCancelCollection = Schema.is(CancelCollectionSchema);
 export const isDownloadExport = Schema.is(DownloadExportSchema);

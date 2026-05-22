@@ -4,7 +4,7 @@ import type { CollectionStatus, Source } from '@/common/model/request-message';
 export interface StateUpdatePayload {
 	readonly status: CollectionStatus;
 	readonly trackCount: number;
-	readonly errorMessage?: string | undefined;
+	readonly message?: string | undefined;
 	readonly skippedTrackCount?: number | undefined;
 	readonly source?: Source | undefined;
 }
@@ -20,7 +20,7 @@ export function listenForStateUpdates(
 		onStateUpdate({
 			status: message.status,
 			trackCount: message.trackCount,
-			errorMessage: message.errorMessage,
+			message: message.message,
 			skippedTrackCount: message.skippedTrackCount,
 			source: message.source,
 		});
