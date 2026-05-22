@@ -35,7 +35,7 @@ describe('runCheckLogin', () => {
 			expirationDate: 1,
 			hostOnly: false,
 			httpOnly: true,
-			name: 'connect_session',
+			name: '_soundcloud_session',
 			path: '/',
 			sameSite: 'no_restriction',
 			secure: true,

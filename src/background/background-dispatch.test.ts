@@ -62,7 +62,7 @@ function makeCheckLoginAwareRunner(
 			return Effect.promise(() =>
 				getCookie({
 					url: 'https://soundcloud.com',
-					name: 'connect_session',
+					name: '_soundcloud_session',
 				}),
 			).pipe(
 				Effect.flatMap((cookie) =>
@@ -106,7 +106,7 @@ describe('background dispatch', () => {
 			expirationDate: 1,
 			hostOnly: false,
 			httpOnly: true,
-			name: 'connect_session',
+			name: '_soundcloud_session',
 			path: '/',
 			sameSite: 'no_restriction',
 			secure: true,
