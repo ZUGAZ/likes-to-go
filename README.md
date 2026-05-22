@@ -18,7 +18,7 @@ That's it. Your likes, your file, your hard drive.
 
 ### Chrome Web Store
 
-Coming soon. The listing link will be added here when published.
+[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/likes-to-go/bleniiemffekgejceicenjdomcapbhmg)
 
 ### Dev mode (sideload)
 
