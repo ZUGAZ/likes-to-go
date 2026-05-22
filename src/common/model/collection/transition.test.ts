@@ -122,7 +122,10 @@ describe('collection-transition', () => {
 
 		it('GetStateResponse status is login-required for login ErrorState', () => {
 			const response = collectionStateToGetStateResponse(
-				ErrorState({ message: LOGIN_REQUIRED_MESSAGE }),
+				ErrorState({
+					reason: 'login-required',
+					message: LOGIN_REQUIRED_MESSAGE,
+				}),
 			);
 			expect(response.status).toBe('login-required');
 			expect(response.message).toBe(LOGIN_REQUIRED_MESSAGE);
@@ -425,6 +428,72 @@ describe('collection-transition', () => {
 			expect(result.commands.map((c) => c._tag)).toEqual([
 				'SendCancelToTab',
 				'NotifyPopup',
+			]);
+		});
+	});
+
+	describe('ErrorState', () => {
+		it('navigation error + GetStateRequested keeps error state without commands', () => {
+			const errorState = ErrorState({
+				reason: 'source-invalidated',
+				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+			});
+
+			const result = transition(errorState, GetStateRequested());
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				reason: 'source-invalidated',
+				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+			});
+			expect(result.commands).toEqual([]);
+		});
+
+		it('navigation error + LoginVerified keeps error state without commands', () => {
+			const errorState = ErrorState({
+				reason: 'source-invalidated',
+				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+			});
+
+			const result = transition(errorState, LoginVerified());
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				reason: 'source-invalidated',
+				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+			});
+			expect(result.commands).toEqual([]);
+		});
+
+		it('login error + GetStateRequested emits login check only', () => {
+			const errorState = ErrorState({
+				reason: 'login-required',
+				message: LOGIN_REQUIRED_MESSAGE,
+			});
+
+			const result = transition(errorState, GetStateRequested());
+
+			expect(result.state).toMatchObject({
+				_tag: 'Error',
+				reason: 'login-required',
+				message: LOGIN_REQUIRED_MESSAGE,
+			});
+			expect(result.commands.map((command) => command._tag)).toEqual([
+				'CheckLogin',
+			]);
+		});
+
+		it('login error + LoginVerified transitions to Idle and re-checks source', () => {
+			const errorState = ErrorState({
+				reason: 'login-required',
+				message: LOGIN_REQUIRED_MESSAGE,
+			});
+
+			const result = transition(errorState, LoginVerified());
+
+			expect(result.state).toMatchObject({ _tag: 'Idle' });
+			expect(result.commands.map((command) => command._tag)).toEqual([
+				'CheckSource',
 			]);
 		});
 	});

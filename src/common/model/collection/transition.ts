@@ -25,6 +25,7 @@ import { isStartCollectionEvent } from '@/common/model/collection/events/start-c
 import { isTabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
 import { isTabCreated } from '@/common/model/collection/events/tab-created';
 import { isTracksBatchEvent } from '@/common/model/collection/events/tracks-batch';
+import { isLoginRequiredReason } from '@/common/model/collection/error-reason';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { CollectionState } from '@/common/model/collection/state';
 import {
@@ -90,7 +91,10 @@ export function transition(
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'download-failed',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -98,8 +102,8 @@ export function transition(
 		}
 		if (isLoginRequired(event)) {
 			const newState = ErrorState({
+				reason: 'login-required',
 				message: LOGIN_REQUIRED_MESSAGE,
-				...(current.source === undefined ? {} : { source: current.source }),
 			});
 			return {
 				state: newState,
@@ -141,7 +145,10 @@ export function transition(
 			};
 		}
 		if (isTabCreateFailed(event)) {
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'tab-create-failed',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -155,6 +162,7 @@ export function transition(
 		}
 		if (isLoginRequired(event)) {
 			const newState = ErrorState({
+				reason: 'login-required',
 				message: LOGIN_REQUIRED_MESSAGE,
 			});
 			return {
@@ -211,7 +219,10 @@ export function transition(
 			return { state: current, commands: [] };
 		}
 		if (isCollectionErrorEvent(event)) {
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'collection-failed',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -221,7 +232,10 @@ export function transition(
 			if (event.tabId !== current.tabId)
 				return { state: current, commands: [] };
 
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'source-invalidated',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [
@@ -231,7 +245,10 @@ export function transition(
 			};
 		}
 		if (isLoginRequired(event)) {
-			const newState = ErrorState({ message: LOGIN_REQUIRED_MESSAGE });
+			const newState = ErrorState({
+				reason: 'login-required',
+				message: LOGIN_REQUIRED_MESSAGE,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -248,7 +265,10 @@ export function transition(
 			};
 		}
 		if (isSendToTabFailed(event)) {
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'collection-failed',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -306,7 +326,10 @@ export function transition(
 			};
 		}
 		if (isCollectionErrorEvent(event)) {
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'collection-failed',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -316,7 +339,10 @@ export function transition(
 			if (event.tabId !== current.tabId)
 				return { state: current, commands: [] };
 
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'source-invalidated',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [
@@ -326,7 +352,10 @@ export function transition(
 			};
 		}
 		if (isLoginRequired(event)) {
-			const newState = ErrorState({ message: LOGIN_REQUIRED_MESSAGE });
+			const newState = ErrorState({
+				reason: 'login-required',
+				message: LOGIN_REQUIRED_MESSAGE,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -343,7 +372,10 @@ export function transition(
 			};
 		}
 		if (isSendToTabFailed(event)) {
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'collection-failed',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -385,22 +417,19 @@ export function transition(
 
 	if (isErrorState(current)) {
 		if (isGetStateRequested(event)) {
+			if (!isLoginRequiredReason(current.reason)) {
+				return { state: current, commands: [] };
+			}
 			return {
 				state: current,
-				commands: [CheckSource(), CheckLogin()],
-			};
-		}
-		if (isSourceSelected(event)) {
-			return {
-				state: ErrorState({
-					message: current.message,
-					source: event.source,
-				}),
-				commands: [],
+				commands: [CheckLogin()],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
-			const newState = ErrorState({ message: event.message });
+			const newState = ErrorState({
+				reason: 'download-failed',
+				message: event.message,
+			});
 			return {
 				state: newState,
 				commands: [NotifyPopup({ state: newState })],
@@ -421,12 +450,13 @@ export function transition(
 			};
 		}
 		if (isLoginVerified(event)) {
-			const newState = Idle({
-				source: current.source,
-			});
+			if (!isLoginRequiredReason(current.reason)) {
+				return { state: current, commands: [] };
+			}
+			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [CheckSource()],
 			};
 		}
 		return { state: current, commands: [] };

@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { batch, createSignal } from 'solid-js';
+import { batch, createSignal, untrack } from 'solid-js';
 
 import {
 	decodeGetStateResponse,
@@ -102,7 +102,11 @@ export function createPopupViewModel(): PopupViewModel {
 	});
 
 	const retryAfterError = Effect.gen(function* () {
+		const shouldDismissError = untrack(() => state() === 'error');
 		applyModel(initializingPopupModel());
+		if (shouldDismissError) {
+			yield* sendToBackgroundEffect(CancelCollectionRequest());
+		}
 		yield* getState().pipe(Effect.tap(applyGetStateResponse));
 	});
 

@@ -14,8 +14,10 @@ import { SourceSelected } from '@/common/model/collection/events/source-selected
 import { StartCollection } from '@/common/model/collection/events/start-collection';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import { isCollecting } from '@/common/model/collection/states/collecting';
+import { isErrorState } from '@/common/model/collection/states/error-state';
 import { initialCollectionState } from '@/common/model/collection/transition';
 import {
+	CancelCollectionRequest,
 	GetStateRequest,
 	StartCollectionRequest,
 	type GetStateResponse,
@@ -232,6 +234,98 @@ describe('background dispatch', () => {
 			'SendCancelToTab',
 			'NotifyPopup',
 		]);
+	});
+
+	it('handleMessageEffect(GetStateRequest) preserves navigation error after tab navigates away', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const stateRefLayer = Layer.effect(
+			StateRefTag,
+			Ref.make(initialCollectionState),
+		);
+		const runnerLayer = makeCheckLoginAwareRunner(
+			recordedCommands,
+			getCookieMock,
+			queryTabsMock,
+		);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
+
+		const program = Effect.gen(function* () {
+			yield* dispatchEffect(StartCollection());
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
+					tabId: 42,
+				}),
+			);
+			yield* handleCollectionTabNavigationEffect(42, 'https://example.com');
+			const response = yield* handleMessageEffect(
+				GetStateRequest(),
+				{} as chrome.runtime.MessageSender,
+			);
+			const ref = yield* StateRefTag;
+			const state = yield* Ref.get(ref);
+			return { response, state };
+		}).pipe(Effect.provide(testLayer));
+
+		const { response, state } = await Effect.runPromise(program);
+
+		expect(response).toMatchObject({
+			status: 'error',
+			trackCount: 0,
+			message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+		});
+		expect(isErrorState(state)).toBe(true);
+		if (isErrorState(state)) {
+			expect(state.message).toBe(COLLECTION_SOURCE_INVALIDATED_MESSAGE);
+		}
+	});
+
+	it('CancelCollection after navigation error returns idle on GetState', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const stateRefLayer = Layer.effect(
+			StateRefTag,
+			Ref.make(initialCollectionState),
+		);
+		const runnerLayer = makeCheckLoginAwareRunner(
+			recordedCommands,
+			getCookieMock,
+			queryTabsMock,
+		);
+		const testLayer = Layer.mergeAll(
+			stateRefLayer,
+			runnerLayer,
+			silentLoggerLayer,
+		);
+		const sender: chrome.runtime.MessageSender = {};
+
+		const program = Effect.gen(function* () {
+			yield* dispatchEffect(StartCollection());
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/artist/track',
+					tabId: 42,
+				}),
+			);
+			yield* handleCollectionTabNavigationEffect(42, 'https://example.com');
+			yield* handleMessageEffect(CancelCollectionRequest(), sender);
+			const response = yield* handleMessageEffect(GetStateRequest(), sender);
+			const ref = yield* StateRefTag;
+			const state = yield* Ref.get(ref);
+			return { response, state };
+		}).pipe(Effect.provide(testLayer));
+
+		const { response, state } = await Effect.runPromise(program);
+
+		expect(response).toMatchObject({
+			status: 'idle',
+			trackCount: 0,
+			source: 'likes-page',
+		});
+		expect(state).toMatchObject({ _tag: 'Idle' });
 	});
 
 	it('handleCollectionTabNavigationEffect ignores same-url updates and other tabs', async () => {

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Effect, Layer, ManagedRuntime } from 'effect';
+import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { GetStateResponse } from '@/common/model/request-message';
 
@@ -35,7 +36,7 @@ const { stopListeningMock, listenForStateUpdatesMock, triggerStateUpdate } =
 
 type GetStateMockEffect = Effect.Effect<GetStateResponse>;
 
-const { getStateMock } = vi.hoisted(() => ({
+const { getStateMock, sendToBackgroundMock } = vi.hoisted(() => ({
 	getStateMock: vi.fn<() => GetStateMockEffect>(() =>
 		Effect.succeed({
 			status: 'idle',
@@ -43,11 +44,14 @@ const { getStateMock } = vi.hoisted(() => ({
 			message: undefined,
 		}),
 	),
+	sendToBackgroundMock: vi.fn<
+		(message: { readonly _tag: string }) => Effect.Effect<void>
+	>(() => Effect.succeed(undefined)),
 }));
 
 vi.mock('@/common/infrastructure/chrome-messaging', () => ({
 	getState: getStateMock,
-	sendToBackgroundEffect: () => Effect.succeed(undefined),
+	sendToBackgroundEffect: sendToBackgroundMock,
 	decodeGetStateResponse: () =>
 		Effect.succeed({
 			status: 'idle',
@@ -64,6 +68,8 @@ describe('Popup viewmodel', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		getStateMock.mockReset();
+		sendToBackgroundMock.mockReset();
+		sendToBackgroundMock.mockImplementation(() => Effect.succeed(undefined));
 		getStateMock.mockImplementation(() =>
 			Effect.succeed({
 				status: 'idle',
@@ -153,15 +159,52 @@ describe('Popup viewmodel', () => {
 			);
 		const runtime = makeTestRuntime();
 		const vm = createPopupViewModel();
+		sendToBackgroundMock.mockClear();
 
 		await runtime.runPromise(vm.effects.syncState);
 		expect(getStateMock).toHaveBeenCalledTimes(1);
 
 		await runtime.runPromise(vm.effects.retryAfterError);
 
+		expect(sendToBackgroundMock).not.toHaveBeenCalled();
 		expect(getStateMock).toHaveBeenCalledTimes(2);
 		expect(vm.state()).toBe('error');
 		expect(vm.message()).toBe('Still need login.');
+		expect(sendToBackgroundMock).not.toHaveBeenCalled();
+	});
+
+	it('retryAfterError dismisses generic error before re-syncing', async () => {
+		getStateMock
+			.mockImplementationOnce(() =>
+				Effect.succeed({
+					status: 'error',
+					trackCount: 0,
+					message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+				}),
+			)
+			.mockImplementationOnce(() =>
+				Effect.succeed({
+					status: 'idle',
+					trackCount: 0,
+					source: 'active-soundcloud-tab',
+				}),
+			);
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+		sendToBackgroundMock.mockClear();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		await runtime.runPromise(vm.effects.retryAfterError);
+
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) => message._tag === 'CancelCollection',
+			),
+		).toBe(true);
+		expect(sendToBackgroundMock).toHaveBeenCalledTimes(1);
+		expect(vm.state()).toBe('initial');
+		expect(vm.source()).toBe('active-soundcloud-tab');
 	});
 
 	it('syncState sets error when getState fails', async () => {
@@ -200,12 +243,19 @@ describe('Popup viewmodel', () => {
 			);
 		const runtime = makeTestRuntime();
 		const vm = createPopupViewModel();
+		sendToBackgroundMock.mockClear();
 
 		await runtime.runPromise(vm.effects.syncState);
 		expect(vm.state()).toBe('error');
 
 		await runtime.runPromise(vm.effects.retryAfterError);
 
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) => message._tag === 'CancelCollection',
+			),
+		).toBe(true);
+		expect(sendToBackgroundMock).toHaveBeenCalledTimes(1);
 		expect(vm.state()).toBe('initial');
 		expect(vm.message()).toBeUndefined();
 		expect(vm.source()).toBe('active-soundcloud-tab');
