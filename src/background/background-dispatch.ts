@@ -5,6 +5,7 @@ import type { CollectionEvent } from '@/common/model/collection/event';
 import { requestMessageToCollectionEvent } from '@/common/model/collection/request-message-to-event';
 import { hasTracks } from '@/common/model/collection/state';
 import { collectionStateToGetStateResponse } from '@/common/model/collection/state-to-response';
+import { isErrorState } from '@/common/model/collection/states/error-state';
 import { transition } from '@/common/model/collection/transition';
 import type {
 	GetStateResponse,
@@ -32,6 +33,9 @@ export function dispatchEffect(
 		const result = transition(current, event);
 		yield* Ref.set(ref, result.state);
 		const stateTag = result.state._tag;
+		const message = isErrorState(result.state)
+			? result.state.message
+			: 'No message';
 		const tracksLen = hasTracks(result.state)
 			? result.state.tracks.length
 			: undefined;
@@ -41,6 +45,7 @@ export function dispatchEffect(
 			event._tag,
 			'→ state',
 			stateTag,
+			message,
 			tracksLen !== undefined ? { tracks: tracksLen } : '',
 			'commands',
 			result.commands.map((cmd) => cmd._tag).join(', '),
