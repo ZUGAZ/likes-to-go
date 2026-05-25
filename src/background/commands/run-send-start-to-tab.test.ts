@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, layer } from '@effect/vitest';
+import { vi } from 'vitest';
+import { Effect } from 'effect';
 import { runSendStartToTab } from '@/background/commands/run-send-start-to-tab';
 import { sendToTabEffect } from '@/common/infrastructure/chrome-messaging';
 import { StartCollectionRequest } from '@/common/model/request-message';
-import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
-import { Effect } from 'effect';
+import { silentLoggerLayer } from '@/test/effect-log-test';
 
 vi.mock('@/common/infrastructure/chrome-messaging', () => ({
 	sendToTabEffect: vi.fn(() => Effect.void),
@@ -62,18 +63,24 @@ describe('runSendStartToTab', () => {
 		});
 	});
 
-	it('focuses the collection tab before sending start', async () => {
-		const exit = await runPromiseExitWithSilentLogger(runSendStartToTab(42));
+	layer(silentLoggerLayer)((it) => {
+		it.effect('focuses the collection tab before sending start', () =>
+			Effect.gen(function* () {
+				const exit = yield* Effect.exit(runSendStartToTab(42));
 
-		expect(chrome.tabs.update).toHaveBeenCalledWith(42, { active: true });
-		expect(chrome.windows.update).toHaveBeenCalledWith(7, { focused: true });
-		expect(sendToTabEffectMock).toHaveBeenCalledWith(
-			42,
-			StartCollectionRequest(),
+				expect(chrome.tabs.update).toHaveBeenCalledWith(42, { active: true });
+				expect(chrome.windows.update).toHaveBeenCalledWith(7, {
+					focused: true,
+				});
+				expect(sendToTabEffectMock).toHaveBeenCalledWith(
+					42,
+					StartCollectionRequest(),
+				);
+				expect(exit._tag).toBe('Success');
+				if (exit._tag === 'Success') {
+					expect(exit.value).toBeUndefined();
+				}
+			}),
 		);
-		expect(exit._tag).toBe('Success');
-		if (exit._tag === 'Success') {
-			expect(exit.value).toBeUndefined();
-		}
 	});
 });

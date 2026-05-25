@@ -1,9 +1,9 @@
-import { Cause, Exit, Option } from 'effect';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, layer, vi } from '@effect/vitest';
+import { Cause, Effect, Exit, Option } from 'effect';
 import { runCreateTab } from '@/background/commands/run-create-tab';
-import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
 import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TabCreateFailed } from '@/common/model/collection/events/tab-create-failed';
+import { silentLoggerLayer } from '@/test/effect-log-test';
 
 declare const chrome: typeof globalThis.chrome;
 
@@ -32,41 +32,46 @@ describe('runCreateTab', () => {
 		});
 	});
 
-	it('succeeds with tabId when chrome.tabs.create returns an id', async () => {
-		createTabMock.mockResolvedValueOnce({
-			id: 123,
-		});
+	layer(silentLoggerLayer)((it) => {
+		it.effect('succeeds with tabId when chrome.tabs.create returns an id', () =>
+			Effect.gen(function* () {
+				createTabMock.mockResolvedValueOnce({
+					id: 123,
+				});
 
-		const exit = await runPromiseExitWithSilentLogger(
-			runCreateTab('https://example.com'),
+				const exit = yield* Effect.exit(runCreateTab('https://example.com'));
+
+				expect(chrome.tabs.create).toHaveBeenCalledWith({
+					url: 'https://example.com',
+					active: true,
+				});
+				expect(exit._tag).toBe('Success');
+				if (exit._tag === 'Success') {
+					expect(exit.value).toEqual(TabCreated({ tabId: 123 }));
+				}
+			}),
 		);
 
-		expect(chrome.tabs.create).toHaveBeenCalledWith({
-			url: 'https://example.com',
-			active: true,
-		});
-		expect(exit._tag).toBe('Success');
-		if (exit._tag === 'Success') {
-			expect(exit.value).toEqual(TabCreated({ tabId: 123 }));
-		}
-	});
+		it.effect('fails when chrome.tabs.create rejects', () =>
+			Effect.gen(function* () {
+				createTabMock.mockRejectedValueOnce(new Error('boom'));
 
-	it('fails when chrome.tabs.create rejects', async () => {
-		createTabMock.mockRejectedValueOnce(new Error('boom'));
+				const exit = yield* Effect.exit(runCreateTab('https://example.com'));
 
-		const exit = await runPromiseExitWithSilentLogger(
-			runCreateTab('https://example.com'),
-		);
+				expect(Exit.isFailure(exit)).toBe(true);
+				if (!Exit.isFailure(exit)) return;
 
-		expect(Exit.isFailure(exit)).toBe(true);
-		if (!Exit.isFailure(exit)) return;
+				const failure = exit.cause.pipe(
+					Cause.failureOption,
+					Option.getOrUndefined,
+				);
 
-		const failure = exit.cause.pipe(Cause.failureOption, Option.getOrUndefined);
-
-		expect(failure).toEqual(
-			TabCreateFailed({
-				message: 'Could not open the likes page',
-				reason: 'boom',
+				expect(failure).toEqual(
+					TabCreateFailed({
+						message: 'Could not open the likes page',
+						reason: 'boom',
+					}),
+				);
 			}),
 		);
 	});

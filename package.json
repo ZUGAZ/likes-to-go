@@ -27,7 +27,7 @@
 		"postinstall": "wxt prepare"
 	},
 	"dependencies": {
-		"effect": "^3.19.18",
+		"effect": "^3.21.2",
 		"solid-js": "^1.9.11",
 		"solid-transition-group": "^0.3.0"
 	},
@@ -43,6 +43,7 @@
 		"@commitlint/cli": "^20.4.2",
 		"@commitlint/config-conventional": "^20.4.2",
 		"@effect/language-service": "^0.80.0",
+		"@effect/vitest": "0.29.0",
 		"@eslint/js": "^9.39.2",
 		"@solidjs/testing-library": "^0.8.10",
 		"@tailwindcss/vite": "^4.2.0",

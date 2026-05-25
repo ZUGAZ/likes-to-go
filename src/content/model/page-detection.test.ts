@@ -1,3 +1,5 @@
+import { afterEach, describe, expect, layer, vi } from '@effect/vitest';
+import { Cause, Effect, Exit, Fiber, Option } from 'effect';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import {
 	EMPTY_LIKES_LIST_MESSAGE,
@@ -9,13 +11,9 @@ import {
 	WAIT_FOR_LIST_TO_SETTLE_MS,
 	detectSupportedCollectionPage,
 } from '@/content/model/page-detection';
-import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
-import { Cause, Exit, Option } from 'effect';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { silentLoggerLayer } from '@/test/effect-log-test';
 
-function detectionFailure(
-	exit: Awaited<ReturnType<typeof runPromiseExitWithSilentLogger>>,
-): unknown {
+function detectionFailure(exit: Exit.Exit<unknown, unknown>): unknown {
 	if (!Exit.isFailure(exit)) return undefined;
 	return exit.cause.pipe(Cause.failureOption, Option.getOrUndefined);
 }
@@ -27,176 +25,221 @@ describe('detectSupportedCollectionPage', () => {
 		window.history.replaceState(null, '', '/');
 	});
 
-	it('returns the track list root for a supported likes page', async () => {
-		document.body.innerHTML = [
-			'<div class="header__userNav">User Menu</div>',
-			'<div class="lazyLoadingList__list">',
-			'<div class="badgeList__item">card</div>',
-			'</div>',
-		].join('');
+	layer(silentLoggerLayer)((it) => {
+		it.effect('returns the track list root for a supported likes page', () =>
+			Effect.gen(function* () {
+				document.body.innerHTML = [
+					'<div class="header__userNav">User Menu</div>',
+					'<div class="lazyLoadingList__list">',
+					'<div class="badgeList__item">card</div>',
+					'</div>',
+				].join('');
 
-		const exit = await runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
+				const exit = yield* Effect.exit(
+					detectSupportedCollectionPage({
+						pageDocument: document,
+					}),
+				);
+
+				expect(Exit.isSuccess(exit)).toBe(true);
+				if (!Exit.isSuccess(exit)) return;
+				expect(exit.value.className).toBe('lazyLoadingList__list');
 			}),
 		);
 
-		expect(Exit.isSuccess(exit)).toBe(true);
-		if (!Exit.isSuccess(exit)) return;
-		expect(exit.value.className).toBe('lazyLoadingList__list');
-	});
+		it.effect(
+			'supports a non-likes pathname when collection DOM is present',
+			() =>
+				Effect.gen(function* () {
+					window.history.pushState(null, '', '/artist/track');
+					document.body.innerHTML = [
+						'<div class="header__userNav">User Menu</div>',
+						'<div class="lazyLoadingList__list">',
+						'<div class="badgeList__item">card</div>',
+						'</div>',
+					].join('');
 
-	it('supports a non-likes pathname when collection DOM is present', async () => {
-		window.history.pushState(null, '', '/artist/track');
-		document.body.innerHTML = [
-			'<div class="header__userNav">User Menu</div>',
-			'<div class="lazyLoadingList__list">',
-			'<div class="badgeList__item">card</div>',
-			'</div>',
-		].join('');
+					const exit = yield* Effect.exit(
+						detectSupportedCollectionPage({
+							pageDocument: document,
+						}),
+					);
 
-		const exit = await runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
+					expect(location.pathname).toBe('/artist/track');
+					expect(Exit.isSuccess(exit)).toBe(true);
+				}),
+		);
+
+		it.effect(
+			'fails with login-required when the page has a list but no user nav',
+			() =>
+				Effect.gen(function* () {
+					document.body.innerHTML = [
+						'<div class="lazyLoadingList__list">',
+						'<div class="badgeList__item">card</div>',
+						'</div>',
+					].join('');
+
+					const exit = yield* Effect.exit(
+						detectSupportedCollectionPage({
+							pageDocument: document,
+						}),
+					);
+					const failure = detectionFailure(exit);
+
+					expect(failure).toBeInstanceOf(CollectionPageLoginRequired);
+					expect(failure).toMatchObject({
+						message: LOGIN_REQUIRED_MESSAGE,
+						reason: 'User nav selector not found in page DOM',
+					});
+				}),
+		);
+
+		it.effect(
+			'fails with empty-list message when the list container has no cards',
+			() =>
+				Effect.gen(function* () {
+					document.body.innerHTML = [
+						'<div class="header__userNav">User Menu</div>',
+						'<div class="lazyLoadingList__list"></div>',
+					].join('');
+
+					const exit = yield* Effect.exit(
+						detectSupportedCollectionPage({
+							pageDocument: document,
+						}),
+					);
+					const failure = detectionFailure(exit);
+
+					expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
+					expect(failure).toMatchObject({
+						message: EMPTY_LIKES_LIST_MESSAGE,
+						reason: 'Track list container found but contains no track cards',
+					});
+				}),
+		);
+
+		it.effect(
+			'fails with empty-list message when spinner clears and no cards appear',
+			() =>
+				Effect.gen(function* () {
+					document.body.innerHTML = [
+						'<div class="header__userNav">User Menu</div>',
+						'<div class="lazyLoadingList__list"></div>',
+						'<div class="loading regular m-padded">Loading</div>',
+					].join('');
+
+					const exitFiber = yield* Effect.fork(
+						Effect.exit(
+							detectSupportedCollectionPage({
+								pageDocument: document,
+							}),
+						),
+					);
+
+					document.querySelector('.loading.regular.m-padded')?.remove();
+					const exit = yield* Fiber.join(exitFiber);
+					const failure = detectionFailure(exit);
+
+					expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
+					expect(failure).toMatchObject({
+						message: EMPTY_LIKES_LIST_MESSAGE,
+						reason: 'Track list container found but contains no track cards',
+					});
+				}),
+		);
+
+		it.effect('succeeds when cards appear after spinner clears', () =>
+			Effect.gen(function* () {
+				document.body.innerHTML = [
+					'<div class="header__userNav">User Menu</div>',
+					'<div class="lazyLoadingList__list"></div>',
+					'<div class="loading regular m-padded">Loading</div>',
+				].join('');
+
+				const exitFiber = yield* Effect.fork(
+					Effect.exit(
+						detectSupportedCollectionPage({
+							pageDocument: document,
+						}),
+					),
+				);
+
+				document.querySelector('.loading.regular.m-padded')?.remove();
+				const list = document.querySelector('.lazyLoadingList__list');
+				list?.insertAdjacentHTML(
+					'beforeend',
+					'<div class="badgeList__item">card</div>',
+				);
+
+				const exit = yield* Fiber.join(exitFiber);
+				expect(Exit.isSuccess(exit)).toBe(true);
 			}),
 		);
 
-		expect(location.pathname).toBe('/artist/track');
-		expect(Exit.isSuccess(exit)).toBe(true);
-	});
+		it.effect(
+			'fails when loading indicator does not settle before timeout',
+			() =>
+				Effect.gen(function* () {
+					vi.useFakeTimers();
+					document.body.innerHTML = [
+						'<div class="header__userNav">User Menu</div>',
+						'<div class="lazyLoadingList__list"></div>',
+						'<div class="loading regular m-padded">Loading</div>',
+					].join('');
 
-	it('fails with login-required when the page has a list but no user nav', async () => {
-		document.body.innerHTML = [
-			'<div class="lazyLoadingList__list">',
-			'<div class="badgeList__item">card</div>',
-			'</div>',
-		].join('');
+					const exitFiber = yield* Effect.fork(
+						Effect.exit(
+							detectSupportedCollectionPage({
+								pageDocument: document,
+								settleTimeoutMs: 1,
+							}),
+						),
+					);
 
-		const exit = await runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
-			}),
-		);
-		const failure = detectionFailure(exit);
+					yield* Effect.promise(() =>
+						vi.advanceTimersByTimeAsync(WAIT_FOR_LIST_TO_SETTLE_MS),
+					);
+					const exit = yield* Fiber.join(exitFiber);
+					const failure = detectionFailure(exit);
 
-		expect(failure).toBeInstanceOf(CollectionPageLoginRequired);
-		expect(failure).toMatchObject({
-			message: LOGIN_REQUIRED_MESSAGE,
-			reason: 'User nav selector not found in page DOM',
-		});
-	});
-
-	it('fails with a clear empty-list message when the likes list has no cards', async () => {
-		document.body.innerHTML = [
-			'<div class="header__userNav">User Menu</div>',
-			'<div class="lazyLoadingList__list"></div>',
-		].join('');
-
-		const exit = await runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
-			}),
-		);
-		const failure = detectionFailure(exit);
-
-		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
-		expect(failure).toMatchObject({
-			message: EMPTY_LIKES_LIST_MESSAGE,
-			reason: 'Track list container found but contains no track cards',
-		});
-	});
-
-	it('fails with empty-list message when spinner clears and no cards appear', async () => {
-		document.body.innerHTML = [
-			'<div class="header__userNav">User Menu</div>',
-			'<div class="lazyLoadingList__list"></div>',
-			'<div class="loading regular m-padded">Loading</div>',
-		].join('');
-
-		const exitPromise = runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
-			}),
+					expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
+					expect(failure).toMatchObject({
+						message: UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
+						reason:
+							'Track list loading indicator did not settle before timeout',
+					});
+				}),
 		);
 
-		document.querySelector('.loading.regular.m-padded')?.remove();
-		const failure = detectionFailure(await exitPromise);
+		it.effect(
+			'fails with a missing-list message when the page lacks supported collection DOM',
+			() =>
+				Effect.gen(function* () {
+					vi.useFakeTimers();
+					document.body.innerHTML =
+						'<div class="header__userNav">User Menu</div>';
 
-		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
-		expect(failure).toMatchObject({
-			message: EMPTY_LIKES_LIST_MESSAGE,
-			reason: 'Track list container found but contains no track cards',
-		});
-	});
+					const exitFiber = yield* Effect.fork(
+						Effect.exit(
+							detectSupportedCollectionPage({
+								pageDocument: document,
+								timeoutMs: 1,
+							}),
+						),
+					);
 
-	it('succeeds when cards appear after spinner clears', async () => {
-		document.body.innerHTML = [
-			'<div class="header__userNav">User Menu</div>',
-			'<div class="lazyLoadingList__list"></div>',
-			'<div class="loading regular m-padded">Loading</div>',
-		].join('');
+					yield* Effect.promise(() => vi.advanceTimersByTimeAsync(1));
+					const exit = yield* Fiber.join(exitFiber);
+					const failure = detectionFailure(exit);
 
-		const exitPromise = runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
-			}),
+					expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
+					expect(failure).toMatchObject({
+						message: UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
+						reason:
+							'Track list container selector did not match any elements before timeout',
+					});
+				}),
 		);
-
-		document.querySelector('.loading.regular.m-padded')?.remove();
-		const list = document.querySelector('.lazyLoadingList__list');
-		list?.insertAdjacentHTML(
-			'beforeend',
-			'<div class="badgeList__item">card</div>',
-		);
-
-		const exit = await exitPromise;
-		expect(Exit.isSuccess(exit)).toBe(true);
-	});
-
-	it('fails when loading indicator does not settle before timeout', async () => {
-		vi.useFakeTimers();
-		document.body.innerHTML = [
-			'<div class="header__userNav">User Menu</div>',
-			'<div class="lazyLoadingList__list"></div>',
-			'<div class="loading regular m-padded">Loading</div>',
-		].join('');
-
-		const exitPromise = runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
-				settleTimeoutMs: 1,
-			}),
-		);
-
-		await vi.advanceTimersByTimeAsync(WAIT_FOR_LIST_TO_SETTLE_MS);
-		const failure = detectionFailure(await exitPromise);
-
-		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
-		expect(failure).toMatchObject({
-			message: UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
-			reason: 'Track list loading indicator did not settle before timeout',
-		});
-	});
-
-	it('fails with a missing-list message when the page lacks supported collection DOM', async () => {
-		vi.useFakeTimers();
-		document.body.innerHTML = '<div class="header__userNav">User Menu</div>';
-
-		const exitPromise = runPromiseExitWithSilentLogger(
-			detectSupportedCollectionPage({
-				pageDocument: document,
-				timeoutMs: 1,
-			}),
-		);
-
-		await vi.advanceTimersByTimeAsync(1);
-		const failure = detectionFailure(await exitPromise);
-
-		expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
-		expect(failure).toMatchObject({
-			message: UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
-			reason:
-				'Track list container selector did not match any elements before timeout',
-		});
 	});
 });
