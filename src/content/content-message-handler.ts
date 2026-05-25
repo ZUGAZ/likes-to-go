@@ -90,15 +90,13 @@ export function createContentMessageHandler(
 					const program = Effect.gen(function* () {
 						yield* Effect.log('StartCollection received');
 
-						const pageDetection = yield* detectSupportedCollectionPage({
+						return yield* detectSupportedCollectionPage({
 							pageDocument: document,
-						}).pipe(Effect.either);
-
-						return yield* pageDetection.pipe(
-							Either.match({
-								onLeft: (error) =>
+						}).pipe(
+							Effect.matchEffect({
+								onFailure: (error) =>
 									reportDetectionFailure(pageDetectionErrorToRequest(error)),
-								onRight: (root) =>
+								onSuccess: (root) =>
 									collectionPipeline.pipe(
 										Effect.provide(makeCollectionLive(root)),
 									),
