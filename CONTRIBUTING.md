@@ -33,15 +33,15 @@ To load the extension in Chrome:
 Four layers. Dependencies flow downward only. No circular imports.
 
 ```
-┌─────────────────────────────────────────────┐
-│  View          Solid.js + Tailwind          │
-├─────────────────────────────────────────────┤
-│  ViewModel     Solid signals + actions      │
-├─────────────────────────────────────────────┤
-│  Model         Effect (Schema, Stream)      │
-├─────────────────────────────────────────────┤
-│  Infrastructure   DOM reader, Chrome APIs   │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  View          Solid.js + Tailwind (Effect-free) │
+├──────────────────────────────────────────────────┤
+│  ViewModel     Solid signals + Effect actions    │
+├──────────────────────────────────────────────────┤
+│  Model         Effect (Schema, Stream)           │
+├──────────────────────────────────────────────────┤
+│  Infrastructure   Effect-wrapped DOM + Chrome    │
+└──────────────────────────────────────────────────┘
 ```
 
 ### Where things live
@@ -62,21 +62,21 @@ src/
 
 ### Runtime components
 
-- **Popup** (View + ViewModel): Solid.js UI. Sends commands, displays progress.
-- **Background service worker** (Orchestrator): Coordinates content script, accumulates data, triggers download.
-- **Content script** (Model + Infrastructure): Injected into SoundCloud. Reads the DOM, collects track data, streams it to the background worker.
+- **Popup** (View + ViewModel): Solid.js UI for views; Effect for ViewModel actions and runtime. Sends commands, displays progress.
+- **Background service worker** (Orchestrator): Effect-based orchestration. Coordinates content script, accumulates data, triggers download.
+- **Content script** (Model + Infrastructure): Effect-based collection pipeline. Injected into SoundCloud. Reads the DOM, collects track data, reports to the background worker.
 
 ## 🧠 Technical decisions
 
 ### Why Effect (and where not)
 
-[Effect](https://effect.website/) provides typed errors, schema validation, streaming with backpressure, and dependency injection. It lives in the **Model** and **Infrastructure** layers only.
+[Effect](https://effect.website/) provides typed errors, schema validation, streaming with backpressure, and dependency injection. It is the **default toolkit** for side effects, orchestration, schemas, and dependency injection across the codebase — Model, Infrastructure, Background, Content, and Popup ViewModel.
 
 Effect does **not** touch:
 
-- Popup UI state (Solid signals handle that)
-- Simple synchronous transforms (plain TypeScript functions)
-- Chrome message passing wrappers (thin typed adapters)
+- **Solid view components** (`.tsx` JSX only) — UI state uses Solid signals; ViewModel actions and runtime wiring use Effect
+
+Plain TypeScript is fine for trivial one-liners where Effect adds no clarity. Chrome APIs stay in infrastructure adapters wrapped as Effect programs.
 
 ### Why Solid.js
 
