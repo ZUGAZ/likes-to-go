@@ -1,9 +1,9 @@
 {
-	"name": "likes-to-go",
+	"name": "Likes to Go",
 	"version": "1.1.0",
 	"private": true,
 	"type": "module",
-	"description": "A Chrome extension that saves your SoundCloud likes as a file",
+	"description": "Your music taste in a file. A Chrome extension that saves your SoundCloud likes as a file. No accounts, no servers, no audio downloaded. Your data, to go.",
 	"author": "Evgeniy Ugryumov <evgeniy.ugryumov@gmail.com>",
 	"license": "MIT",
 	"repository": {
