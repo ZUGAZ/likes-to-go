@@ -4,10 +4,12 @@ import { batch, createSignal, untrack } from 'solid-js';
 import {
 	decodeGetStateResponse,
 	getState,
-	listenForStateUpdates,
 	sendToBackgroundEffect,
 } from '@/common/infrastructure/chrome-messaging';
-import type { StateUpdatePayload } from '@/common/infrastructure/listen-for-state-updates';
+import {
+	listenForStateUpdatesEffect,
+	type StateUpdatePayload,
+} from '@/common/infrastructure/listen-for-state-updates';
 import {
 	CancelCollectionRequest,
 	DownloadExportRequest,
@@ -80,7 +82,9 @@ export function createPopupViewModel(): PopupViewModel {
 		applyModel(loadingPopupModel());
 	};
 
-	const stopListening = listenForStateUpdates(applyGetStateResponse);
+	const stopListening = Effect.runSync(
+		listenForStateUpdatesEffect(applyGetStateResponse),
+	);
 
 	const syncState = getState().pipe(Effect.tap(applyGetStateResponse));
 

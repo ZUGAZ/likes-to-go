@@ -58,7 +58,12 @@ vi.mock('@/common/infrastructure/chrome-messaging', () => ({
 			trackCount: 0,
 			message: undefined,
 		}),
-	listenForStateUpdates: listenForStateUpdatesMock,
+}));
+
+vi.mock('@/common/infrastructure/listen-for-state-updates', () => ({
+	listenForStateUpdatesEffect: vi.fn((callback: (payload: unknown) => void) =>
+		Effect.sync(() => listenForStateUpdatesMock(callback)),
+	),
 }));
 
 const makeTestRuntime = () =>

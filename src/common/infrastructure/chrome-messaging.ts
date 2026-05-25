@@ -16,7 +16,13 @@ export {
 	decodeGetStateResponse,
 	getState,
 } from '@/common/infrastructure/get-state';
-export { listenForStateUpdates } from '@/common/infrastructure/listen-for-state-updates';
+export {
+	DecodeStateUpdateFailed,
+	decodeStateUpdatePayload,
+	listenForStateUpdates,
+	listenForStateUpdatesEffect,
+	type StateUpdatePayload,
+} from '@/common/infrastructure/listen-for-state-updates';
 export {
 	SendToTabMessagingFailed,
 	sendToTab,
