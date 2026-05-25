@@ -81,56 +81,59 @@ export function createContentMessageHandler(
 		_sender: chrome.runtime.MessageSender,
 		sendResponse: (response?: unknown) => void,
 	) => {
-		const parsed = parseRequestMessage(message);
-		if (Either.isLeft(parsed)) return false;
-		const msg = parsed.right;
+		return Either.match(parseRequestMessage(message), {
+			onLeft: () => false,
+			onRight: (msg) => {
+				if (isStartCollection(msg)) {
+					interuptFiber();
 
-		if (isStartCollection(msg)) {
-			interuptFiber();
+					const program = Effect.gen(function* () {
+						yield* Effect.log('StartCollection received');
 
-			const program = Effect.gen(function* () {
-				yield* Effect.log('StartCollection received');
+						const pageDetection = yield* detectSupportedCollectionPage({
+							pageDocument: document,
+						}).pipe(Effect.either);
 
-				const pageDetection = yield* detectSupportedCollectionPage({
-					pageDocument: document,
-				}).pipe(Effect.either);
+						return yield* pageDetection.pipe(
+							Either.match({
+								onLeft: (error) =>
+									reportDetectionFailure(pageDetectionErrorToRequest(error)),
+								onRight: (root) =>
+									collectionPipeline.pipe(
+										Effect.provide(makeCollectionLive(root)),
+									),
+							}),
+						);
+					}).pipe(Effect.catchAll(Effect.succeed));
 
-				return yield* pageDetection.pipe(
-					Either.match({
-						onLeft: (error) =>
-							reportDetectionFailure(pageDetectionErrorToRequest(error)),
-						onRight: (root) =>
-							collectionPipeline.pipe(Effect.provide(makeCollectionLive(root))),
-					}),
-				);
-			}).pipe(Effect.catchAll(Effect.succeed));
+					fiber = Runtime.runFork(runtime)(program);
 
-			fiber = Runtime.runFork(runtime)(program);
+					void Runtime.runPromise(runtime)(
+						Fiber.await(fiber).pipe(
+							Effect.tap((exit) => {
+								fiber = null;
+								if (Exit.isInterrupted(exit)) {
+									return Effect.log('content collection interrupted');
+								}
+								return Effect.void;
+							}),
+						),
+					).then(() => sendResponse());
 
-			void Runtime.runPromise(runtime)(
-				Fiber.await(fiber).pipe(
-					Effect.tap((exit) => {
-						fiber = null;
-						if (Exit.isInterrupted(exit)) {
-							return Effect.log('content collection interrupted');
-						}
-						return Effect.void;
-					}),
-				),
-			).then(() => sendResponse());
+					return true;
+				}
 
-			return true;
-		}
+				if (isCancelCollection(msg)) {
+					void Runtime.runPromise(runtime)(
+						Effect.log('content CancelCollection received'),
+					);
+					interuptFiber();
+					sendResponse();
+					return false;
+				}
 
-		if (isCancelCollection(msg)) {
-			void Runtime.runPromise(runtime)(
-				Effect.log('content CancelCollection received'),
-			);
-			interuptFiber();
-			sendResponse();
-			return false;
-		}
-
-		return false;
+				return false;
+			},
+		});
 	};
 }

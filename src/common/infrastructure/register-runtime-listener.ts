@@ -23,25 +23,27 @@ export function registerRuntimeListener(
 			sender: chrome.runtime.MessageSender,
 			sendResponse: (response?: MessageResponse) => void,
 		) => {
-			const parsed = parseRequestMessage(message);
-			if (Either.isLeft(parsed)) {
-				sendResponse({
-					status: 'error',
-					trackCount: 0,
-					message: parsed.left.reason,
-				});
-				return;
-			}
-			Promise.resolve(handler(parsed.right, sender))
-				.then(sendResponse)
-				.catch((err: unknown) => {
+			return Either.match(parseRequestMessage(message), {
+				onLeft: (left) => {
 					sendResponse({
 						status: 'error',
 						trackCount: 0,
-						message: errorToReason(err),
+						message: left.reason,
 					});
-				});
-			return true; // keep channel open for async response
+				},
+				onRight: (msg) => {
+					Promise.resolve(handler(msg, sender))
+						.then(sendResponse)
+						.catch((err: unknown) => {
+							sendResponse({
+								status: 'error',
+								trackCount: 0,
+								message: errorToReason(err),
+							});
+						});
+					return true; // keep channel open for async response
+				},
+			});
 		},
 	);
 }
