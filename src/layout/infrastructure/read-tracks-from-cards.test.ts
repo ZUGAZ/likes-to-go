@@ -1,16 +1,15 @@
+import { describe, expect, it } from '@effect/vitest';
+import { badgesSelectorSet } from '@/layout/infrastructure/layouts/badges';
 import {
-	TRACK_ARTIST,
-	TRACK_ARTWORK,
-	TRACK_CARD,
-	TRACK_LINK,
-	TRACK_LIST_CONTAINER,
-	TRACK_TITLE,
-} from '@/common/infrastructure/selectors';
-import { describe, expect, it } from 'vitest';
+	trackArtwork,
+	trackCard,
+	trackLink,
+} from '@/layout/infrastructure/layouts/badges/selectors';
 import {
-	getTracksFromCards,
-	getTracksFromRoot,
-} from '@/common/infrastructure/dom-reader';
+	readTracksFromCards,
+	readTracksFromRoot,
+} from '@/layout/infrastructure/read-tracks-from-cards';
+import { TRACK_LIST_CONTAINER } from '@/layout/infrastructure/selectors/shared';
 import { loadFixtureText } from '@/common/tests/fixture-loaders';
 
 function createFixture(innerHTML: string): Element {
@@ -20,12 +19,12 @@ function createFixture(innerHTML: string): Element {
 	return root;
 }
 
-describe('getTracksFromRoot', () => {
+describe('readTracksFromRoot', () => {
 	const baseUrl = 'https://soundcloud.com';
 
 	it('returns empty array when no cards', () => {
 		const root = createFixture('<p>no tracks</p>');
-		expect(getTracksFromRoot(root, baseUrl)).toEqual([]);
+		expect(readTracksFromRoot(root, baseUrl, badgesSelectorSet)).toEqual([]);
 	});
 
 	it('parses cards with badgeList__item and playableTile selectors', () => {
@@ -47,7 +46,7 @@ describe('getTracksFromRoot', () => {
 				</li>
 			</ul>
 		`);
-		const tracks = getTracksFromRoot(root, baseUrl);
+		const tracks = readTracksFromRoot(root, baseUrl, badgesSelectorSet);
 		expect(tracks).toHaveLength(2);
 		expect(tracks[0]).toEqual({
 			title: 'Track A',
@@ -80,7 +79,7 @@ describe('getTracksFromRoot', () => {
 				</li>
 			</ul>
 		`);
-		const tracks = getTracksFromRoot(root, baseUrl);
+		const tracks = readTracksFromRoot(root, baseUrl, badgesSelectorSet);
 		expect(tracks).toHaveLength(0);
 	});
 
@@ -94,7 +93,7 @@ describe('getTracksFromRoot', () => {
 				</div>
 			</li>
 		`);
-		const tracks = getTracksFromRoot(root, baseUrl);
+		const tracks = readTracksFromRoot(root, baseUrl, badgesSelectorSet);
 		expect(tracks[0]?.url).toBe('https://soundcloud.com/user/song');
 	});
 
@@ -113,7 +112,7 @@ describe('getTracksFromRoot', () => {
 				</div>
 			</li>
 		`);
-		const tracks = getTracksFromRoot(root, baseUrl);
+		const tracks = readTracksFromRoot(root, baseUrl, badgesSelectorSet);
 		expect(tracks).toHaveLength(1);
 		expect(tracks[0]?.artwork_url).toBe(
 			'https://i1.sndcdn.com/artworks-abc-t500x500.png',
@@ -130,7 +129,7 @@ describe('getTracksFromRoot', () => {
 				</div>
 			</li>
 		`);
-		const tracks = getTracksFromRoot(root, baseUrl);
+		const tracks = readTracksFromRoot(root, baseUrl, badgesSelectorSet);
 		expect(tracks).toHaveLength(1);
 		expect(tracks[0]).toEqual({
 			title: 'Minimal',
@@ -140,7 +139,7 @@ describe('getTracksFromRoot', () => {
 		expect('artwork_url' in (tracks[0] ?? {})).toBe(false);
 	});
 
-	it('getTracksFromCards matches getTracksFromRoot when given all cards from root', () => {
+	it('readTracksFromCards matches readTracksFromRoot when given all cards from root', () => {
 		const root = createFixture(`
 			<li class="badgeList__item">
 				<div class="audibleTile">
@@ -157,9 +156,9 @@ describe('getTracksFromRoot', () => {
 				</div>
 			</li>
 		`);
-		const cards = Array.from(root.querySelectorAll(TRACK_CARD));
-		expect(getTracksFromCards(cards, baseUrl)).toEqual(
-			getTracksFromRoot(root, baseUrl),
+		const cards = Array.from(root.querySelectorAll(trackCard));
+		expect(readTracksFromCards(cards, baseUrl, badgesSelectorSet)).toEqual(
+			readTracksFromRoot(root, baseUrl, badgesSelectorSet),
 		);
 	});
 });
@@ -183,20 +182,24 @@ describe('badges-view fixture', () => {
 		const baseUrl = 'https://soundcloud.com';
 		const root = loadBadgesViewFixture();
 
-		const cards = Array.from(root.querySelectorAll(TRACK_CARD));
+		const cards = Array.from(root.querySelectorAll(trackCard));
 		expect(cards).toHaveLength(5);
 
 		const malformedCard = cards.find((card) => {
-			return card.querySelector(TRACK_LINK)?.getAttribute('href') === '';
+			return card.querySelector(trackLink)?.getAttribute('href') === '';
 		});
 		if (malformedCard == null) {
 			throw new Error('Expected malformed card with empty href');
 		}
 
-		expect(malformedCard.querySelector(TRACK_TITLE)).toBeNull();
-		expect(malformedCard.querySelector(TRACK_ARTIST)).toBeNull();
+		expect(
+			malformedCard.querySelector(badgesSelectorSet.trackTitle),
+		).toBeNull();
+		expect(
+			malformedCard.querySelector(badgesSelectorSet.trackArtist),
+		).toBeNull();
 
-		const tracks = getTracksFromRoot(root, baseUrl);
+		const tracks = readTracksFromRoot(root, baseUrl, badgesSelectorSet);
 
 		// Only 3 cards are well-formed: valid title + non-empty href.
 		expect(tracks).toHaveLength(3);
@@ -239,7 +242,7 @@ describe('badges-view fixture', () => {
 
 		// Sanity check: malformed cards may still have artwork elements, but no parsed artwork URL.
 		const malformedArtworkStyle =
-			malformedCard.querySelector(TRACK_ARTWORK)?.getAttribute('style') ?? '';
+			malformedCard.querySelector(trackArtwork)?.getAttribute('style') ?? '';
 		expect(malformedArtworkStyle).not.toContain('background-image');
 	});
 });

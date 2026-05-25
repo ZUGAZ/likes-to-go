@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from '@effect/vitest';
 import {
-	isLoadingIndicatorPresent,
 	isErrorIndicatorPresent,
+	isLoadingIndicatorPresent,
 	isUserLoggedIn,
-} from './selectors';
+} from '@/layout/infrastructure/selectors/shared';
 
 describe('DOM indicator helpers', () => {
 	describe('isLoadingIndicatorPresent', () => {

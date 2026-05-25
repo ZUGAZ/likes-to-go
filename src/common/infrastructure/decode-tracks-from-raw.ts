@@ -1,5 +1,5 @@
 import { Either, Schema } from 'effect';
-import type { RawTrack } from '@/common/infrastructure/dom-reader';
+import type { RawTrack } from '@/layout/model/raw-track';
 import type { Track } from '@/common/model/track';
 import { TrackSchema } from '@/common/model/track';
 
