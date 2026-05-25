@@ -7,7 +7,10 @@ export {
 	badgesLayoutDetector,
 	badgesSelectorSet,
 } from '@/layout/infrastructure/layouts/badges';
-export { listLayoutDetector } from '@/layout/infrastructure/layouts/list';
+export {
+	listLayoutDetector,
+	listSelectorSet,
+} from '@/layout/infrastructure/layouts/list';
 export {
 	readTracksFromCards,
 	readTracksFromRoot,

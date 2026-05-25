@@ -1,9 +1,8 @@
 import type { LayoutDetector } from '@/layout/model/layout-detector';
-
-const LIST_TRACK_CARD = '.soundList__item';
+import { listSelectorSet } from '@/layout/infrastructure/layouts/list';
 
 export const listLayoutDetector: LayoutDetector = {
 	layout: 'List',
 	detectInContainer: (container) =>
-		container.querySelector(LIST_TRACK_CARD) !== null,
+		container.querySelector(listSelectorSet.trackCard) !== null,
 };

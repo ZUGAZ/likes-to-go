@@ -14,6 +14,7 @@ export {
 	detectLayoutInContainer,
 	isSupportedLayout,
 	listLayoutDetector,
+	listSelectorSet,
 	ERROR_INDICATOR,
 	isErrorIndicatorPresent,
 	isLoadingIndicatorPresent,
