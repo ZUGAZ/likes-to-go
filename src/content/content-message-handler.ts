@@ -96,9 +96,9 @@ export function createContentMessageHandler(
 							Effect.matchEffect({
 								onFailure: (error) =>
 									reportDetectionFailure(pageDetectionErrorToRequest(error)),
-								onSuccess: (root) =>
+								onSuccess: ({ root, layoutContext }) =>
 									collectionPipeline.pipe(
-										Effect.provide(makeCollectionLive(root)),
+										Effect.provide(makeCollectionLive(root, layoutContext)),
 									),
 							}),
 						);

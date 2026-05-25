@@ -4,7 +4,9 @@ import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required
 import {
 	EMPTY_LIKES_LIST_MESSAGE,
 	UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
+	UNSUPPORTED_LAYOUT_MESSAGE,
 } from '@/content/model/collection-error-messages';
+import { loadFixtureText } from '@/common/tests/fixture-loaders';
 import {
 	CollectionPageLoginRequired,
 	UnsupportedCollectionPage,
@@ -43,7 +45,8 @@ describe('detectSupportedCollectionPage', () => {
 
 				expect(Exit.isSuccess(exit)).toBe(true);
 				if (!Exit.isSuccess(exit)) return;
-				expect(exit.value.className).toBe('lazyLoadingList__list');
+				expect(exit.value.root.className).toBe('lazyLoadingList__list');
+				expect(exit.value.layoutContext.layout).toBe('Badges');
 			}),
 		);
 
@@ -67,6 +70,54 @@ describe('detectSupportedCollectionPage', () => {
 
 					expect(location.pathname).toBe('/artist/track');
 					expect(Exit.isSuccess(exit)).toBe(true);
+					if (!Exit.isSuccess(exit)) return;
+					expect(exit.value.layoutContext.layout).toBe('Badges');
+				}),
+		);
+
+		it.effect('returns List layout context for list-view DOM', () =>
+			Effect.gen(function* () {
+				document.body.innerHTML = [
+					'<div class="header__userNav">User Menu</div>',
+					loadFixtureText('list-view.html'),
+				].join('');
+
+				const exit = yield* Effect.exit(
+					detectSupportedCollectionPage({
+						pageDocument: document,
+					}),
+				);
+
+				expect(Exit.isSuccess(exit)).toBe(true);
+				if (!Exit.isSuccess(exit)) return;
+				expect(exit.value.layoutContext.layout).toBe('List');
+			}),
+		);
+
+		it.effect(
+			'fails with unsupported-layout when both badge and list cards are present',
+			() =>
+				Effect.gen(function* () {
+					document.body.innerHTML = [
+						'<div class="header__userNav">User Menu</div>',
+						'<div class="lazyLoadingList__list">',
+						'<div class="badgeList__item">badge</div>',
+						'<li class="soundList__item">list</li>',
+						'</div>',
+					].join('');
+
+					const exit = yield* Effect.exit(
+						detectSupportedCollectionPage({
+							pageDocument: document,
+						}),
+					);
+					const failure = detectionFailure(exit);
+
+					expect(failure).toBeInstanceOf(UnsupportedCollectionPage);
+					expect(failure).toMatchObject({
+						message: UNSUPPORTED_LAYOUT_MESSAGE,
+						reason: 'Layout detection returned Unknown',
+					});
 				}),
 		);
 

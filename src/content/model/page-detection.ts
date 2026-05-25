@@ -1,18 +1,29 @@
-import {
-	TRACK_CARD,
-	TRACK_LIST_CONTAINER,
-	isLoadingIndicatorPresent,
-	isUserLoggedIn,
-} from '@/common/infrastructure/selectors';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import {
 	EMPTY_LIKES_LIST_MESSAGE,
 	UNSUPPORTED_COLLECTION_PAGE_MESSAGE,
+	UNSUPPORTED_LAYOUT_MESSAGE,
 } from '@/content/model/collection-error-messages';
+import {
+	badgesLayoutDetector,
+	detectLayoutInContainer,
+	isLoadingIndicatorPresent,
+	isSupportedLayout,
+	isUserLoggedIn,
+	listLayoutDetector,
+	resolveLayoutCollectionContext,
+	TRACK_LIST_CONTAINER,
+	type LayoutCollectionContext,
+} from '@/layout';
 import { Data, Effect } from 'effect';
 
 export const WAIT_FOR_TRACK_LIST_CONTAINER_MS = 5_000;
 export const WAIT_FOR_LIST_TO_SETTLE_MS = 5_000;
+
+export interface SupportedCollectionPage {
+	readonly root: Element;
+	readonly layoutContext: LayoutCollectionContext;
+}
 
 export class UnsupportedCollectionPage extends Data.TaggedError(
 	'UnsupportedCollectionPage',
@@ -32,16 +43,25 @@ function findTrackListContainer(pageDocument: Document): Element | null {
 	return pageDocument.querySelector(TRACK_LIST_CONTAINER);
 }
 
-function hasTrackCards(container: Element): boolean {
-	return container.querySelector(TRACK_CARD) !== null;
+function hasAnyKnownLayoutCards(container: Element): boolean {
+	return (
+		badgesLayoutDetector.detectInContainer(container) ||
+		listLayoutDetector.detectInContainer(container)
+	);
 }
 
 function isTrackListEmpty(pageDocument: Document, container: Element): boolean {
-	return !hasTrackCards(container) && !isLoadingIndicatorPresent(pageDocument);
+	return (
+		!hasAnyKnownLayoutCards(container) &&
+		!isLoadingIndicatorPresent(pageDocument)
+	);
 }
 
 function isListSettled(pageDocument: Document, container: Element): boolean {
-	return hasTrackCards(container) || !isLoadingIndicatorPresent(pageDocument);
+	return (
+		hasAnyKnownLayoutCards(container) ||
+		!isLoadingIndicatorPresent(pageDocument)
+	);
 }
 
 function waitForTrackListContainer(
@@ -127,7 +147,7 @@ export function detectSupportedCollectionPage({
 	readonly timeoutMs?: number;
 	readonly settleTimeoutMs?: number;
 }): Effect.Effect<
-	Element,
+	SupportedCollectionPage,
 	UnsupportedCollectionPage | CollectionPageLoginRequired
 > {
 	return Effect.gen(function* () {
@@ -159,7 +179,10 @@ export function detectSupportedCollectionPage({
 			);
 		}
 
-		if (!hasTrackCards(root) && isLoadingIndicatorPresent(pageDocument)) {
+		if (
+			!hasAnyKnownLayoutCards(root) &&
+			isLoadingIndicatorPresent(pageDocument)
+		) {
 			yield* Effect.tryPromise({
 				try: () => waitForListToSettle(pageDocument, root, settleTimeoutMs),
 				catch: () =>
@@ -171,7 +194,7 @@ export function detectSupportedCollectionPage({
 			});
 		}
 
-		if (!hasTrackCards(root)) {
+		if (!hasAnyKnownLayoutCards(root)) {
 			return yield* Effect.fail(
 				new UnsupportedCollectionPage({
 					message: EMPTY_LIKES_LIST_MESSAGE,
@@ -180,6 +203,19 @@ export function detectSupportedCollectionPage({
 			);
 		}
 
-		return root;
+		const layout = yield* Effect.sync(() => detectLayoutInContainer(root));
+
+		if (!isSupportedLayout(layout)) {
+			return yield* Effect.fail(
+				new UnsupportedCollectionPage({
+					message: UNSUPPORTED_LAYOUT_MESSAGE,
+					reason: 'Layout detection returned Unknown',
+				}),
+			);
+		}
+
+		const layoutContext = resolveLayoutCollectionContext(layout);
+
+		return { root, layoutContext };
 	}).pipe(Effect.withLogSpan('detectSupportedCollectionPage'));
 }

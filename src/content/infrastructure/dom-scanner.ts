@@ -5,11 +5,12 @@ import {
 	type CollectionScanState,
 } from '@/content/model/collect-batches';
 import { LIKES_PAGE_BASE_URL } from '@/content/constants';
+import type { LayoutCollectionContext } from '@/layout';
 import {
 	isErrorIndicatorPresent as isErrorIndicatorPresentInDom,
 	isLoadingIndicatorPresent as isLoadingIndicatorPresentInDom,
 	RETRY_BUTTON,
-} from '@/common/infrastructure/selectors';
+} from '@/layout';
 
 export interface DomScanner {
 	readonly scanBatch: (state: CollectionScanState) => Effect.Effect<{
@@ -26,10 +27,15 @@ export class DomScannerTag extends Context.Tag('DomScanner')<
 	DomScanner
 >() {}
 
-export function makeDomScannerLive(root: Element): Layer.Layer<DomScannerTag> {
+export function makeDomScannerLive(
+	root: Element,
+	layoutContext: LayoutCollectionContext,
+): Layer.Layer<DomScannerTag> {
 	return Layer.succeed(DomScannerTag, {
 		scanBatch: (state) =>
-			Effect.sync(() => collectBatch(root, LIKES_PAGE_BASE_URL, state)),
+			Effect.sync(() =>
+				collectBatch(root, LIKES_PAGE_BASE_URL, state, layoutContext),
+			),
 		isLoadingIndicatorPresent: () =>
 			Effect.sync(() => {
 				const scope = root.ownerDocument;

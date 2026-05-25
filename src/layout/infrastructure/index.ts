@@ -3,6 +3,7 @@ export {
 	detectLayoutInContainer,
 	isSupportedLayout,
 } from '@/layout/infrastructure/detect-layout';
+export { resolveLayoutCollectionContext } from '@/layout/infrastructure/resolve-layout-collection-context';
 export {
 	badgesLayoutDetector,
 	badgesSelectorSet,

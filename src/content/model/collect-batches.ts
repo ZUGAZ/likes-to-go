@@ -1,10 +1,6 @@
 import { decodeTracksFromRaw } from '@/common/infrastructure/decode-tracks-from-raw';
-import { getTracksFromCards } from '@/common/infrastructure/dom-reader';
-import {
-	TRACK_ARTWORK_CONTAINER,
-	trackCardsFromIndex,
-} from '@/common/infrastructure/selectors';
 import type { Track } from '@/common/model/track';
+import type { LayoutCollectionContext } from '@/layout';
 
 export interface CollectionBatch {
 	readonly tracks: readonly Track[];
@@ -34,8 +30,11 @@ const LTG_SCANNED_ATTR = 'data-ltg-scanned';
  * Apply a semi-transparent heart overlay to the artwork container of a scanned card.
  * Idempotent: does not create duplicate overlays if called multiple times on the same card.
  */
-function applyScannedOverlay(card: Element): void {
-	const artwork = card.querySelector(TRACK_ARTWORK_CONTAINER);
+function applyScannedOverlay(
+	card: Element,
+	trackArtworkContainer: string,
+): void {
+	const artwork = card.querySelector(trackArtworkContainer);
 	if (!(artwork instanceof HTMLElement)) return;
 	if (artwork.hasAttribute(LTG_SCANNED_ATTR)) return;
 
@@ -72,20 +71,24 @@ export function collectBatch(
 	root: Element,
 	baseUrl: string,
 	state: CollectionScanState,
+	layoutContext: LayoutCollectionContext,
 ): { batch: CollectionBatch; nextState: CollectionScanState } {
-	const selector = trackCardsFromIndex(state.previousValidCount);
+	const selector = layoutContext.selectorSet.trackCardsFromIndex(
+		state.previousValidCount,
+	);
 	const cards = root.querySelectorAll(selector);
+	const trackArtworkContainer = layoutContext.selectorSet.trackArtworkContainer;
 	cards.forEach((card) => {
-		applyScannedOverlay(card);
+		applyScannedOverlay(card, trackArtworkContainer);
 	});
-	const raw = getTracksFromCards(Array.from(cards), baseUrl);
+	const raw = layoutContext.readTracksFromCards(Array.from(cards), baseUrl);
 	const tracks = decodeTracksFromRaw(raw);
 
 	const parsedCount = raw.length;
 	const skippedCount = parsedCount - tracks.length;
 	// Counts only schema-validated tracks, not raw DOM elements.
 	// Placeholder cards (lazy-loaded, empty title/url) are filtered by
-	// getTracksFromCards and will activate on later scroll passes.
+	// the layout reader and will activate on later scroll passes.
 	const totalValidCount = state.previousValidCount + tracks.length;
 	const noNewCards = tracks.length === 0;
 

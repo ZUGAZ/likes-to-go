@@ -1,11 +1,15 @@
+import { loadFixtureText } from '@/common/tests/fixture-loaders';
 import {
 	collectBatch,
 	initialScanState,
 	type CollectionScanState,
 } from '@/content/model/collect-batches';
+import { resolveLayoutCollectionContext, TRACK_LIST_CONTAINER } from '@/layout';
 import { describe, expect, it } from 'vitest';
 
 const baseUrl = 'https://soundcloud.com';
+const badgesLayoutContext = resolveLayoutCollectionContext('Badges');
+const listLayoutContext = resolveLayoutCollectionContext('List');
 
 function createListRoot(innerHTML: string): Element {
 	const root = document.createElement('div');
@@ -88,7 +92,12 @@ describe('collectBatch', () => {
 	it('returns no new cards and unchanged totals when root has no cards', () => {
 		const root = createListRoot('<p>empty</p>');
 		const state = initialScanState();
-		const { batch, nextState } = collectBatch(root, baseUrl, state);
+		const { batch, nextState } = collectBatch(
+			root,
+			baseUrl,
+			state,
+			badgesLayoutContext,
+		);
 
 		expect(batch.tracks).toHaveLength(0);
 		expect(batch.parsedCount).toBe(0);
@@ -103,7 +112,12 @@ describe('collectBatch', () => {
 	it('returns first batch with all parsed tracks and correct state update', () => {
 		const root = createListRoot(twoCardsHtml);
 		const state = initialScanState();
-		const { batch, nextState } = collectBatch(root, baseUrl, state);
+		const { batch, nextState } = collectBatch(
+			root,
+			baseUrl,
+			state,
+			badgesLayoutContext,
+		);
 
 		expect(batch.tracks).toHaveLength(2);
 		expect(batch.parsedCount).toBe(2);
@@ -128,7 +142,12 @@ describe('collectBatch', () => {
 			totalParsedCount: 2,
 			totalSkippedCount: 0,
 		};
-		const { batch, nextState } = collectBatch(root, baseUrl, state);
+		const { batch, nextState } = collectBatch(
+			root,
+			baseUrl,
+			state,
+			badgesLayoutContext,
+		);
 
 		expect(batch.tracks).toHaveLength(0);
 		expect(batch.parsedCount).toBe(0);
@@ -147,6 +166,7 @@ describe('collectBatch', () => {
 			root,
 			baseUrl,
 			state0,
+			badgesLayoutContext,
 		);
 
 		expect(batch1.tracks).toHaveLength(1);
@@ -159,6 +179,7 @@ describe('collectBatch', () => {
 			root,
 			baseUrl,
 			state1,
+			badgesLayoutContext,
 		);
 		expect(batch2.tracks).toHaveLength(0);
 		expect(batch2.parsedCount).toBe(0);
@@ -173,7 +194,12 @@ describe('collectBatch', () => {
 	it('applies a single heart overlay per scanned card and does not duplicate on rescan', () => {
 		const root = createListRoot(twoCardsWithArtworkHtml);
 		const state0 = initialScanState();
-		const { nextState: state1 } = collectBatch(root, baseUrl, state0);
+		const { nextState: state1 } = collectBatch(
+			root,
+			baseUrl,
+			state0,
+			badgesLayoutContext,
+		);
 
 		const artworks = root.querySelectorAll('.playableTile__artwork');
 		expect(artworks).toHaveLength(2);
@@ -185,7 +211,7 @@ describe('collectBatch', () => {
 			expect(overlays).toHaveLength(1);
 		}
 
-		collectBatch(root, baseUrl, state1);
+		collectBatch(root, baseUrl, state1, badgesLayoutContext);
 
 		for (const el of Array.from(
 			root.querySelectorAll('.playableTile__artwork'),
@@ -197,9 +223,27 @@ describe('collectBatch', () => {
 		}
 	});
 
+	it('returns decoded tracks from list-view fixture via List layout context', () => {
+		document.body.innerHTML = loadFixtureText('list-view.html');
+		const root = document.querySelector(TRACK_LIST_CONTAINER);
+		if (root == null) throw new Error('fixture root missing');
+
+		const { batch } = collectBatch(
+			root,
+			baseUrl,
+			initialScanState(),
+			listLayoutContext,
+		);
+
+		expect(batch.tracks).toHaveLength(3);
+		expect(batch.tracks[0]?.title).toBe('Arax & Enif - Round');
+		expect(batch.tracks[0]?.genre).toBe('Drum & Bass');
+		expect(batch.tracks[0]?.playback_count).toBe(27565);
+	});
+
 	it('does not add debug-style outlines on list items (overlay only)', () => {
 		const root = createListRoot(twoCardsWithArtworkHtml);
-		collectBatch(root, baseUrl, initialScanState());
+		collectBatch(root, baseUrl, initialScanState(), badgesLayoutContext);
 		for (const li of Array.from(root.querySelectorAll('li.badgeList__item'))) {
 			const o = li.getAttribute('style') ?? '';
 			expect(o).not.toContain('outline');
