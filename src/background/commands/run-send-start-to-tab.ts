@@ -1,4 +1,4 @@
-import { sendToTab } from '@/common/infrastructure/chrome-messaging';
+import { sendToTabEffect } from '@/common/infrastructure/chrome-messaging';
 import { catchError } from '@/common/model/catch-error';
 import { SendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
 import { StartCollectionRequest } from '@/common/model/request-message';
@@ -25,15 +25,14 @@ export function runSendStartToTab(
 		catch: catchError(SendToTabFailed, 'Could not focus the collection tab'),
 	});
 
-	const sendEffect = Effect.tryPromise({
-		try: async () => {
-			await sendToTab(tabId, StartCollectionRequest());
-		},
-		catch: catchError(
-			SendToTabFailed,
-			'Could not open or talk to the likes page',
+	const sendEffect = sendToTabEffect(tabId, StartCollectionRequest()).pipe(
+		Effect.mapError((err) =>
+			SendToTabFailed({
+				message: 'Could not open or talk to the likes page',
+				reason: err.reason,
+			}),
 		),
-	});
+	);
 
 	const sendWithRetry = (
 		delaysMs: readonly number[],

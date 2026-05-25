@@ -17,4 +17,8 @@ export {
 	getState,
 } from '@/common/infrastructure/get-state';
 export { listenForStateUpdates } from '@/common/infrastructure/listen-for-state-updates';
-export { sendToTab } from '@/common/infrastructure/send-to-tab';
+export {
+	SendToTabMessagingFailed,
+	sendToTab,
+	sendToTabEffect,
+} from '@/common/infrastructure/send-to-tab';

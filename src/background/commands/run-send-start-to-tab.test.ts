@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runSendStartToTab } from '@/background/commands/run-send-start-to-tab';
-import { sendToTab } from '@/common/infrastructure/chrome-messaging';
+import { sendToTabEffect } from '@/common/infrastructure/chrome-messaging';
 import { StartCollectionRequest } from '@/common/model/request-message';
 import { runPromiseExitWithSilentLogger } from '@/test/effect-log-test';
+import { Effect } from 'effect';
 
 vi.mock('@/common/infrastructure/chrome-messaging', () => ({
-	sendToTab: vi.fn().mockResolvedValue(undefined),
+	sendToTabEffect: vi.fn(() => Effect.void),
 }));
 
 describe('runSendStartToTab', () => {
@@ -20,7 +21,7 @@ describe('runSendStartToTab', () => {
 
 	const updateTabMock = vi.fn<UpdateTab>();
 	const updateWindowMock = vi.fn<UpdateWindow>();
-	const sendToTabMock = vi.mocked(sendToTab);
+	const sendToTabEffectMock = vi.mocked(sendToTabEffect);
 	const focusedCollectionTab: chrome.tabs.Tab = {
 		active: true,
 		autoDiscardable: true,
@@ -66,7 +67,10 @@ describe('runSendStartToTab', () => {
 
 		expect(chrome.tabs.update).toHaveBeenCalledWith(42, { active: true });
 		expect(chrome.windows.update).toHaveBeenCalledWith(7, { focused: true });
-		expect(sendToTabMock).toHaveBeenCalledWith(42, StartCollectionRequest());
+		expect(sendToTabEffectMock).toHaveBeenCalledWith(
+			42,
+			StartCollectionRequest(),
+		);
 		expect(exit._tag).toBe('Success');
 		if (exit._tag === 'Success') {
 			expect(exit.value).toBeUndefined();
