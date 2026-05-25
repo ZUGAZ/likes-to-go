@@ -33,6 +33,12 @@ That's it. Your likes, your file, your hard drive.
 2. Click **❤️ Likes to go**.
 3. Wait for collection to complete, then click **💚 Ready to go** to download.
 
+## Supported SoundCloud views
+
+Likes to Go supports exporting from your SoundCloud likes page when it is shown as **Badges** or **List** view. Use SoundCloud's view switcher on your likes page to pick either layout before you start an export.
+
+If the export fails because the page layout is not recognized, switch to the other supported view and try again. Other likes page layouts are not supported in this release.
+
 ## Output format
 
 The export payload currently follows `format_version: 1`:
@@ -50,7 +56,11 @@ The export payload currently follows `format_version: 1`:
 			"artist": "Artist Name",
 			"url": "https://soundcloud.com/artist/track-name",
 			"artwork_url": "https://i1.sndcdn.com/artworks-example-large.jpg",
-			"user_url": "https://soundcloud.com/artist"
+			"user_url": "https://soundcloud.com/artist",
+			"genre": "Electronic",
+			"tags": ["Electronic"],
+			"playback_count": 12500,
+			"likes_count": 890
 		},
 		{
 			"title": "Second Track",
@@ -74,6 +84,26 @@ Field notes:
   - `url` (string)
   - `artwork_url` (optional string)
   - `user_url` (optional string)
+  - `genre` (optional string)
+  - `tags` (optional string array)
+  - `playback_count` (optional number)
+  - `likes_count` (optional number)
+
+**Optional track fields** (`genre`, `tags`, `playback_count`, `likes_count`) may be omitted per track. They appear when you export from **List view** and SoundCloud shows that metadata on the page. **Badges view** exports core fields only and omits these keys.
+
+**Not exported:** track duration and liked-at timestamp are not available from either supported view in the current release.
+
+### Field availability by view
+
+| Field              | Badges view | List view         |
+| ------------------ | ----------- | ----------------- |
+| title, artist, url | Yes         | Yes               |
+| artwork_url        | Yes         | Yes (when loaded) |
+| user_url           | Yes         | Yes               |
+| genre              | —           | Yes (when shown)  |
+| tags               | —           | Yes (when shown)  |
+| playback_count     | —           | Yes (when shown)  |
+| likes_count        | —           | Yes (when shown)  |
 
 ## Privacy
 

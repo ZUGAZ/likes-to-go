@@ -54,9 +54,12 @@ src/
   popup/             Popup UI + viewmodel (View + ViewModel)
   background/       Service worker orchestration
   content/           Content script (Model + Infrastructure: content/model/, content/infrastructure/)
+  layout/            Layout detection + per-view DOM selectors/readers (Badges, List)
   common/            Shared across contexts: common/model/, common/infrastructure/
   assets/            CSS (Tailwind)
 ```
+
+Layout-specific DOM knowledge lives in `src/layout/`; the shared collection pipeline stays in `content/`.
 
 **WXT entrypoints** are the extension's entry points -- they wire things together but contain minimal logic. The real work lives in the four architecture layers, nested under the context folders above.
 
@@ -139,7 +142,12 @@ Vitest + fast-check property-based tests. Schema validation, stream accumulation
 
 ### Infrastructure layer
 
-Vitest with mocked DOM (happy-dom) and mocked Chrome APIs. Selector accuracy against HTML fixtures.
+Vitest with mocked DOM (happy-dom) and mocked Chrome APIs. Selector accuracy against HTML fixtures in `tests/fixtures/`:
+
+- `badges-view.html` — Badges view card structure
+- `list-view.html` — List view card structure (including optional metadata markup used by list-only export fields)
+
+When SoundCloud markup changes, update the relevant layout under `src/layout/infrastructure/layouts/` and the matching fixture.
 
 ### View layer
 
