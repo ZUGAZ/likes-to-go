@@ -7,3 +7,7 @@ export const UNSUPPORTED_COLLECTION_PAGE_MESSAGE =
 
 /** User-facing message when track cards were seen but none could be validated. */
 export const UNREADABLE_LIKES_LIST_MESSAGE = 'Could not read your likes list';
+
+/** User-facing message when the likes page layout is not Badges or List. */
+export const UNSUPPORTED_LAYOUT_MESSAGE =
+	'This likes page layout is not supported. Switch SoundCloud to Badges or List view, then try again.';

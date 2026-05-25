@@ -1,1 +1,1 @@
-/** List layout selectors and detector — added in layout-detection / list-view-support tasks. */
+export { listLayoutDetector } from '@/layout/infrastructure/layouts/list/detect';

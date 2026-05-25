@@ -36,3 +36,4 @@ export {
 	trackLink,
 	trackTitle,
 } from '@/layout/infrastructure/layouts/badges/selectors';
+export { badgesLayoutDetector } from '@/layout/infrastructure/layouts/badges/detect';

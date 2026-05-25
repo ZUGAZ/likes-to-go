@@ -3,11 +3,17 @@ export {
 	LayoutSchema,
 	RawTrackSchema,
 	type Layout,
+	type LayoutDetector,
 	type LayoutSelectorSet,
 	type RawTrack,
 } from '@/layout/model';
 export {
+	badgesLayoutDetector,
 	badgesSelectorSet,
+	detectLayout,
+	detectLayoutInContainer,
+	isSupportedLayout,
+	listLayoutDetector,
 	ERROR_INDICATOR,
 	isErrorIndicatorPresent,
 	isLoadingIndicatorPresent,
