@@ -4,7 +4,7 @@ import solid from 'eslint-plugin-solid/configs/typescript';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-	{ ignores: ['.output/', '.wxt/'] },
+	{ ignores: ['.output/', '.wxt/', '.repos/'] },
 	eslint.configs.recommended,
 	...tseslint.configs.strictTypeChecked,
 	solid,
