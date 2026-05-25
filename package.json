@@ -22,7 +22,7 @@
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"prepare": "husky",
+		"prepare": "bash scripts/prepare-effect.sh && husky",
 		"commit": "bash scripts/commit.sh",
 		"postinstall": "wxt prepare"
 	},

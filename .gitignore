@@ -4,3 +4,4 @@ node_modules/
 dist/
 *.zip
 .pnpm-store/
+.repos/effect
