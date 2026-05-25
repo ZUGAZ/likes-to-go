@@ -60,6 +60,35 @@ describe('buildExportPayload', () => {
 		});
 	});
 
+	it('tracks include optional list fields when present', () => {
+		const tracks = [
+			validTrack({
+				genre: 'Drum & Bass',
+				tags: ['Drum & Bass'],
+				playback_count: 27565,
+				likes_count: 1269,
+			}),
+		];
+		const payload = buildExportPayload({ tracks });
+		expect(payload.tracks[0]).toMatchObject({
+			genre: 'Drum & Bass',
+			tags: ['Drum & Bass'],
+			playback_count: 27565,
+			likes_count: 1269,
+		});
+	});
+
+	it('tracks omit optional list fields when undefined', () => {
+		const tracks = [validTrack()];
+		const payload = buildExportPayload({ tracks });
+		const t = payload.tracks[0];
+		if (t === undefined) throw new Error('expected one track');
+		expect('genre' in t).toBe(false);
+		expect('tags' in t).toBe(false);
+		expect('playback_count' in t).toBe(false);
+		expect('likes_count' in t).toBe(false);
+	});
+
 	it('tracks include optional v1 fields when present', () => {
 		const tracks = [
 			validTrack({

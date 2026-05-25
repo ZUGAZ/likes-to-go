@@ -35,6 +35,29 @@ describe('decodeTracksFromRaw', () => {
 		expect(decodeTracksFromRaw(raw)).toEqual([]);
 	});
 
+	it('decodes list raw tracks with all optional list fields', () => {
+		const raw = [
+			{
+				title: 'Song',
+				artist: 'Artist',
+				url: 'https://soundcloud.com/artist/song',
+				genre: 'Drum & Bass',
+				tags: ['Drum & Bass'],
+				playback_count: 27565,
+				likes_count: 1269,
+			},
+		];
+		const tracks = decodeTracksFromRaw(raw);
+		expect(tracks).toHaveLength(1);
+		expect(tracks[0]).toMatchObject({
+			title: 'Song',
+			genre: 'Drum & Bass',
+			tags: ['Drum & Bass'],
+			playback_count: 27565,
+			likes_count: 1269,
+		});
+	});
+
 	it('returns only valid items when mix of valid and invalid', () => {
 		const raw = [
 			{

@@ -15,3 +15,12 @@ export const trackArtwork = '.sound__artwork .sc-artwork.image__full';
 
 /** Selector for artwork container (relative to card); used for overlay positioning. */
 export const trackArtworkContainer = '.sound__artwork';
+
+/** List-only field selectors (not part of LayoutSelectorSet). */
+export const listFieldSelectors = {
+	trackTag: '.soundTitle__tag',
+	trackTagContent: '.soundTitle__tag .sc-tagContent',
+	trackPlaysStat: '.sc-ministats-plays',
+	trackPlaysItem: 'li.sc-ministats-item',
+	trackLikeLabel: '.sc-button-like .sc-button-label',
+} as const;

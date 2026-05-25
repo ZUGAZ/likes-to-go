@@ -11,12 +11,33 @@ const validRawTrack = fc
 		url: fc.webUrl(),
 		artwork_url: fc.option(fc.webUrl(), { nil: undefined }),
 		user_url: fc.option(fc.webUrl(), { nil: undefined }),
+		genre: fc.option(fc.string({ minLength: 1 }), { nil: undefined }),
+		tags: fc.option(
+			fc.array(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 5 }),
+			{ nil: undefined },
+		),
+		playback_count: fc.option(fc.nat(), { nil: undefined }),
+		likes_count: fc.option(fc.nat(), { nil: undefined }),
 	})
-	.map(({ artwork_url, user_url, ...base }) => ({
-		...base,
-		...(artwork_url !== undefined && { artwork_url }),
-		...(user_url !== undefined && { user_url }),
-	}));
+	.map(
+		({
+			artwork_url,
+			user_url,
+			genre,
+			tags,
+			playback_count,
+			likes_count,
+			...base
+		}) => ({
+			...base,
+			...(artwork_url !== undefined && { artwork_url }),
+			...(user_url !== undefined && { user_url }),
+			...(genre !== undefined && { genre }),
+			...(tags !== undefined && { tags }),
+			...(playback_count !== undefined && { playback_count }),
+			...(likes_count !== undefined && { likes_count }),
+		}),
+	);
 
 describe('TrackSchema', () => {
 	it('decodes valid object with url string to Track', () => {
@@ -44,6 +65,41 @@ describe('TrackSchema', () => {
 		const decoded = Schema.decodeUnknownSync(TrackSchema)(raw);
 		expect(decoded.artwork_url).toBe(raw.artwork_url);
 		expect(decoded.user_url).toBeUndefined();
+	});
+
+	it('decodes with optional genre', () => {
+		const raw = {
+			title: 'Song',
+			artist: 'Artist',
+			url: 'https://soundcloud.com/artist/song',
+			genre: 'Drum & Bass',
+		};
+		const decoded = Schema.decodeUnknownSync(TrackSchema)(raw);
+		expect(decoded.genre).toBe('Drum & Bass');
+	});
+
+	it('decodes with optional tags', () => {
+		const raw = {
+			title: 'Song',
+			artist: 'Artist',
+			url: 'https://soundcloud.com/artist/song',
+			tags: ['Drum & Bass', 'Bass'],
+		};
+		const decoded = Schema.decodeUnknownSync(TrackSchema)(raw);
+		expect(decoded.tags).toEqual(['Drum & Bass', 'Bass']);
+	});
+
+	it('decodes with optional playback_count and likes_count', () => {
+		const raw = {
+			title: 'Song',
+			artist: 'Artist',
+			url: 'https://soundcloud.com/artist/song',
+			playback_count: 27565,
+			likes_count: 1269,
+		};
+		const decoded = Schema.decodeUnknownSync(TrackSchema)(raw);
+		expect(decoded.playback_count).toBe(27565);
+		expect(decoded.likes_count).toBe(1269);
 	});
 
 	it('decodes minimal object (required fields only); artwork_url undefined', () => {
@@ -97,6 +153,22 @@ describe('TrackSchema property tests', () => {
 							'user_url' in track ? track.user_url : undefined;
 						const rawUserUrl = 'user_url' in raw ? raw.user_url : undefined;
 						expect(trackUserUrl).toBe(rawUserUrl);
+						const trackGenre = 'genre' in track ? track.genre : undefined;
+						const rawGenre = 'genre' in raw ? raw.genre : undefined;
+						expect(trackGenre).toBe(rawGenre);
+						const trackTags = 'tags' in track ? track.tags : undefined;
+						const rawTags = 'tags' in raw ? raw.tags : undefined;
+						expect(trackTags).toEqual(rawTags);
+						const trackPlaybackCount =
+							'playback_count' in track ? track.playback_count : undefined;
+						const rawPlaybackCount =
+							'playback_count' in raw ? raw.playback_count : undefined;
+						expect(trackPlaybackCount).toBe(rawPlaybackCount);
+						const trackLikesCount =
+							'likes_count' in track ? track.likes_count : undefined;
+						const rawLikesCount =
+							'likes_count' in raw ? raw.likes_count : undefined;
+						expect(trackLikesCount).toBe(rawLikesCount);
 					},
 				});
 			}),
@@ -131,6 +203,28 @@ describe('TrackSchema property tests', () => {
 						const trackUserUrl =
 							'user_url' in track ? track.user_url : undefined;
 						expect(decodedAgainUserUrl).toBe(trackUserUrl);
+						const decodedAgainGenre =
+							'genre' in decodedAgain ? decodedAgain.genre : undefined;
+						const trackGenre = 'genre' in track ? track.genre : undefined;
+						expect(decodedAgainGenre).toBe(trackGenre);
+						const decodedAgainTags =
+							'tags' in decodedAgain ? decodedAgain.tags : undefined;
+						const trackTags = 'tags' in track ? track.tags : undefined;
+						expect(decodedAgainTags).toEqual(trackTags);
+						const decodedAgainPlaybackCount =
+							'playback_count' in decodedAgain
+								? decodedAgain.playback_count
+								: undefined;
+						const trackPlaybackCount =
+							'playback_count' in track ? track.playback_count : undefined;
+						expect(decodedAgainPlaybackCount).toBe(trackPlaybackCount);
+						const decodedAgainLikesCount =
+							'likes_count' in decodedAgain
+								? decodedAgain.likes_count
+								: undefined;
+						const trackLikesCount =
+							'likes_count' in track ? track.likes_count : undefined;
+						expect(decodedAgainLikesCount).toBe(trackLikesCount);
 					},
 				});
 			}),
@@ -162,6 +256,14 @@ describe('TrackSchema property tests', () => {
 							fc.constant(null),
 							fc.boolean(),
 						),
+						genre: fc.oneof(fc.integer(), fc.constant(null), fc.boolean()),
+						tags: fc.oneof(fc.integer(), fc.constant(null), fc.boolean()),
+						playback_count: fc.oneof(
+							fc.string(),
+							fc.constant(null),
+							fc.boolean(),
+						),
+						likes_count: fc.oneof(fc.string(), fc.constant(null), fc.boolean()),
 					})
 					.map((corrupt) => ({ ...base, ...corrupt })),
 			),
