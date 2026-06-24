@@ -7,7 +7,11 @@ export default defineConfig({
 	test: {
 		environment: 'happy-dom',
 		globals: false,
-		include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+		include: [
+			'src/**/*.test.ts',
+			'src/**/*.test.tsx',
+			'cws-manifest-limits.test.ts',
+		],
 		setupFiles: ['vitest.setup.ts'],
 	},
 	resolve: {
