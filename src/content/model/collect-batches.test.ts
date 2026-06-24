@@ -89,10 +89,10 @@ describe('initialScanState', () => {
 });
 
 describe('collectBatch', () => {
-	it('returns no new cards and unchanged totals when root has no cards', () => {
+	it('returns no new cards and unchanged totals when root has no cards', async () => {
 		const root = createListRoot('<p>empty</p>');
 		const state = initialScanState();
-		const { batch, nextState } = collectBatch(
+		const { batch, nextState } = await collectBatch(
 			root,
 			baseUrl,
 			state,
@@ -109,10 +109,10 @@ describe('collectBatch', () => {
 		expect(nextState.totalSkippedCount).toBe(0);
 	});
 
-	it('returns first batch with all parsed tracks and correct state update', () => {
+	it('returns first batch with all parsed tracks and correct state update', async () => {
 		const root = createListRoot(twoCardsHtml);
 		const state = initialScanState();
-		const { batch, nextState } = collectBatch(
+		const { batch, nextState } = await collectBatch(
 			root,
 			baseUrl,
 			state,
@@ -135,14 +135,14 @@ describe('collectBatch', () => {
 		expect(nextState.totalSkippedCount).toBe(0);
 	});
 
-	it('second pass with same state returns no new cards and idempotent counts', () => {
+	it('second pass with same state returns no new cards and idempotent counts', async () => {
 		const root = createListRoot(twoCardsHtml);
 		const state: CollectionScanState = {
 			previousValidCount: 2,
 			totalParsedCount: 2,
 			totalSkippedCount: 0,
 		};
-		const { batch, nextState } = collectBatch(
+		const { batch, nextState } = await collectBatch(
 			root,
 			baseUrl,
 			state,
@@ -159,10 +159,10 @@ describe('collectBatch', () => {
 		expect(nextState.totalSkippedCount).toBe(0);
 	});
 
-	it('single card: first pass returns one track, second pass returns no new cards', () => {
+	it('single card: first pass returns one track, second pass returns no new cards', async () => {
 		const root = createListRoot(singleCardHtml);
 		const state0 = initialScanState();
-		const { batch: batch1, nextState: state1 } = collectBatch(
+		const { batch: batch1, nextState: state1 } = await collectBatch(
 			root,
 			baseUrl,
 			state0,
@@ -175,7 +175,7 @@ describe('collectBatch', () => {
 		expect(batch1.totalValidCount).toBe(1);
 		expect(batch1.noNewCards).toBe(false);
 
-		const { batch: batch2, nextState: state2 } = collectBatch(
+		const { batch: batch2, nextState: state2 } = await collectBatch(
 			root,
 			baseUrl,
 			state1,
@@ -191,10 +191,10 @@ describe('collectBatch', () => {
 		expect(state2.totalSkippedCount).toBe(0);
 	});
 
-	it('applies a single heart overlay per scanned card and does not duplicate on rescan', () => {
+	it('applies a single heart overlay per scanned card and does not duplicate on rescan', async () => {
 		const root = createListRoot(twoCardsWithArtworkHtml);
 		const state0 = initialScanState();
-		const { nextState: state1 } = collectBatch(
+		const { nextState: state1 } = await collectBatch(
 			root,
 			baseUrl,
 			state0,
@@ -211,7 +211,7 @@ describe('collectBatch', () => {
 			expect(overlays).toHaveLength(1);
 		}
 
-		collectBatch(root, baseUrl, state1, badgesLayoutContext);
+		await collectBatch(root, baseUrl, state1, badgesLayoutContext);
 
 		for (const el of Array.from(
 			root.querySelectorAll('.playableTile__artwork'),
@@ -223,12 +223,12 @@ describe('collectBatch', () => {
 		}
 	});
 
-	it('returns decoded tracks from list-view fixture via List layout context', () => {
+	it('returns decoded tracks from list-view fixture via List layout context', async () => {
 		document.body.innerHTML = loadFixtureText('list-view.html');
 		const root = document.querySelector(TRACK_LIST_CONTAINER);
 		if (root == null) throw new Error('fixture root missing');
 
-		const { batch } = collectBatch(
+		const { batch } = await collectBatch(
 			root,
 			baseUrl,
 			initialScanState(),
@@ -241,9 +241,9 @@ describe('collectBatch', () => {
 		expect(batch.tracks[0]?.playback_count).toBe(27565);
 	});
 
-	it('does not add debug-style outlines on list items (overlay only)', () => {
+	it('does not add debug-style outlines on list items (overlay only)', async () => {
 		const root = createListRoot(twoCardsWithArtworkHtml);
-		collectBatch(root, baseUrl, initialScanState(), badgesLayoutContext);
+		await collectBatch(root, baseUrl, initialScanState(), badgesLayoutContext);
 		for (const li of Array.from(root.querySelectorAll('li.badgeList__item'))) {
 			const o = li.getAttribute('style') ?? '';
 			expect(o).not.toContain('outline');

@@ -229,7 +229,7 @@ function runWithTestClock(
 				yield* Fiber.interrupt(fiber);
 				break;
 			}
-			yield* TestClock.adjust('3 seconds');
+			yield* TestClock.adjust('5 seconds');
 		}
 
 		const outcome = yield* Fiber.await(fiber);
@@ -263,6 +263,38 @@ describe('collectionPipeline', () => {
 		expect(value).toEqual(Completed());
 		expect(calls).toContain('TracksBatch:2');
 		expect(calls).toContain('CollectionComplete');
+	});
+
+	it('waits for pacing before scanning the next batch', async () => {
+		const calls: string[] = [];
+		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
+		const batch = makeBatch([fakeTrack], 1, false);
+		const finalBatch = makeBatch([], 1, true);
+		const serviceLayer = makeTestLayer(
+			[batch, finalBatch],
+			calls,
+			[false],
+			undefined,
+			undefined,
+			scanBatchMetrics,
+		);
+		const pipelineLayer = Layer.mergeAll(serviceLayer, silentLoggerLayer);
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const fiber = yield* Effect.fork(
+					collectionPipeline.pipe(Effect.provide(pipelineLayer)),
+				);
+
+				yield* TestClock.adjust('1 second');
+				expect(scanBatchMetrics.scanBatchCalls).toBe(1);
+
+				yield* TestClock.adjust('5 seconds');
+				expect(scanBatchMetrics.scanBatchCalls).toBe(2);
+
+				yield* Fiber.interrupt(fiber);
+			}).pipe(Effect.provide(TestContext.TestContext)),
+		);
 	});
 
 	it('errors after final cycle when no valid tracks were collected (path A)', async () => {

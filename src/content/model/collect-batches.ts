@@ -1,5 +1,6 @@
 import { decodeTracksFromRaw } from '@/common/infrastructure/decode-tracks-from-raw';
 import type { Track } from '@/common/model/track';
+import { forEachInBatches } from '@/content/infrastructure/dom-batch';
 import type { LayoutCollectionContext } from '@/layout';
 
 export interface CollectionBatch {
@@ -67,21 +68,24 @@ export function initialScanState(): CollectionScanState {
  * Single-pass scan: reads only new cards (via :nth-child selector), parses, decodes.
  * Pure: no I/O, no loop, no knowledge of passes or termination. Consumer drives repeated calls and pacing.
  */
-export function collectBatch(
+export async function collectBatch(
 	root: Element,
 	baseUrl: string,
 	state: CollectionScanState,
 	layoutContext: LayoutCollectionContext,
-): { batch: CollectionBatch; nextState: CollectionScanState } {
+): Promise<{ batch: CollectionBatch; nextState: CollectionScanState }> {
 	const selector = layoutContext.selectorSet.trackCardsFromIndex(
 		state.previousValidCount,
 	);
 	const cards = root.querySelectorAll(selector);
 	const trackArtworkContainer = layoutContext.selectorSet.trackArtworkContainer;
-	cards.forEach((card) => {
+	const cardElements = Array.from(cards);
+
+	await forEachInBatches(cardElements, (card) => {
 		applyScannedOverlay(card, trackArtworkContainer);
 	});
-	const raw = layoutContext.readTracksFromCards(Array.from(cards), baseUrl);
+
+	const raw = layoutContext.readTracksFromCards(cardElements, baseUrl);
 	const tracks = decodeTracksFromRaw(raw);
 
 	const parsedCount = raw.length;

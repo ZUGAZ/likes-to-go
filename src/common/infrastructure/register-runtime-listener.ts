@@ -32,15 +32,17 @@ export function registerRuntimeListener(
 					});
 				},
 				onRight: (msg) => {
-					Promise.resolve(handler(msg, sender))
-						.then(sendResponse)
-						.catch((err: unknown) => {
+					void (async () => {
+						try {
+							sendResponse(await handler(msg, sender));
+						} catch (err: unknown) {
 							sendResponse({
 								status: 'error',
 								trackCount: 0,
 								message: errorToReason(err),
 							});
-						});
+						}
+					})();
 					return true; // keep channel open for async response
 				},
 			});

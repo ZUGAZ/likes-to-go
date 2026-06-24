@@ -1,9 +1,9 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
+import { nextDelayMs, planNextPace } from '@/common/model/pacing';
 import {
 	ERROR_RETRY_DELAY_MS,
 	MAX_ERROR_RETRIES,
 	NO_NEW_TRACKS_PASSES,
-	WAIT_FOR_NODES_MS,
 } from '@/content/constants';
 import {
 	BackgroundSenderTag,
@@ -55,6 +55,7 @@ interface LoopState {
 	readonly scanState: CollectionScanState;
 	readonly passesWithNoNewTracks: number;
 	readonly isVisibilityPaused: boolean;
+	readonly actionTimestampsMs: readonly number[];
 	/**
 	 * True when the loading indicator was absent at the end of the previous
 	 * iteration. The next iteration is the final cycle; it runs normally and
@@ -72,6 +73,7 @@ const initialLoopState: LoopState = {
 	scanState: initialScanState(),
 	passesWithNoNewTracks: 0,
 	isVisibilityPaused: false,
+	actionTimestampsMs: [],
 	isFinalCycle: false,
 };
 
@@ -157,7 +159,12 @@ function loopStep(
 		yield* Effect.retry(retryAttempt, { times: MAX_ERROR_RETRIES - 1 });
 
 		yield* scroller.scrollToBottom();
-		yield* Effect.sleep(WAIT_FOR_NODES_MS);
+		const pace = planNextPace({
+			actionTimestampsMs: current.actionTimestampsMs,
+			nowMs: Date.now(),
+			delayMs: nextDelayMs(),
+		});
+		yield* Effect.sleep(pace.waitMs);
 
 		// If this was already the final cycle, stop now.
 		if (current.isFinalCycle) {
@@ -197,6 +204,7 @@ function loopStep(
 				scanState: nextState,
 				passesWithNoNewTracks,
 				isVisibilityPaused,
+				actionTimestampsMs: pace.actionTimestampsMs,
 				isFinalCycle: true,
 			});
 		}
@@ -207,6 +215,7 @@ function loopStep(
 				scanState: nextState,
 				passesWithNoNewTracks,
 				isVisibilityPaused,
+				actionTimestampsMs: pace.actionTimestampsMs,
 				isFinalCycle: false,
 			});
 		}
@@ -217,6 +226,7 @@ function loopStep(
 				scanState: nextState,
 				passesWithNoNewTracks,
 				isVisibilityPaused,
+				actionTimestampsMs: pace.actionTimestampsMs,
 				isFinalCycle: false,
 			});
 		}
@@ -230,6 +240,7 @@ function loopStep(
 			scanState: nextState,
 			passesWithNoNewTracks,
 			isVisibilityPaused,
+			actionTimestampsMs: pace.actionTimestampsMs,
 			isFinalCycle: false,
 		});
 	}).pipe(Effect.withLogSpan('loopStep'));

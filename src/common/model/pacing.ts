@@ -8,7 +8,19 @@ const DELAY_MS_MAX = 5000;
 const DELAY_MS_MEAN = (DELAY_MS_MIN + DELAY_MS_MAX) / 2;
 const DELAY_MS_STD = 500;
 const WINDOW_MS = 60_000;
-const DEFAULT_MAX_ACTIONS_PER_MINUTE = 12;
+export const DEFAULT_MAX_ACTIONS_PER_MINUTE = 12;
+
+export interface NextPacePlanInput {
+	readonly actionTimestampsMs: readonly number[];
+	readonly nowMs: number;
+	readonly delayMs: number;
+	readonly maxPerMinute?: number;
+}
+
+export interface NextPacePlan {
+	readonly waitMs: number;
+	readonly actionTimestampsMs: readonly number[];
+}
 
 /** Default RNG (browser). Override in tests for determinism. */
 function defaultRandom(): number {
@@ -62,6 +74,25 @@ export function rateCapWaitMs(
 	const oldestInWindow = sorted[0] ?? 0;
 	const waitUntil = oldestInWindow + WINDOW_MS;
 	return Math.max(0, waitUntil - nowMs);
+}
+
+export function planNextPace({
+	actionTimestampsMs,
+	nowMs,
+	delayMs,
+	maxPerMinute = DEFAULT_MAX_ACTIONS_PER_MINUTE,
+}: NextPacePlanInput): NextPacePlan {
+	const cutoff = nowMs - WINDOW_MS;
+	const updatedTimestamps = [
+		...actionTimestampsMs.filter((timestamp) => timestamp >= cutoff),
+		nowMs,
+	];
+	const rateWaitMs = rateCapWaitMs(updatedTimestamps, maxPerMinute, nowMs);
+
+	return {
+		waitMs: Math.max(delayMs, rateWaitMs),
+		actionTimestampsMs: updatedTimestamps,
+	};
 }
 
 /**

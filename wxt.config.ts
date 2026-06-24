@@ -8,11 +8,8 @@ export default defineConfig({
 	autoIcons: { baseIconPath: 'assets/icon.svg' },
 	imports: false,
 	manifest: {
-		permissions: ['downloads', 'cookies'],
-		host_permissions: [
-			'https://*.soundcloud.com/*',
-			'https://api-auth.soundcloud.com/*',
-		],
+		permissions: ['downloads', 'cookies', 'tabs', 'storage'],
+		host_permissions: ['https://*.soundcloud.com/*'],
 	},
 	// Don't auto-open a browser; load extension manually (e.g. Chrome on host when dev in container).
 	webExt: { disabled: true },

@@ -106,17 +106,20 @@ export function createContentMessageHandler(
 
 					fiber = Runtime.runFork(runtime)(program);
 
-					void Runtime.runPromise(runtime)(
-						Fiber.await(fiber).pipe(
-							Effect.tap((exit) => {
-								fiber = null;
-								if (Exit.isInterrupted(exit)) {
-									return Effect.log('content collection interrupted');
-								}
-								return Effect.void;
-							}),
-						),
-					).then(() => sendResponse());
+					void (async () => {
+						await Runtime.runPromise(runtime)(
+							Fiber.await(fiber).pipe(
+								Effect.tap((exit) => {
+									fiber = null;
+									if (Exit.isInterrupted(exit)) {
+										return Effect.log('content collection interrupted');
+									}
+									return Effect.void;
+								}),
+							),
+						);
+						sendResponse();
+					})();
 
 					return true;
 				}

@@ -1,4 +1,5 @@
 import { CommandRunnerTag } from '@/background/command-runner';
+import { CollectionStateStorageTag } from '@/background/infrastructure/collection-state-storage';
 import { StateRefTag } from '@/background/state-ref';
 import type { CollectionCommand } from '@/common/model/collection/command';
 import type { CollectionEvent } from '@/common/model/collection/event';
@@ -13,7 +14,10 @@ import type {
 } from '@/common/model/request-message';
 import { Effect, Ref } from 'effect';
 
-export type BackgroundEnv = StateRefTag | CommandRunnerTag;
+export type BackgroundEnv =
+	| StateRefTag
+	| CommandRunnerTag
+	| CollectionStateStorageTag;
 
 function runCommandEffect(
 	cmd: CollectionCommand,
@@ -32,6 +36,17 @@ export function dispatchEffect(
 		const current = yield* Ref.get(ref);
 		const result = transition(current, event);
 		yield* Ref.set(ref, result.state);
+		const storage = yield* CollectionStateStorageTag;
+		yield* storage
+			.sync(result.state)
+			.pipe(
+				Effect.catchAll((error) =>
+					Effect.logWarning(
+						'collection state storage sync failed',
+						error.reason,
+					),
+				),
+			);
 		const stateTag = result.state._tag;
 		const message = isErrorState(result.state)
 			? result.state.message

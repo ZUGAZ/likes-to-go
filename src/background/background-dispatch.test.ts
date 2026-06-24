@@ -4,6 +4,7 @@ import {
 } from '@/background/background-dispatch';
 import { handleCollectionTabNavigationEffect } from '@/background/collection-tab-navigation';
 import { CommandRunnerTag } from '@/background/command-runner';
+import { CollectionStateStorageNoop } from '@/background/infrastructure/collection-state-storage';
 import { StateRefTag } from '@/background/state-ref';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
@@ -150,6 +151,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 
@@ -204,6 +206,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 
@@ -250,6 +253,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 
@@ -298,6 +302,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 		const sender: chrome.runtime.MessageSender = {};
@@ -338,6 +343,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 
@@ -379,6 +385,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 
@@ -422,6 +429,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 
@@ -469,6 +477,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 		const sender: chrome.runtime.MessageSender = {};
@@ -505,6 +514,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 
@@ -537,6 +547,7 @@ describe('background dispatch', () => {
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
 			runnerLayer,
+			CollectionStateStorageNoop,
 			silentLoggerLayer,
 		);
 

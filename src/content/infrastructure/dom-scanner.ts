@@ -33,7 +33,7 @@ export function makeDomScannerLive(
 ): Layer.Layer<DomScannerTag> {
 	return Layer.succeed(DomScannerTag, {
 		scanBatch: (state) =>
-			Effect.sync(() =>
+			Effect.promise(() =>
 				collectBatch(root, LIKES_PAGE_BASE_URL, state, layoutContext),
 			),
 		isLoadingIndicatorPresent: () =>

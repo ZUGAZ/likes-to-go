@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { nextDelayMs, rateCapWaitMs } from '@/common/model/pacing';
+import {
+	nextDelayMs,
+	planNextPace,
+	rateCapWaitMs,
+} from '@/common/model/pacing';
 
 describe('nextDelayMs', () => {
 	it('returns value in 2000–5000 ms with deterministic rng', () => {
@@ -36,5 +40,34 @@ describe('rateCapWaitMs', () => {
 		const wait = rateCapWaitMs(timestamps, 12, now);
 		expect(wait).toBeGreaterThan(0);
 		expect(wait).toBeLessThanOrEqual(60_000);
+	});
+});
+
+describe('planNextPace', () => {
+	const now = 100_000;
+
+	it('records the current action timestamp and uses the requested delay under cap', () => {
+		const plan = planNextPace({
+			actionTimestampsMs: [now - 1_000],
+			nowMs: now,
+			delayMs: 3_000,
+			maxPerMinute: 12,
+		});
+
+		expect(plan.actionTimestampsMs).toEqual([now - 1_000, now]);
+		expect(plan.waitMs).toBe(3_000);
+	});
+
+	it('uses the rate cap wait when the updated action window reaches the cap', () => {
+		const timestamps = Array.from({ length: 11 }, (_, i) => now - i * 1_000);
+		const plan = planNextPace({
+			actionTimestampsMs: timestamps,
+			nowMs: now,
+			delayMs: 3_000,
+			maxPerMinute: 12,
+		});
+
+		expect(plan.actionTimestampsMs).toHaveLength(12);
+		expect(plan.waitMs).toBeGreaterThan(3_000);
 	});
 });
