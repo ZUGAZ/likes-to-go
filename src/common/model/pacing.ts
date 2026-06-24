@@ -1,6 +1,6 @@
 /**
  * Pacing for collection: delay between actions (2–5 s with gaussian jitter)
- * and rate cap (10–15 actions per minute). Content script uses these to avoid bans.
+ * and rate cap (10–15 actions per minute).
  */
 
 const DELAY_MS_MIN = 2000;
