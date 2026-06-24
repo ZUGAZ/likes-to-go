@@ -10,11 +10,13 @@ import {
 	listenForStateUpdatesEffect,
 	type StateUpdatePayload,
 } from '@/common/infrastructure/listen-for-state-updates';
+import { getResolvedPopupThemeEffect } from '@/common/infrastructure/get-resolved-popup-theme';
 import {
 	CancelCollectionRequest,
 	DownloadExportRequest,
 	StartCollectionRequest,
 } from '@/common/model/request-message';
+import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import type { ViewModelEffect } from '@/common/viewmodel/bind-viewmodel';
 import {
 	initialPopupModel,
@@ -30,6 +32,7 @@ import {
 } from '@/popup/components/popup/model';
 
 export interface PopupViewModel {
+	readonly theme: () => ResolvedPopupTheme;
 	readonly state: () => PopupState;
 	readonly trackCount: () => number;
 	readonly message: () => string | undefined;
@@ -51,6 +54,7 @@ export interface PopupViewModel {
 export function createPopupViewModel(): PopupViewModel {
 	const boot = initializingPopupModel();
 	const [state, setState] = createSignal<PopupState>(boot.state);
+	const [theme, setTheme] = createSignal<ResolvedPopupTheme>('light');
 	const [trackCount, setTrackCount] = createSignal(boot.trackCount);
 	const [message, setMessage] = createSignal<string | undefined>(boot.message);
 	const [skippedTrackCount, setSkippedTrackCount] = createSignal(
@@ -96,7 +100,12 @@ export function createPopupViewModel(): PopupViewModel {
 		listenForStateUpdatesEffect(applyGetStateResponse),
 	);
 
-	const syncState = getState().pipe(Effect.tap(applyGetStateResponse));
+	const syncTheme = getResolvedPopupThemeEffect().pipe(Effect.tap(setTheme));
+
+	const syncState = Effect.gen(function* () {
+		yield* syncTheme;
+		yield* getState().pipe(Effect.tap(applyGetStateResponse));
+	});
 
 	const startCollection = Effect.gen(function* () {
 		setToLoading();
@@ -140,6 +149,7 @@ export function createPopupViewModel(): PopupViewModel {
 	};
 
 	return {
+		theme,
 		state,
 		trackCount,
 		message,

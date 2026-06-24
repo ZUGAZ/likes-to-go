@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 .heartbeat {
 	display: inline-block; /* required for transform animation on emoji */
 	animation: heartbeat 0.9s ease-in-out infinite;

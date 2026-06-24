@@ -9,6 +9,7 @@ vi.mock('solid-transition-group', () => ({
 }));
 
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
+import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import {
 	mapSourceToCopy,
 	mapStateToBusy,
@@ -33,6 +34,7 @@ function renderPopupView(
 		skippedTrackCount: number;
 		message: string | undefined;
 		source: PopupSource;
+		theme: ResolvedPopupTheme;
 	}>,
 ) {
 	const [state, setState] = createSignal<PopupState>(
@@ -50,6 +52,9 @@ function renderPopupView(
 	const [source, setSource] = createSignal<PopupSource>(
 		inputs?.source ?? 'likes-page',
 	);
+	const [theme, setTheme] = createSignal<ResolvedPopupTheme>(
+		inputs?.theme ?? 'light',
+	);
 
 	const onStart = vi.fn();
 	const onRetryFromError = vi.fn();
@@ -58,6 +63,7 @@ function renderPopupView(
 
 	const result = render(() => (
 		<PopupView
+			theme={theme}
 			state={state}
 			trackCount={trackCount}
 			skippedTrackCount={skippedTrackCount}
@@ -83,6 +89,7 @@ function renderPopupView(
 		setSkippedTrackCount,
 		setMessage,
 		setSource,
+		setTheme,
 		onStart,
 		onRetryFromError,
 		onCancel,
@@ -96,6 +103,14 @@ describe('Popup view', () => {
 
 		expect(popup.getByRole('button', { name: '❤️ Likes to go' })).toBeTruthy();
 		expect(popup.getByText('Will open your likes page')).toBeTruthy();
+	});
+
+	it('applies dark theme attributes to the popup root', () => {
+		const popup = renderPopupView({ state: 'initial', theme: 'dark' });
+		const root = popup.container.querySelector('main');
+
+		expect(root?.getAttribute('data-theme')).toBe('dark');
+		expect(root?.getAttribute('style')).toContain('color-scheme: dark');
 	});
 
 	it('renders the active SoundCloud tab source', () => {

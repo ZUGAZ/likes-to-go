@@ -19,6 +19,7 @@ export function PopupContainer() {
 
 	return (
 		<PopupView
+			theme={vm.theme}
 			state={vm.state}
 			trackCount={vm.trackCount}
 			message={vm.message}

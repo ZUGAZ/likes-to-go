@@ -4,6 +4,7 @@ import { Effect, Layer, ManagedRuntime } from 'effect';
 import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { GetStateResponse } from '@/common/model/request-message';
+import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 
 import { createPopupViewModel } from '@/popup/components/popup/view-model';
 import type { PopupEnv } from '@/popup/runtime/popup-env';
@@ -49,6 +50,12 @@ const { getStateMock, sendToBackgroundMock } = vi.hoisted(() => ({
 	>(() => Effect.succeed(undefined)),
 }));
 
+const { getResolvedPopupThemeMock } = vi.hoisted(() => ({
+	getResolvedPopupThemeMock: vi.fn<() => Effect.Effect<ResolvedPopupTheme>>(
+		() => Effect.succeed('light'),
+	),
+}));
+
 vi.mock('@/common/infrastructure/chrome-messaging', () => ({
 	getState: getStateMock,
 	sendToBackgroundEffect: sendToBackgroundMock,
@@ -66,6 +73,10 @@ vi.mock('@/common/infrastructure/listen-for-state-updates', () => ({
 	),
 }));
 
+vi.mock('@/common/infrastructure/get-resolved-popup-theme', () => ({
+	getResolvedPopupThemeEffect: getResolvedPopupThemeMock,
+}));
+
 const makeTestRuntime = () =>
 	ManagedRuntime.make<PopupEnv, never>(Layer.mergeAll(silentLoggerLayer));
 
@@ -75,6 +86,8 @@ describe('Popup viewmodel', () => {
 		getStateMock.mockReset();
 		sendToBackgroundMock.mockReset();
 		sendToBackgroundMock.mockImplementation(() => Effect.succeed(undefined));
+		getResolvedPopupThemeMock.mockReset();
+		getResolvedPopupThemeMock.mockImplementation(() => Effect.succeed('light'));
 		getStateMock.mockImplementation(() =>
 			Effect.succeed({
 				status: 'idle',
@@ -96,6 +109,7 @@ describe('Popup viewmodel', () => {
 		const vm = createPopupViewModel();
 
 		expect(vm.state()).toBe('initializing');
+		expect(vm.theme()).toBe('light');
 		expect(vm.source()).toBe('likes-page');
 		expect(vm.sourceCopy()).toBe('Will open your likes page');
 		expect(vm.isStatusBusy()).toBe(true);
@@ -112,6 +126,19 @@ describe('Popup viewmodel', () => {
 		expect(vm.trackCount()).toBe(0);
 		expect(vm.message()).toBeUndefined();
 		expect(vm.source()).toBe('likes-page');
+	});
+
+	it('syncState updates resolved theme', async () => {
+		getResolvedPopupThemeMock.mockImplementationOnce(() =>
+			Effect.succeed('dark'),
+		);
+		const runtime = makeTestRuntime();
+		const vm = createPopupViewModel();
+
+		await runtime.runPromise(vm.effects.syncState);
+
+		expect(vm.theme()).toBe('dark');
+		expect(getResolvedPopupThemeMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('syncState updates source from background', async () => {
