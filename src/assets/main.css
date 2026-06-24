@@ -40,3 +40,15 @@
 .fade-exit {
 	opacity: 1;
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.heartbeat {
+		animation: none;
+	}
+
+	/* Solid Transition still owns state swaps; CSS removes the perceptible delay. */
+	.fade-enter-active,
+	.fade-exit-active {
+		transition: none;
+	}
+}
