@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v1.1.0...likes-to-go-v1.3.0) (2026-06-24)
+
+
+### Features
+
+* ♿ improve popup accessibility ([33a2cc5](https://github.com/ZUGAZ/likes-to-go/commit/33a2cc57d2566ca7a0690e2f0f7c9c2c786253d6))
+* 🎨 align popup theme with SoundCloud ([33253f0](https://github.com/ZUGAZ/likes-to-go/commit/33253f0a2bca7386ce0a40bf2dc2c60e47b92bae))
+* 💫 respect reduced motion in popup ([8e13c78](https://github.com/ZUGAZ/likes-to-go/commit/8e13c78976a076b8eaa4815271e00d8cc9204851))
+* 📊 add list-only export fields for genre, tags, and counts ([d61b630](https://github.com/ZUGAZ/likes-to-go/commit/d61b630aef191b624f7abb001142b638ab8b74a4))
+* 📋 add list layout selectors and core field parsing ([c32cbf2](https://github.com/ZUGAZ/likes-to-go/commit/c32cbf22f6338a24eef1c1bf13bae37d389a9615))
+* 🔌 wire layout context through collection flow ([806389d](https://github.com/ZUGAZ/likes-to-go/commit/806389da569a1efd79c71f6a671ff77b6885d5b8))
+* 🔍 add per-layout detection with fail-safe orchestrator ([3a63666](https://github.com/ZUGAZ/likes-to-go/commit/3a63666f730124bd4686a67c9a91349e4ab06d53))
+* 🛡️ harden extension platform behavior ([7c58697](https://github.com/ZUGAZ/likes-to-go/commit/7c58697fa3e05d2b7bc74e9ab50c5a98c7f840e3))
+
 ## [1.1.0](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v1.0.1...likes-to-go-v1.1.0) (2026-05-22)
 
 ### Features
