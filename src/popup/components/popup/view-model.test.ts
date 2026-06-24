@@ -97,6 +97,9 @@ describe('Popup viewmodel', () => {
 
 		expect(vm.state()).toBe('initializing');
 		expect(vm.source()).toBe('likes-page');
+		expect(vm.sourceCopy()).toBe('Will open your likes page');
+		expect(vm.isStatusBusy()).toBe(true);
+		expect(vm.liveStatusMessage()).toBe('Loading.');
 	});
 
 	it('syncState sets initial state from background', async () => {
@@ -127,6 +130,7 @@ describe('Popup viewmodel', () => {
 
 		expect(vm.state()).toBe('initial');
 		expect(vm.source()).toBe('active-soundcloud-tab');
+		expect(vm.sourceCopy()).toBe('Will collect from current SoundCloud tab');
 	});
 
 	it('syncState sets login-required error when cookie is missing', async () => {
@@ -292,6 +296,8 @@ describe('Popup viewmodel', () => {
 
 		expect(vm.state()).toBe('checking-login');
 		expect(vm.trackCount()).toBe(0);
+		expect(vm.isStatusBusy()).toBe(true);
+		expect(vm.liveStatusMessage()).toBe('Checking login status.');
 
 		triggerStateUpdate({
 			status: 'collecting',
@@ -302,6 +308,7 @@ describe('Popup viewmodel', () => {
 
 		expect(vm.state()).toBe('processing');
 		expect(vm.trackCount()).toBe(3);
+		expect(vm.liveStatusMessage()).toBe('Collecting likes. 3 found.');
 	});
 
 	it('state update with status done maps to done state', async () => {

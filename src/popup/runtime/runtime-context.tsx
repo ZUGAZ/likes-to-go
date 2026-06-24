@@ -1,15 +1,12 @@
 import { createContext, untrack, useContext } from 'solid-js';
 import type { ParentComponent } from 'solid-js';
-import type { Runtime } from 'effect';
 
-import type { PopupEnv } from '@/popup/runtime/popup-env';
+import type { PopupRuntime } from '@/popup/runtime/popup-runtime-type';
 
-const PopupRuntimeContext = createContext<
-	Runtime.Runtime<PopupEnv> | undefined
->(undefined);
+const PopupRuntimeContext = createContext<PopupRuntime | undefined>(undefined);
 
 export const PopupRuntimeProvider: ParentComponent<{
-	runtime: Runtime.Runtime<PopupEnv>;
+	runtime: PopupRuntime;
 }> = (props) => {
 	const runtime = untrack(() => props.runtime);
 
@@ -20,7 +17,7 @@ export const PopupRuntimeProvider: ParentComponent<{
 	);
 };
 
-export function usePopupRuntime(): Runtime.Runtime<PopupEnv> {
+export function usePopupRuntime(): PopupRuntime {
 	const runtime = useContext(PopupRuntimeContext);
 	if (runtime === undefined) {
 		throw new Error('PopupRuntimeProvider is missing in the component tree');

@@ -2,14 +2,10 @@ import type { Component } from 'solid-js';
 
 import { PopupContainer } from '@/popup/components/popup/container';
 import { PopupRuntimeProvider } from '@/popup/runtime/runtime-context';
-import type { PopupEnv } from '@/popup/runtime/popup-env';
-import type { Runtime } from 'effect';
+import type { PopupRuntime } from '@/popup/runtime/popup-runtime-type';
 
-export const PopupRoot: Component<{ runtime: Runtime.Runtime<PopupEnv> }> = (
-	props,
-) => (
+export const PopupRoot: Component<{ runtime: PopupRuntime }> = (props) => (
 	<PopupRuntimeProvider runtime={props.runtime}>
 		<PopupContainer />
 	</PopupRuntimeProvider>
 );
-

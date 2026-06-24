@@ -9,7 +9,13 @@ vi.mock('solid-transition-group', () => ({
 }));
 
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
-import type { PopupSource, PopupState } from '@/popup/components/popup/model';
+import {
+	mapSourceToCopy,
+	mapStateToBusy,
+	mapStateToLiveStatusMessage,
+	type PopupSource,
+	type PopupState,
+} from '@/popup/components/popup/model';
 import { PopupView } from '@/popup/components/popup/view';
 
 const unmountFns: Array<() => void> = [];
@@ -56,7 +62,11 @@ function renderPopupView(
 			trackCount={trackCount}
 			skippedTrackCount={skippedTrackCount}
 			message={message}
-			source={source}
+			sourceCopy={() => mapSourceToCopy(source())}
+			isStatusBusy={() => mapStateToBusy(state())}
+			liveStatusMessage={() =>
+				mapStateToLiveStatusMessage(state(), trackCount())
+			}
 			onStart={onStart}
 			onRetryFromError={onRetryFromError}
 			onCancel={onCancel}
@@ -103,6 +113,7 @@ describe('Popup view', () => {
 		const popup = renderPopupView({ state: 'initializing' });
 
 		expect(popup.getByText('Loading…')).toBeTruthy();
+		expect(popup.container.querySelector('[aria-busy="true"]')).toBeTruthy();
 		expect(popup.queryByRole('button', { name: '❤️ Likes to go' })).toBeNull();
 	});
 
@@ -121,6 +132,7 @@ describe('Popup view', () => {
 		});
 
 		expect(popup.getByText('Checking login status…')).toBeTruthy();
+		expect(popup.container.querySelector('[aria-busy="true"]')).toBeTruthy();
 		expect(popup.getByRole('button', { name: 'Cancel order' })).toBeTruthy();
 	});
 
@@ -132,6 +144,10 @@ describe('Popup view', () => {
 		});
 
 		expect(popup.getByText('Collecting likes… (42 found)')).toBeTruthy();
+		expect(popup.container.querySelector('[aria-busy="true"]')).toBeTruthy();
+		expect(
+			popup.container.querySelector('[aria-live="polite"]')?.textContent,
+		).toBe('Collecting likes. 42 found.');
 		expect(popup.getByRole('button', { name: 'Cancel order' })).toBeTruthy();
 		expect(popup.queryByText('tracks could not be read yet')).toBeNull();
 	});
@@ -143,7 +159,27 @@ describe('Popup view', () => {
 			skippedTrackCount: 2,
 		});
 
-		expect(popup.getByText('2 tracks could not be read yet')).toBeTruthy();
+		expect(popup.getByRole('status').textContent).toBe(
+			'2 tracks could not be read yet',
+		);
+	});
+
+	it('updates the polite live region when the track count changes', async () => {
+		const popup = renderPopupView({
+			state: 'processing',
+			trackCount: 1,
+			skippedTrackCount: 0,
+		});
+
+		const liveRegion = popup.container.querySelector('[aria-live="polite"]');
+		expect(liveRegion).toBeTruthy();
+		expect(liveRegion?.textContent).toBe('Collecting likes. 1 found.');
+
+		popup.setTrackCount(2);
+
+		await Promise.resolve();
+
+		expect(liveRegion?.textContent).toBe('Collecting likes. 2 found.');
 	});
 
 	it('renders the paused state with a visibility pause message', () => {
@@ -178,7 +214,9 @@ describe('Popup view', () => {
 			skippedTrackCount: 3,
 		});
 
-		expect(popup.getByText('3 tracks could not be read')).toBeTruthy();
+		expect(popup.getByRole('status').textContent).toBe(
+			'3 tracks could not be read',
+		);
 	});
 
 	it('renders login-required with lock icon prefix and custom message', () => {
@@ -192,7 +230,14 @@ describe('Popup view', () => {
 		expect(alert.textContent).toContain(
 			'Please log in to SoundCloud, then try again.',
 		);
-		expect(popup.getByRole('button', { name: 'Try again' })).toBeTruthy();
+		const retryButton = popup.getByRole('button', { name: 'Try again' });
+		expect(retryButton).toBeTruthy();
+		expect(
+			Boolean(
+				alert.compareDocumentPosition(retryButton) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+			),
+		).toBe(true);
 	});
 
 	it('renders login-required with default message when message is undefined', () => {
@@ -213,7 +258,14 @@ describe('Popup view', () => {
 
 		const alert = popup.getByRole('alert');
 		expect(alert.textContent).toContain('Boom');
-		expect(popup.getByRole('button', { name: '❤️ Try again' })).toBeTruthy();
+		const retryButton = popup.getByRole('button', { name: '❤️ Try again' });
+		expect(retryButton).toBeTruthy();
+		expect(
+			Boolean(
+				alert.compareDocumentPosition(retryButton) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+			),
+		).toBe(true);
 	});
 
 	it('calls onStart when clicking Start in the initial state', () => {

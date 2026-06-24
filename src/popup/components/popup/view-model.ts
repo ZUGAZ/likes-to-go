@@ -20,6 +20,9 @@ import {
 	initialPopupModel,
 	initializingPopupModel,
 	loadingPopupModel,
+	mapSourceToCopy,
+	mapStateToBusy,
+	mapStateToLiveStatusMessage,
 	mapStatusToPopupState,
 	type PopupModel,
 	type PopupSource,
@@ -32,6 +35,9 @@ export interface PopupViewModel {
 	readonly message: () => string | undefined;
 	readonly skippedTrackCount: () => number;
 	readonly source: () => PopupSource;
+	readonly sourceCopy: () => string;
+	readonly isStatusBusy: () => boolean;
+	readonly liveStatusMessage: () => string | undefined;
 	readonly effects: {
 		readonly syncState: ViewModelEffect;
 		readonly retryAfterError: ViewModelEffect;
@@ -51,6 +57,10 @@ export function createPopupViewModel(): PopupViewModel {
 		boot.skippedTrackCount ?? 0,
 	);
 	const [source, setSource] = createSignal<PopupSource>(boot.source);
+	const sourceCopy = (): string => mapSourceToCopy(source());
+	const isStatusBusy = (): boolean => mapStateToBusy(state());
+	const liveStatusMessage = (): string | undefined =>
+		mapStateToLiveStatusMessage(state(), trackCount());
 	let currentSource = boot.source;
 
 	const applyModel = (model: PopupModel): void => {
@@ -135,6 +145,9 @@ export function createPopupViewModel(): PopupViewModel {
 		message,
 		skippedTrackCount,
 		source,
+		sourceCopy,
+		isStatusBusy,
+		liveStatusMessage,
 		effects: {
 			syncState,
 			retryAfterError,
