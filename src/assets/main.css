@@ -54,3 +54,49 @@
 		transition: none;
 	}
 }
+
+/* Beat mascot shared layout */
+
+.beat-root {
+	position: relative;
+}
+
+.beat-layout {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+}
+
+.beat-mascot {
+	flex-shrink: 0;
+	width: 4rem;
+	height: 4rem;
+}
+
+.beat-mascot img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.beat-balloon {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+}
+
+/* CSS triangle tail pointing left toward the mascot */
+.beat-balloon__tail {
+	position: absolute;
+	top: 0.75rem;
+	left: -0.5rem;
+	width: 0;
+	height: 0;
+	border-top: 0.375rem solid transparent;
+	border-bottom: 0.375rem solid transparent;
+	border-right: 0.5rem solid var(--beat-balloon-tail-color, white);
+}
+
+:where([data-theme='dark']) .beat-balloon__tail {
+	--beat-balloon-tail-color: rgb(23 23 23); /* neutral-900 */
+}

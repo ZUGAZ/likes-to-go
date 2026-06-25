@@ -2,13 +2,27 @@ import { Effect, Runtime } from 'effect';
 
 export type ViewModelEffect = Effect.Effect<void, unknown>;
 
-type EffectFactory<Env> = (
+/**
+ * An effect map entry is either an Effect value or a function returning one.
+ * The factory's parameters are typed as `never[]` so a factory with concrete
+ * parameters (e.g. `(id: ActionId) => Effect`) still assigns here despite
+ * parameter contravariance, while `BindEffectEntry` recovers the real argument
+ * tuple for the bound action.
+ */
+type EffectEntry<Env> =
+	| Effect.Effect<unknown, unknown, Env>
+	| ((...args: never[]) => Effect.Effect<unknown, unknown, Env>);
+
+/** A factory narrowed to a callable signature for invocation at runtime. */
+type CallableEffectFactory<Env> = (
 	...args: ReadonlyArray<unknown>
 ) => Effect.Effect<unknown, unknown, Env>;
 
-type EffectEntry<Env> =
-	| EffectFactory<Env>
-	| Effect.Effect<unknown, unknown, Env>;
+function isEffectFactory<Env>(
+	entry: EffectEntry<Env>,
+): entry is CallableEffectFactory<Env> {
+	return typeof entry === 'function';
+}
 
 type BindEffectEntry<Entry> = Entry extends (
 	...args: infer Args
@@ -71,7 +85,7 @@ function bindEffectFactory<Env>(
 	runtime: Runtime.Runtime<Env>,
 	key: string,
 	name: string,
-	factory: EffectFactory<Env>,
+	factory: CallableEffectFactory<Env>,
 ): (...args: ReadonlyArray<unknown>) => void {
 	const run = Runtime.runPromise(runtime);
 
@@ -107,7 +121,9 @@ function bindEffectsRecord<
 			continue;
 		}
 
-		bound[key] = bindEffectFactory(runtime, key, name, entry);
+		if (isEffectFactory(entry)) {
+			bound[key] = bindEffectFactory(runtime, key, name, entry);
+		}
 	}
 
 	if (!isBoundEffectsRecord(effects, bound)) {
