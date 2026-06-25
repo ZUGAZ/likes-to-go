@@ -12,7 +12,8 @@
 	},
 	"packageManager": "pnpm@10.28.2",
 	"scripts": {
-		"dev": "wxt",
+		"dev": "bash scripts/sync-mascot-public.sh && wxt",
+		"prebuild": "bash scripts/sync-mascot-public.sh",
 		"build": "wxt build",
 		"package": "wxt zip",
 		"test": "vitest",

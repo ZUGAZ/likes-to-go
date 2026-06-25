@@ -5,3 +5,4 @@ dist/
 *.zip
 .pnpm-store/
 .repos/effect
+public/mascot/
