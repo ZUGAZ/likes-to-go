@@ -11,9 +11,9 @@ import {
 	type BeatPoseKey,
 	type PersonaBalloonContext,
 } from '@/mascot/persona';
-import type { PopupState } from '@/popup/components/popup/model';
+import type { BeatState } from '@/mascot/model';
 
-const ALL_STATES: ReadonlyArray<PopupState> = [
+const ALL_STATES: ReadonlyArray<BeatState> = [
 	'initializing',
 	'initial',
 	'loading',
@@ -59,10 +59,10 @@ const contextActiveTab: PersonaBalloonContext = {
 };
 
 describe('beatPersonaCatalog exhaustiveness', () => {
-	it('has exactly one entry per PopupState', () => {
+	it('has exactly one entry per BeatState', () => {
 		const catalogKeys = Object.keys(
 			beatPersonaCatalog,
-		) as ReadonlyArray<PopupState>;
+		) as ReadonlyArray<BeatState>;
 		expect(catalogKeys).toHaveLength(ALL_STATES.length);
 		for (const state of ALL_STATES) {
 			expect(beatPersonaCatalog).toHaveProperty(state);
@@ -190,7 +190,7 @@ describe('resolver spot-checks', () => {
 	});
 
 	it('resolveAccessibilityLiveMessage is defined for busy states', () => {
-		const busyStates: ReadonlyArray<PopupState> = [
+		const busyStates: ReadonlyArray<BeatState> = [
 			'initializing',
 			'loading',
 			'checking-login',
@@ -206,7 +206,7 @@ describe('resolver spot-checks', () => {
 	});
 
 	it('resolveAccessibilityLiveMessage is undefined for non-busy states', () => {
-		const nonBusyStates: ReadonlyArray<PopupState> = [
+		const nonBusyStates: ReadonlyArray<BeatState> = [
 			'initial',
 			'done',
 			'login-required',

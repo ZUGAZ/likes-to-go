@@ -10,9 +10,18 @@ import {
 	type BeatPersonaOption,
 	type PersonaBalloonContext,
 } from '@/mascot/persona';
-import type { PopupState } from '@/popup/components/popup/model';
 
-export type BeatState = PopupState;
+export type BeatState =
+	| 'initializing'
+	| 'initial'
+	| 'loading'
+	| 'checking-login'
+	| 'processing'
+	| 'paused'
+	| 'done'
+	| 'login-required'
+	| 'error';
+
 export type BeatSource = Source;
 
 export interface BeatModel {

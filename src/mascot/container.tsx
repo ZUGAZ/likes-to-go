@@ -11,6 +11,7 @@ interface BeatContainerProps {
 	readonly runtime: Runtime.Runtime<never>;
 	readonly visibility: MascotVisibilityControls;
 	readonly resolvePoseUrl: (pose: BeatPoseKey) => string;
+	readonly onDismiss?: () => void;
 }
 
 export function BeatContainer(props: BeatContainerProps) {
@@ -18,6 +19,7 @@ export function BeatContainer(props: BeatContainerProps) {
 	const runtime = untrack(() => props.runtime);
 	const visibility = untrack(() => props.visibility);
 	const resolvePoseUrl = untrack(() => props.resolvePoseUrl);
+	const onDismiss = untrack(() => props.onDismiss) ?? visibility.dismiss;
 
 	const vm = bindViewModel(
 		runtime,
@@ -48,7 +50,7 @@ export function BeatContainer(props: BeatContainerProps) {
 			footnoteCopy={vm.footnoteCopy}
 			liveStatusMessage={vm.liveStatusMessage}
 			onAction={vm.actions.handleAction}
-			onDismiss={visibility.dismiss}
+			onDismiss={onDismiss}
 		/>
 	);
 }
