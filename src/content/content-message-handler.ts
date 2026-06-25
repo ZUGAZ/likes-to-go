@@ -20,11 +20,12 @@ import {
 } from '@/content/model/page-detection';
 import type { ContentEnv } from '@/content/runtime/content-env';
 import { Effect, Either, Exit, Fiber, Runtime } from 'effect';
+import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
-export interface ContentScriptCtx {
-	readonly isValid: boolean;
-	readonly onInvalidated: (cb: () => void) => () => void;
-}
+export type ContentScriptCtx = Pick<
+	ContentScriptContext,
+	'isValid' | 'onInvalidated'
+>;
 
 export interface ContentMessageHandlerDeps {
 	readonly onToggleMascot: () => void;

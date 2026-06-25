@@ -100,3 +100,8 @@
 :where([data-theme='dark']) .beat-balloon__tail {
 	--beat-balloon-tail-color: rgb(23 23 23); /* neutral-900 */
 }
+
+/* Content overlay host — pointer-events toggled by MascotOverlayRoot */
+.beat-overlay-host {
+	margin: 1rem;
+}
