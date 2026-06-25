@@ -1,3 +1,4 @@
+import { registerActionPopupListener } from '@/background/listeners/action-popup-listener';
 import { registerMessageListener } from '@/background/listeners/message-listener';
 import { registerTabNavigationListener } from '@/background/listeners/tab-navigation-listener';
 import { makeBackgroundRuntime } from '@/background/runtime/background-runtime';
@@ -14,6 +15,7 @@ export function initBackgroundService(): void {
 			const runtime = yield* makeBackgroundRuntime();
 			registerMessageListener(runtime);
 			registerTabNavigationListener(runtime);
+			registerActionPopupListener(runtime);
 			return yield* Effect.never;
 		}),
 	);
