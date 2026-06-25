@@ -1,2 +1,1 @@
-export const LOGIN_REQUIRED_MESSAGE =
-	'Please log in to SoundCloud, then try again.';
+export { BEAT_LOGIN_REQUIRED_BALLOON_COPY as LOGIN_REQUIRED_MESSAGE } from '@/mascot/persona';
