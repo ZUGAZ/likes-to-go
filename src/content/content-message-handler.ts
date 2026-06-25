@@ -5,6 +5,7 @@ import {
 	LoginRequiredRequest,
 	isCancelCollection,
 	isStartCollection,
+	isToggleMascot,
 } from '@/common/model/request-message';
 import { makeCollectionLive } from '@/content/infrastructure/collection-services';
 import {
@@ -23,6 +24,10 @@ import { Effect, Either, Exit, Fiber, Runtime } from 'effect';
 export interface ContentScriptCtx {
 	readonly isValid: boolean;
 	readonly onInvalidated: (cb: () => void) => () => void;
+}
+
+export interface ContentMessageHandlerDeps {
+	readonly onToggleMascot: () => void;
 }
 
 type DetectionFailureRequest =
@@ -60,6 +65,7 @@ function reportDetectionFailure(
 export function createContentMessageHandler(
 	runtime: Runtime.Runtime<ContentEnv>,
 	ctx: ContentScriptCtx,
+	deps: ContentMessageHandlerDeps,
 ): (
 	message: unknown,
 	_sender: chrome.runtime.MessageSender,
@@ -129,6 +135,12 @@ export function createContentMessageHandler(
 						Effect.log('content CancelCollection received'),
 					);
 					interuptFiber();
+					sendResponse();
+					return false;
+				}
+
+				if (isToggleMascot(msg)) {
+					deps.onToggleMascot();
 					sendResponse();
 					return false;
 				}

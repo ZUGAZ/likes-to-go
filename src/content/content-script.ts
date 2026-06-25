@@ -9,7 +9,9 @@ export function initContentScript(ctx: ContentScriptCtx): void {
 	const program = Effect.scoped(
 		Effect.gen(function* () {
 			const runtime = yield* makeContentRuntime();
-			const handler = createContentMessageHandler(runtime, ctx);
+			const handler = createContentMessageHandler(runtime, ctx, {
+				onToggleMascot: () => {},
+			});
 
 			chrome.runtime.onMessage.addListener(handler);
 

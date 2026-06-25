@@ -4,6 +4,7 @@ import {
 	isCollectionError,
 	isLoginRequired,
 	StartCollectionRequest,
+	ToggleMascotRequest,
 } from '@/common/model/request-message';
 import { UNSUPPORTED_COLLECTION_PAGE_MESSAGE } from '@/content/model/collection-error-messages';
 import { createContentMessageHandler } from '@/content/content-message-handler';
@@ -63,10 +64,12 @@ describe('createContentMessageHandler', () => {
 		onInvalidated: () => () => {},
 	};
 
+	const noopDeps = { onToggleMascot: () => {} };
+
 	it('returns false for invalid message payload', () => {
 		document.body.innerHTML =
 			'<div class="lazyLoadingList__list"><ul></ul></div>';
-		const handler = createContentMessageHandler(runtime, ctx);
+		const handler = createContentMessageHandler(runtime, ctx, noopDeps);
 		const sendResponse = vi.fn();
 		const handled = handler(
 			{ _tag: 'Nope' },
@@ -77,11 +80,30 @@ describe('createContentMessageHandler', () => {
 		expect(sendMessageMock).not.toHaveBeenCalled();
 	});
 
+	it('calls onToggleMascot, sends no background message, and returns false', () => {
+		const onToggleMascot = vi.fn();
+		const handler = createContentMessageHandler(runtime, ctx, {
+			onToggleMascot,
+		});
+		const sendResponse = vi.fn();
+
+		const handled = handler(
+			ToggleMascotRequest(),
+			{} as chrome.runtime.MessageSender,
+			sendResponse,
+		);
+
+		expect(handled).toBe(false);
+		expect(onToggleMascot).toHaveBeenCalledTimes(1);
+		expect(sendResponse).toHaveBeenCalledTimes(1);
+		expect(sendMessageMock).not.toHaveBeenCalled();
+	});
+
 	it('sends LoginRequiredRequest when track list exists but user nav is absent', async () => {
 		document.body.innerHTML =
 			'<div class="lazyLoadingList__list"><div class="badgeList__item">card</div></div>';
 
-		const handler = createContentMessageHandler(runtime, ctx);
+		const handler = createContentMessageHandler(runtime, ctx, noopDeps);
 		const sendResponse = vi.fn();
 
 		const handled = handler(
@@ -110,7 +132,7 @@ describe('createContentMessageHandler', () => {
 		vi.useFakeTimers();
 		document.body.innerHTML = '<div>No list</div>';
 
-		const handler = createContentMessageHandler(runtime, ctx);
+		const handler = createContentMessageHandler(runtime, ctx, noopDeps);
 		const sendResponse = vi.fn();
 
 		const handled = handler(

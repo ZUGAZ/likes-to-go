@@ -10,7 +10,7 @@ import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import {
-	type RequestMessage,
+	type BackgroundRequestMessage,
 	isCancelCollection,
 	isCollectionComplete,
 	isCollectionError,
@@ -29,7 +29,7 @@ import { absurd } from 'effect/Function';
  * Used by the background to turn incoming messages into state-machine events without branching on _tag.
  */
 export function requestMessageToCollectionEvent(
-	message: RequestMessage,
+	message: BackgroundRequestMessage,
 ): CollectionEvent {
 	if (isGetStateRequest(message)) return GetStateRequested();
 	if (isStartCollection(message)) return StartCollection();

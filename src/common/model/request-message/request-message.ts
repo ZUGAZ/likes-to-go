@@ -1,6 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
 import { Data, Schema } from 'effect';
+import { type ToggleMascot, ToggleMascotSchema } from './toggle-mascot';
 
 // --- Request message schemas (discriminated union) ---
 
@@ -39,9 +40,13 @@ export const RequestMessageSchema = Schema.Union(
 	DownloadExportSchema,
 	GetStateSchema,
 	LoginRequiredSchema,
+	ToggleMascotSchema,
 );
 
 export type RequestMessage = Schema.Schema.Type<typeof RequestMessageSchema>;
+
+/** Messages that may be sent to the background service worker. ToggleMascot is content-only. */
+export type BackgroundRequestMessage = Exclude<RequestMessage, ToggleMascot>;
 
 // --- Request constructors (Data.tagged) ---
 

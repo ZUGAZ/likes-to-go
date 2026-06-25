@@ -8,9 +8,10 @@ import { hasTracks } from '@/common/model/collection/state';
 import { collectionStateToGetStateResponse } from '@/common/model/collection/state-to-response';
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { transition } from '@/common/model/collection/transition';
-import type {
-	GetStateResponse,
-	RequestMessage,
+import {
+	isToggleMascot,
+	type GetStateResponse,
+	type RequestMessage,
 } from '@/common/model/request-message';
 import { Effect, Ref } from 'effect';
 
@@ -77,6 +78,15 @@ export function handleMessageEffect(
 	void sender;
 	return Effect.gen(function* () {
 		yield* Effect.log('incomming message', message._tag);
+
+		if (isToggleMascot(message)) {
+			yield* Effect.logWarning(
+				'ToggleMascot received by background; this is a content-only message',
+			);
+			const ref = yield* StateRefTag;
+			const state = yield* Ref.get(ref);
+			return collectionStateToGetStateResponse(state);
+		}
 
 		const event = requestMessageToCollectionEvent(message);
 		yield* dispatchEffect(event);

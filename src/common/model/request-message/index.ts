@@ -21,7 +21,17 @@ export {
 	StartCollectionRequest,
 	TracksBatchRequest,
 } from './request-message';
-export type { RequestMessage } from './request-message';
+export type {
+	BackgroundRequestMessage,
+	RequestMessage,
+} from './request-message';
+
+export {
+	isToggleMascot,
+	ToggleMascotRequest,
+	ToggleMascotSchema,
+} from './toggle-mascot';
+export type { ToggleMascot } from './toggle-mascot';
 
 export {
 	CollectionStatusSchema,

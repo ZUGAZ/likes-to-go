@@ -1,4 +1,4 @@
-import type { RequestMessage } from '@/common/model/request-message';
+import type { BackgroundRequestMessage } from '@/common/model/request-message';
 import { errorToReason } from '@/common/model/error-to-reason';
 import { Data, Effect } from 'effect';
 
@@ -12,12 +12,14 @@ export class SendToBackgroundFailed extends Data.TaggedError(
  * Send a request to the background script. Returns a Promise that resolves with the response
  * (e.g. GetStateResponse for GetState) or rejects on channel error.
  */
-export function sendToBackground(message: RequestMessage): Promise<unknown> {
+export function sendToBackground(
+	message: BackgroundRequestMessage,
+): Promise<unknown> {
 	return chrome.runtime.sendMessage(message);
 }
 
 export function sendToBackgroundEffect(
-	message: RequestMessage,
+	message: BackgroundRequestMessage,
 ): Effect.Effect<unknown, SendToBackgroundFailed> {
 	return Effect.tryPromise({
 		try: () => sendToBackground(message),
