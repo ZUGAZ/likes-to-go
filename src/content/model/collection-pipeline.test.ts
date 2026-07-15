@@ -133,7 +133,10 @@ function makeDocumentVisibilityStub(responses?: readonly boolean[]) {
 	return Layer.succeed(DocumentVisibilityTag, {
 		isHidden: () =>
 			Effect.sync(() => {
-				const response = responses?.[callIndex];
+				if (responses === undefined || responses.length === 0) {
+					return false;
+				}
+				const response = responses[Math.min(callIndex, responses.length - 1)];
 				callIndex++;
 				return response ?? false;
 			}),
@@ -286,10 +289,10 @@ describe('collectionPipeline', () => {
 					collectionPipeline.pipe(Effect.provide(pipelineLayer)),
 				);
 
-				yield* TestClock.adjust('1 second');
+				yield* TestClock.adjust('200 millis');
 				expect(scanBatchMetrics.scanBatchCalls).toBe(1);
 
-				yield* TestClock.adjust('5 seconds');
+				yield* TestClock.adjust('1 second');
 				expect(scanBatchMetrics.scanBatchCalls).toBe(2);
 
 				yield* Fiber.interrupt(fiber);

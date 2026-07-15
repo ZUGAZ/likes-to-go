@@ -1,14 +1,14 @@
 /**
- * Pacing for collection: delay between actions (2–5 s with gaussian jitter)
- * and rate cap (10–15 actions per minute).
+ * Pacing for collection: delay between actions (0.4–0.75 s with gaussian jitter)
+ * and rate cap (about 120 actions per minute).
  */
 
-const DELAY_MS_MIN = 2000;
-const DELAY_MS_MAX = 5000;
+const DELAY_MS_MIN = 400;
+const DELAY_MS_MAX = 750;
 const DELAY_MS_MEAN = (DELAY_MS_MIN + DELAY_MS_MAX) / 2;
-const DELAY_MS_STD = 500;
+const DELAY_MS_STD = 100;
 const WINDOW_MS = 60_000;
-export const DEFAULT_MAX_ACTIONS_PER_MINUTE = 12;
+export const DEFAULT_MAX_ACTIONS_PER_MINUTE = 120;
 
 export interface NextPacePlanInput {
 	readonly actionTimestampsMs: readonly number[];
@@ -47,7 +47,7 @@ function normalSample(rng: () => number): number {
 }
 
 /**
- * Returns delay in ms for the next collection action (2–5 s with gaussian jitter).
+ * Returns delay in ms for the next collection action (0.4–0.75 s with gaussian jitter).
  * Pass a deterministic rng in tests.
  */
 export function nextDelayMs(rng: () => number = defaultRandom): number {
