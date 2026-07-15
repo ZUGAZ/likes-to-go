@@ -12,7 +12,7 @@
 	},
 	"packageManager": "pnpm@10.28.2",
 	"scripts": {
-		"dev": "bash scripts/sync-mascot-public.sh && bash scripts/verify-dev-output-mount.sh && wxt --host 0.0.0.0",
+		"dev": "bash scripts/sync-mascot-public.sh && wxt --host 0.0.0.0",
 		"prebuild": "bash scripts/sync-mascot-public.sh",
 		"build": "wxt build",
 		"package": "wxt zip",

@@ -32,19 +32,18 @@ To load the extension in Chrome:
 
 ### Developing with Dev Containers (Windows + host Chrome)
 
-Optional workflow for developers using a Dev Container while loading the extension in **native Windows Chrome** (not a browser inside the container).
+Optional workflow for developers using a Dev Container on a **Windows host checkout** while loading the extension in **native Windows Chrome**.
 
-Container volumes keep source and `node_modules` fast; dev output is typically bind-mounted so host Chrome can load it. Configure the bind mount in your local devcontainer setup (paths vary per machine).
+The devcontainer bind-mounts your host folders. Only `node_modules` uses a Docker named volume (faster installs). Dev output (`.output/chrome-mv3-dev`) stays on host disk — load it directly in Chrome.
 
 **Daily workflow**
 
-1. Run `pnpm dev` inside the container.
-2. Load unpacked **once** from the host folder that mirrors `.output/chrome-mv3-dev`.
-3. Edit code — WXT reloads automatically via HMR.
+1. Open the multi-root workspace and **Reopen in Container**.
+2. Run `pnpm dev` inside the container.
+3. Load unpacked **once** from `.output/chrome-mv3-dev` on your host disk (sibling `public` repo).
+4. Edit code — WXT reloads automatically via HMR when port **3000** is forwarded.
 
-**Port forwarding:** the dev server listens on port **3000**. Forward that port from the container to the host so Chrome can reach the HMR WebSocket.
-
-**When to reload manually:** new entrypoints or manifest changes require a manual extension reload (`Alt+R` on `chrome://extensions`, or the Reload button). If the HMR WebSocket fails (firewall, etc.), file changes still sync via the bind mount — use Reload in `chrome://extensions`.
+**When to reload manually:** new entrypoints or manifest changes require a manual extension reload (`Alt+R` on `chrome://extensions`, or the Reload button).
 
 | Change type                | Expected behavior                                |
 | -------------------------- | ------------------------------------------------ |
