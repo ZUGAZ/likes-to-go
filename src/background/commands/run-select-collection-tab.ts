@@ -7,10 +7,21 @@ import { get } from 'effect/Struct';
 
 const LIKES_URL = 'https://soundcloud.com/you/likes';
 
-function tabIdToSelected(
+/** Chrome may return `url: ''` before navigation; `??` does not fall through. */
+function resolveTabUrl(
+	tab: Pick<chrome.tabs.Tab, 'url' | 'pendingUrl'>,
+): string | undefined {
+	const candidates = [tab.url, tab.pendingUrl];
+	return candidates.find(
+		(candidate): candidate is string =>
+			candidate !== undefined && candidate.length > 0,
+	);
+}
+
+function requireTabId(
 	tab: chrome.tabs.Tab,
-): Effect.Effect<CollectionTabSelected, TabCreateFailed> {
-	const tabIdEffect = flow(
+): Effect.Effect<number, TabCreateFailed> {
+	return flow(
 		get('id'),
 		Option.fromNullable,
 		Option.match({
@@ -24,7 +35,12 @@ function tabIdToSelected(
 			onSome: Effect.succeed,
 		}),
 	)(tab);
-	const sourceUrlEffect = Option.fromNullable(tab.url ?? tab.pendingUrl).pipe(
+}
+
+function existingTabToSelected(
+	tab: chrome.tabs.Tab,
+): Effect.Effect<CollectionTabSelected, TabCreateFailed> {
+	const sourceUrlEffect = Option.fromNullable(resolveTabUrl(tab)).pipe(
 		Option.filter(isSoundCloudUrl),
 		Option.match({
 			onNone: () =>
@@ -39,7 +55,7 @@ function tabIdToSelected(
 	);
 
 	return Effect.gen(function* () {
-		const tabId = yield* tabIdEffect;
+		const tabId = yield* requireTabId(tab);
 		const sourceUrl = yield* sourceUrlEffect;
 		return CollectionTabSelected({ sourceUrl, tabId });
 	});
@@ -75,12 +91,15 @@ export function runSelectCollectionTab(): Effect.Effect<
 
 		const activeTabs = yield* queryActiveTabEffect;
 		const activeTab = activeTabs[0];
+		const activeTabUrl =
+			activeTab === undefined ? undefined : resolveTabUrl(activeTab);
 
-		if (activeTab !== undefined && isSoundCloudUrl(activeTab.url)) {
-			return yield* tabIdToSelected(activeTab);
+		if (activeTab !== undefined && isSoundCloudUrl(activeTabUrl)) {
+			return yield* existingTabToSelected(activeTab);
 		}
 
 		const createdTab = yield* createLikesTabEffect;
-		return yield* tabIdToSelected(createdTab);
+		const tabId = yield* requireTabId(createdTab);
+		return CollectionTabSelected({ sourceUrl: LIKES_URL, tabId });
 	}).pipe(Effect.withLogSpan('runSelectCollectionTab'));
 }

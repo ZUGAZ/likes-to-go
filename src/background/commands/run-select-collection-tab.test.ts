@@ -130,19 +130,19 @@ describe('runSelectCollectionTab', () => {
 		);
 
 		it.effect(
-			'uses pendingUrl when the created tab url is not available yet',
+			'uses likes URL for created tab even when Chrome reports empty url',
 			() =>
 				Effect.gen(function* () {
 					queryTabsMock.mockResolvedValueOnce([
 						{
 							id: 123,
-							url: 'https://example.com',
+							url: 'chrome://extensions/',
 							status: 'complete',
 						},
 					]);
 					createTabMock.mockResolvedValueOnce({
 						id: 456,
-						pendingUrl: 'https://soundcloud.com/you/likes',
+						url: '',
 						status: 'loading',
 					});
 
@@ -154,6 +154,34 @@ describe('runSelectCollectionTab', () => {
 							CollectionTabSelected({
 								sourceUrl: 'https://soundcloud.com/you/likes',
 								tabId: 456,
+							}),
+						);
+					}
+				}),
+		);
+
+		it.effect(
+			'selects active SoundCloud tab via pendingUrl when url is empty',
+			() =>
+				Effect.gen(function* () {
+					queryTabsMock.mockResolvedValueOnce([
+						{
+							id: 123,
+							url: '',
+							pendingUrl: 'https://soundcloud.com/you/likes',
+							status: 'loading',
+						},
+					]);
+
+					const exit = yield* Effect.exit(runSelectCollectionTab());
+
+					expect(chrome.tabs.create).not.toHaveBeenCalled();
+					expect(exit._tag).toBe('Success');
+					if (exit._tag === 'Success') {
+						expect(exit.value).toEqual(
+							CollectionTabSelected({
+								sourceUrl: 'https://soundcloud.com/you/likes',
+								tabId: 123,
 							}),
 						);
 					}
@@ -187,7 +215,7 @@ describe('runSelectCollectionTab', () => {
 			}),
 		);
 
-		it.effect('fails when the selected tab has no SoundCloud URL', () =>
+		it.effect('fails when the selected tab has no id after create', () =>
 			Effect.gen(function* () {
 				queryTabsMock.mockResolvedValueOnce([
 					{
@@ -197,7 +225,7 @@ describe('runSelectCollectionTab', () => {
 					},
 				]);
 				createTabMock.mockResolvedValueOnce({
-					id: 456,
+					url: '',
 					status: 'loading',
 				});
 
@@ -213,7 +241,7 @@ describe('runSelectCollectionTab', () => {
 				expect(failure).toEqual(
 					TabCreateFailed({
 						message: 'Could not select the collection tab',
-						reason: 'Selected tab did not have a SoundCloud URL',
+						reason: 'Selected tab did not have an id',
 					}),
 				);
 			}),
