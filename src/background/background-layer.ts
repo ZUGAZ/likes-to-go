@@ -6,6 +6,10 @@ import {
 	CollectionStateStorageLive,
 	loadCollectionStateEffect,
 } from '@/background/infrastructure/collection-state-storage';
+import {
+	defaultMascotUiSurface,
+	MascotUiSurfaceRefTag,
+} from '@/background/mascot-ui-surface';
 import { StateRefTag } from '@/background/state-ref';
 
 const StateRefLive: Layer.Layer<StateRefTag> = Layer.effect(
@@ -20,6 +24,11 @@ const StateRefLive: Layer.Layer<StateRefTag> = Layer.effect(
 	),
 );
 
+const MascotUiSurfaceRefLive: Layer.Layer<MascotUiSurfaceRefTag> = Layer.effect(
+	MascotUiSurfaceRefTag,
+	Ref.make(defaultMascotUiSurface()),
+);
+
 const CommandRunnerLive: Layer.Layer<CommandRunnerTag> = Layer.succeed(
 	CommandRunnerTag,
 	{ run: runCommand },
@@ -27,6 +36,7 @@ const CommandRunnerLive: Layer.Layer<CommandRunnerTag> = Layer.succeed(
 
 export const BackgroundLive = Layer.mergeAll(
 	StateRefLive,
+	MascotUiSurfaceRefLive,
 	CommandRunnerLive,
 	CollectionStateStorageLive,
 	HeartLoggerLive,

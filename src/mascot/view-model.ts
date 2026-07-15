@@ -1,5 +1,5 @@
-import { Effect, Option, Schema } from 'effect';
-import { batch, createSignal, untrack } from 'solid-js';
+import { Effect, Runtime } from 'effect';
+import { batch, createEffect, createSignal, on, onMount, untrack } from 'solid-js';
 
 import {
 	decodeGetStateResponse,
@@ -14,7 +14,6 @@ import {
 import {
 	CancelCollectionRequest,
 	DownloadExportRequest,
-	GetStateResponseSchema,
 	StartCollectionRequest,
 } from '@/common/model/request-message';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
@@ -68,6 +67,7 @@ export interface MascotViewModel {
 }
 
 export interface MascotViewModelOptions {
+	readonly runtime: Runtime.Runtime<never>;
 	readonly visibility: MascotVisibilityControls;
 	readonly resolvePoseUrl: (pose: BeatPoseKey) => string;
 }
@@ -75,7 +75,7 @@ export interface MascotViewModelOptions {
 export function createMascotViewModel(
 	vmOptions: MascotViewModelOptions,
 ): MascotViewModel {
-	const { visibility, resolvePoseUrl } = vmOptions;
+	const { runtime, visibility, resolvePoseUrl } = vmOptions;
 
 	const boot = initializingBeatModel();
 	const [state, setState] = createSignal<BeatState>(boot.state);
@@ -155,36 +155,34 @@ export function createMascotViewModel(
 		yield* Effect.log('startCollection begin');
 		setToLoading();
 		yield* sendToBackgroundEffect(StartCollectionRequest()).pipe(
+			Effect.flatMap(decodeGetStateResponse),
+			Effect.tap(applyGetStateResponse),
 			Effect.tap((response) =>
-				Effect.gen(function* () {
-					const decoded = yield* Schema.decodeUnknown(GetStateResponseSchema)(
-						response,
-					).pipe(Effect.option);
-					if (Option.isSome(decoded)) {
-						yield* Effect.log('startCollection background responded', {
-							status: decoded.value.status,
-							trackCount: decoded.value.trackCount,
-						});
-						return;
-					}
-					yield* Effect.logWarning(
-						'startCollection background responded with unexpected payload',
-					);
+				Effect.log('startCollection background responded', {
+					status: response.status,
+					trackCount: response.trackCount,
 				}),
 			),
-			Effect.tapError((err) =>
-				Effect.logWarning('startCollection send failed', err.reason),
+			Effect.catchTag('SendToBackgroundFailed', (err) =>
+				Effect.logWarning('startCollection send failed', err.reason).pipe(
+					Effect.zipRight(
+						Effect.sync(() => {
+							applyModel({
+								state: 'error',
+								trackCount: 0,
+								message: err.reason,
+								skippedTrackCount: undefined,
+								source: currentSource,
+							});
+						}),
+					),
+				),
 			),
-			Effect.catchAll((err) =>
-				Effect.sync(() => {
-					applyModel({
-						state: 'error',
-						trackCount: 0,
-						message: err.message,
-						skippedTrackCount: undefined,
-						source: currentSource,
-					});
-				}),
+			Effect.catchTag('DecodeGetStateResponseFailed', (err) =>
+				Effect.logWarning(
+					'startCollection background responded with unexpected payload',
+					err.reason,
+				),
 			),
 		);
 	});
@@ -225,6 +223,22 @@ export function createMascotViewModel(
 	const teardown = (): void => {
 		stopListening();
 	};
+
+	onMount(() => {
+		void Runtime.runPromise(runtime)(syncState);
+	});
+
+	createEffect(
+		on(
+			() => visibility.isVisible(),
+			(visible, wasVisible) => {
+				if (visible && wasVisible === false) {
+					void Runtime.runPromise(runtime)(syncState);
+				}
+			},
+			{ defer: true },
+		),
+	);
 
 	return {
 		theme,

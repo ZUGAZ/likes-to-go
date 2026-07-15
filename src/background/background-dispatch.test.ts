@@ -5,6 +5,10 @@ import {
 import { handleCollectionTabNavigationEffect } from '@/background/collection-tab-navigation';
 import { CommandRunnerTag } from '@/background/command-runner';
 import { CollectionStateStorageNoop } from '@/background/infrastructure/collection-state-storage';
+import {
+	defaultMascotUiSurface,
+	MascotUiSurfaceRefTag,
+} from '@/background/mascot-ui-surface';
 import { StateRefTag } from '@/background/state-ref';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
@@ -95,6 +99,11 @@ function tabsToSource(tabs: readonly TestTab[]): Source {
 	return isSoundCloudUrl(tabs[0]?.url) ? 'active-soundcloud-tab' : 'likes-page';
 }
 
+const mascotUiSurfaceRefLayer = Layer.effect(
+	MascotUiSurfaceRefTag,
+	Ref.make(defaultMascotUiSurface()),
+);
+
 describe('background dispatch', () => {
 	type GetCookie = (details: {
 		readonly url: string;
@@ -150,6 +159,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -205,6 +215,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -252,6 +263,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -301,6 +313,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -342,6 +355,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -384,6 +398,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -428,6 +443,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -476,6 +492,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -513,6 +530,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -546,6 +564,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
+			mascotUiSurfaceRefLayer,
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,

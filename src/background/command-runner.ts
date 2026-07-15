@@ -1,7 +1,5 @@
-import {
-	dispatchEffect,
-	type BackgroundEnv,
-} from '@/background/background-dispatch';
+import { dispatchEffect } from '@/background/background-dispatch';
+import type { BackgroundEnv } from '@/background/runtime/background-env';
 import {
 	runCheckLogin,
 	runCheckSource,

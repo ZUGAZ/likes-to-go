@@ -1,5 +1,7 @@
 import { CommandRunnerTag } from '@/background/command-runner';
 import { CollectionStateStorageTag } from '@/background/infrastructure/collection-state-storage';
+import { rememberMascotUiSurfaceFromSender } from '@/background/mascot-ui-surface';
+import type { BackgroundEnv } from '@/background/runtime/background-env';
 import { StateRefTag } from '@/background/state-ref';
 import type { CollectionCommand } from '@/common/model/collection/command';
 import type { CollectionEvent } from '@/common/model/collection/event';
@@ -9,16 +11,24 @@ import { collectionStateToGetStateResponse } from '@/common/model/collection/sta
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { transition } from '@/common/model/collection/transition';
 import {
+	isCancelCollection,
+	isDownloadExport,
+	isGetStateRequest,
+	isStartCollection,
 	isToggleMascot,
 	type GetStateResponse,
 	type RequestMessage,
 } from '@/common/model/request-message';
 import { Effect, Ref } from 'effect';
 
-export type BackgroundEnv =
-	| StateRefTag
-	| CommandRunnerTag
-	| CollectionStateStorageTag;
+function isMascotUiRequest(message: RequestMessage): boolean {
+	return (
+		isStartCollection(message) ||
+		isGetStateRequest(message) ||
+		isCancelCollection(message) ||
+		isDownloadExport(message)
+	);
+}
 
 function runCommandEffect(
 	cmd: CollectionCommand,
@@ -75,7 +85,6 @@ export function handleMessageEffect(
 	message: RequestMessage,
 	sender: chrome.runtime.MessageSender,
 ): Effect.Effect<GetStateResponse, never, BackgroundEnv> {
-	void sender;
 	return Effect.gen(function* () {
 		yield* Effect.log('incoming message', message._tag, {
 			senderTabId: sender.tab?.id,
@@ -89,6 +98,10 @@ export function handleMessageEffect(
 			const ref = yield* StateRefTag;
 			const state = yield* Ref.get(ref);
 			return collectionStateToGetStateResponse(state);
+		}
+
+		if (isMascotUiRequest(message)) {
+			yield* rememberMascotUiSurfaceFromSender(sender);
 		}
 
 		const event = requestMessageToCollectionEvent(message);

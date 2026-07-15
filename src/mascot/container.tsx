@@ -1,5 +1,5 @@
 import type { Runtime } from 'effect';
-import { onCleanup, onMount, untrack } from 'solid-js';
+import { onCleanup, untrack } from 'solid-js';
 
 import { bindViewModel } from '@/common/viewmodel/bind-viewmodel';
 import type { BeatPoseKey } from '@/mascot/persona';
@@ -25,15 +25,12 @@ export function BeatContainer(props: BeatContainerProps) {
 	const vm = bindViewModel(
 		runtime,
 		createMascotViewModel({
+			runtime,
 			visibility,
 			resolvePoseUrl,
 		}),
 		'MascotViewModel',
 	);
-
-	onMount(() => {
-		vm.actions.syncState();
-	});
 
 	onCleanup(() => {
 		vm.teardown();

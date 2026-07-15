@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Effect, Layer, ManagedRuntime } from 'effect';
+import { Effect, Layer, ManagedRuntime, Runtime } from 'effect';
 import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import type { GetStateResponse } from '@/common/model/request-message';
@@ -64,16 +64,17 @@ const { getResolvedPopupThemeMock } = vi.hoisted(() => ({
 	),
 }));
 
-vi.mock('@/common/infrastructure/chrome-messaging', () => ({
-	getState: getStateMock,
-	sendToBackgroundEffect: sendToBackgroundMock,
-	decodeGetStateResponse: () =>
-		Effect.succeed({
-			status: 'idle',
-			trackCount: 0,
-			message: undefined,
-		}),
-}));
+vi.mock('@/common/infrastructure/chrome-messaging', async (importOriginal) => {
+	const actual =
+		await importOriginal<
+			typeof import('@/common/infrastructure/chrome-messaging')
+		>();
+	return {
+		...actual,
+		getState: getStateMock,
+		sendToBackgroundEffect: sendToBackgroundMock,
+	};
+});
 
 vi.mock('@/common/infrastructure/listen-for-state-updates', () => ({
 	listenForStateUpdatesEffect: vi.fn((callback: (payload: unknown) => void) =>
@@ -85,16 +86,33 @@ vi.mock('@/common/infrastructure/get-resolved-popup-theme', () => ({
 	getResolvedPopupThemeEffect: getResolvedPopupThemeMock,
 }));
 
+vi.mock('solid-js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('solid-js')>();
+	return {
+		...actual,
+		onMount: vi.fn(),
+		createEffect: vi.fn(),
+	};
+});
+
 const makeTestRuntime = () =>
 	ManagedRuntime.make<never, never>(Layer.mergeAll(silentLoggerLayer));
+
+let testRuntime: Runtime.Runtime<never>;
+
+beforeAll(async () => {
+	const managed = makeTestRuntime();
+	testRuntime = await managed.runtime();
+});
 
 function makeVm(initiallyVisible = true) {
 	const visibility = createMascotVisibility(initiallyVisible);
 	const vm = createMascotViewModel({
+		runtime: testRuntime,
 		visibility,
 		resolvePoseUrl: resolveBundledPoseUrl,
 	});
-	return { vm, visibility };
+	return { vm, visibility, runtime: testRuntime };
 }
 
 describe('MascotViewModel', () => {
@@ -318,7 +336,25 @@ describe('MascotViewModel', () => {
 		expect(vm.source()).toBe('active-soundcloud-tab');
 	});
 
-	it('startCollection moves to loading state', async () => {
+	it('startCollection applies background response after optimistic loading', async () => {
+		sendToBackgroundMock.mockImplementation(() =>
+			Effect.succeed({
+				status: 'checking-login',
+				trackCount: 0,
+				message: undefined,
+			}),
+		);
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+
+		await runtime.runPromise(vm.effects.startCollection);
+
+		expect(vm.state()).toBe('checking-login');
+		expect(vm.trackCount()).toBe(0);
+	});
+
+	it('startCollection leaves loading when background response cannot be decoded', async () => {
+		sendToBackgroundMock.mockImplementation(() => Effect.succeed(undefined));
 		const runtime = makeTestRuntime();
 		const { vm } = makeVm();
 
@@ -329,11 +365,18 @@ describe('MascotViewModel', () => {
 	});
 
 	it('state update listener sets processing state', async () => {
+		sendToBackgroundMock.mockImplementation(() =>
+			Effect.succeed({
+				status: 'checking-login',
+				trackCount: 0,
+				message: undefined,
+			}),
+		);
 		const runtime = makeTestRuntime();
 		const { vm } = makeVm();
 
 		await runtime.runPromise(vm.effects.startCollection);
-		expect(vm.state()).toBe('loading');
+		expect(vm.state()).toBe('checking-login');
 
 		triggerStateUpdate({
 			status: 'collecting',
@@ -471,6 +514,7 @@ describe('MascotViewModel — poseUrl', () => {
 		const customResolver = vi.fn((pose: BeatPoseKey) => `custom://${pose}`);
 		const visibility = createMascotVisibility(true);
 		const vm = createMascotViewModel({
+			runtime: testRuntime,
 			visibility,
 			resolvePoseUrl: customResolver,
 		});
