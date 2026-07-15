@@ -22,6 +22,12 @@ export default defineConfig({
 	},
 	// Don't auto-open a browser; load extension manually (e.g. Chrome on host when dev in container).
 	webExt: { disabled: true },
+	dev: {
+		server: {
+			host: '0.0.0.0',
+			port: 3000,
+		},
+	},
 	vite: () => ({
 		plugins: [tailwindcss()],
 		resolve: {

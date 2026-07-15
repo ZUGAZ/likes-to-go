@@ -26,7 +26,34 @@ To load the extension in Chrome:
 
 1. Run `pnpm dev`
 2. Open `chrome://extensions/` and enable **Developer mode**
-3. Click **Load unpacked** and select the `.output/chrome-mv3` directory
+3. Click **Load unpacked** and select the `.output/chrome-mv3-dev` directory
+
+`pnpm build` produces `.output/chrome-mv3` for production or sideload testing — do not use that directory while the dev server is running.
+
+### Developing with Dev Containers (Windows + host Chrome)
+
+Optional workflow for developers using a Dev Container while loading the extension in **native Windows Chrome** (not a browser inside the container).
+
+Container volumes keep source and `node_modules` fast; dev output is typically bind-mounted so host Chrome can load it. Configure the bind mount in your local devcontainer setup (paths vary per machine).
+
+**Daily workflow**
+
+1. Run `pnpm dev` inside the container.
+2. Load unpacked **once** from the host folder that mirrors `.output/chrome-mv3-dev`.
+3. Edit code — WXT reloads automatically via HMR.
+
+**Port forwarding:** the dev server listens on port **3000**. Forward that port from the container to the host so Chrome can reach the HMR WebSocket.
+
+**When to reload manually:** new entrypoints or manifest changes require a manual extension reload (`Alt+R` on `chrome://extensions`, or the Reload button). If the HMR WebSocket fails (firewall, etc.), file changes still sync via the bind mount — use Reload in `chrome://extensions`.
+
+| Change type                | Expected behavior                                |
+| -------------------------- | ------------------------------------------------ |
+| Popup / HTML UI            | Vite HMR in place                                |
+| Content scripts            | Re-registered via `chrome.scripting`             |
+| Background service worker  | Extension reload via dev server WebSocket        |
+| Manifest / new entrypoints | Manual reload (`Alt+R` or `chrome://extensions`) |
+
+See the [WXT Dev Containers FAQ](https://wxt.dev/guide/resources/faq.html#how-do-i-run-my-wxt-project-with-docker-devcontainers).
 
 ## 🏛️ Architecture
 

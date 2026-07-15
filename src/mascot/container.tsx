@@ -3,7 +3,7 @@ import { onCleanup, onMount, untrack } from 'solid-js';
 
 import { bindViewModel } from '@/common/viewmodel/bind-viewmodel';
 import type { BeatPoseKey } from '@/mascot/persona';
-import { BeatView } from '@/mascot/view';
+import { BeatView, type BeatPresentation } from '@/mascot/view';
 import { createMascotViewModel } from '@/mascot/view-model';
 import type { MascotVisibilityControls } from '@/mascot/visibility';
 
@@ -11,6 +11,7 @@ interface BeatContainerProps {
 	readonly runtime: Runtime.Runtime<never>;
 	readonly visibility: MascotVisibilityControls;
 	readonly resolvePoseUrl: (pose: BeatPoseKey) => string;
+	readonly presentation?: BeatPresentation;
 	readonly onDismiss?: () => void;
 }
 
@@ -40,6 +41,9 @@ export function BeatContainer(props: BeatContainerProps) {
 
 	return (
 		<BeatView
+			{...(props.presentation !== undefined
+				? { presentation: props.presentation }
+				: {})}
 			theme={vm.theme}
 			state={vm.state}
 			isVisible={vm.isVisible}
