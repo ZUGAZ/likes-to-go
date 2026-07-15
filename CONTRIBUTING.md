@@ -30,18 +30,21 @@ To load the extension in Chrome:
 
 `pnpm build` produces `.output/chrome-mv3` for production or sideload testing — do not use that directory while the dev server is running.
 
-### Developing with Dev Containers (Windows + host Chrome)
+### Developing with Dev Containers (WSL + Windows Chrome)
 
-Optional workflow for developers using a Dev Container on a **Windows host checkout** while loading the extension in **native Windows Chrome**.
+Optional workflow for developers on **Windows with WSL** who run a Dev Container while loading the extension in **native Windows Chrome**.
 
-The devcontainer bind-mounts your host folders. Only `node_modules` uses a Docker named volume (faster installs). Dev output (`.output/chrome-mv3-dev`) stays on host disk — load it directly in Chrome.
+**Filesystem requirement:** clone the repo to the **WSL filesystem** (ext4), not to `C:\` or `/mnt/c/`. Docker bind mounts from Windows NTFS are unreliable for file watching and I/O — use a WSL path such as `/home/<user>/likes-to-go`.
+
+The devcontainer bind-mounts your WSL checkout. Only `node_modules` uses a Docker named volume (faster installs). Dev output (`.output/chrome-mv3-dev`) stays on WSL disk — load it in Chrome via the WSL UNC path (`\\wsl.localhost\<Distro>\...\public\.output\chrome-mv3-dev`).
 
 **Daily workflow**
 
-1. Open the multi-root workspace and **Reopen in Container**.
+1. Open the multi-root workspace from your WSL path and **Reopen in Container**.
 2. Run `pnpm dev` inside the container.
-3. Load unpacked **once** from `.output/chrome-mv3-dev` on your host disk (sibling `public` repo).
-4. Edit code — WXT reloads automatically via HMR when port **3000** is forwarded.
+3. Load unpacked **once** from `.output/chrome-mv3-dev` (via WSL UNC path in Windows Chrome).
+4. Confirm port **3000** appears in the Cursor **Ports** panel.
+5. Edit code — WXT reloads automatically via HMR when the WebSocket reaches the dev server.
 
 **When to reload manually:** new entrypoints or manifest changes require a manual extension reload (`Alt+R` on `chrome://extensions`, or the Reload button).
 
@@ -51,6 +54,15 @@ The devcontainer bind-mounts your host folders. Only `node_modules` uses a Docke
 | Content scripts            | Re-registered via `chrome.scripting`             |
 | Background service worker  | Extension reload via dev server WebSocket        |
 | Manifest / new entrypoints | Manual reload (`Alt+R` or `chrome://extensions`) |
+
+**HMR WebSocket troubleshooting**
+
+If the extension console shows `WebSocket connection to 'ws://localhost:3000/' failed`:
+
+1. Verify `pnpm dev` is running and port **3000** is forwarded (Cursor Ports panel).
+2. From Windows PowerShell: `curl.exe -sI http://localhost:3000/` — expect HTTP headers from the dev server.
+3. If port 3000 is taken or remapped silently, free the port or rebuild the devcontainer (config uses `requireLocalPort`).
+4. **Fallback:** extension files still rebuild on save — use Reload on `chrome://extensions`.
 
 See the [WXT Dev Containers FAQ](https://wxt.dev/guide/resources/faq.html#how-do-i-run-my-wxt-project-with-docker-devcontainers).
 

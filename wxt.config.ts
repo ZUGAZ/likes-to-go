@@ -29,6 +29,9 @@ export default defineConfig({
 		},
 	},
 	vite: () => ({
+		server: {
+			strictPort: true,
+		},
 		plugins: [tailwindcss()],
 		resolve: {
 			alias: {
