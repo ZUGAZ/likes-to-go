@@ -64,7 +64,7 @@ describe('createContentMessageHandler', () => {
 		onInvalidated: () => () => {},
 	};
 
-	const noopDeps = { onToggleMascot: () => {} };
+	const noopDeps = { onToggleMascot: () => {}, isMascotVisible: () => false };
 
 	it('returns false for invalid message payload', () => {
 		document.body.innerHTML =
@@ -84,6 +84,7 @@ describe('createContentMessageHandler', () => {
 		const onToggleMascot = vi.fn();
 		const handler = createContentMessageHandler(runtime, ctx, {
 			onToggleMascot,
+			isMascotVisible: () => true,
 		});
 		const sendResponse = vi.fn();
 
@@ -99,6 +100,33 @@ describe('createContentMessageHandler', () => {
 		expect(sendMessageMock).not.toHaveBeenCalled();
 	});
 
+	it('acknowledges StartCollection synchronously so background can receive pipeline messages', () => {
+		document.body.innerHTML =
+			'<div class="lazyLoadingList__list"><div class="badgeList__item">card</div></div>';
+
+		const handler = createContentMessageHandler(runtime, ctx, noopDeps);
+		const sendResponse = vi.fn();
+		const callOrder: string[] = [];
+		sendResponse.mockImplementation(() => {
+			callOrder.push('sendResponse');
+		});
+		sendMessageMock.mockImplementation((message: unknown) => {
+			void message;
+			callOrder.push('sendMessage');
+			return Promise.resolve(undefined);
+		});
+
+		const handled = handler(
+			StartCollectionRequest(),
+			{} as chrome.runtime.MessageSender,
+			sendResponse,
+		);
+
+		expect(handled).toBe(false);
+		expect(sendResponse).toHaveBeenCalledTimes(1);
+		expect(callOrder[0]).toBe('sendResponse');
+	});
+
 	it('sends LoginRequiredRequest when track list exists but user nav is absent', async () => {
 		document.body.innerHTML =
 			'<div class="lazyLoadingList__list"><div class="badgeList__item">card</div></div>';
@@ -112,10 +140,10 @@ describe('createContentMessageHandler', () => {
 			sendResponse,
 		);
 
-		expect(handled).toBe(true);
-		await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledTimes(1));
+		expect(handled).toBe(false);
+		expect(sendResponse).toHaveBeenCalledTimes(1);
 
-		expect(sendMessageMock).toHaveBeenCalledTimes(1);
+		await vi.waitFor(() => expect(sendMessageMock).toHaveBeenCalledTimes(1));
 		const rawLogin = sendMessageMock.mock.calls[0]?.[0];
 		const loginParsed = parseRequestMessage(rawLogin);
 		expect(Either.isRight(loginParsed)).toBe(true);
@@ -141,11 +169,11 @@ describe('createContentMessageHandler', () => {
 			sendResponse,
 		);
 
-		expect(handled).toBe(true);
-		expect(sendResponse).not.toHaveBeenCalled();
+		expect(handled).toBe(false);
+		expect(sendResponse).toHaveBeenCalledTimes(1);
 
 		await vi.advanceTimersByTimeAsync(15_000);
-		await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledTimes(1));
+		await vi.waitFor(() => expect(sendMessageMock).toHaveBeenCalledTimes(1));
 
 		expect(sendMessageMock).toHaveBeenCalledTimes(1);
 		const rawErr = sendMessageMock.mock.calls[0]?.[0];

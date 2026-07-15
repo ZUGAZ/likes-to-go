@@ -1,4 +1,5 @@
 import { Context, Effect, Layer } from 'effect';
+import { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
 import {
 	collectBatch,
 	type CollectionBatch,
@@ -6,6 +7,7 @@ import {
 } from '@/content/model/collect-batches';
 import { LIKES_PAGE_BASE_URL } from '@/content/constants';
 import type { LayoutCollectionContext } from '@/layout';
+import { errorToReason } from '@/common/model/error-to-reason';
 import {
 	isErrorIndicatorPresent as isErrorIndicatorPresentInDom,
 	isLoadingIndicatorPresent as isLoadingIndicatorPresentInDom,
@@ -13,10 +15,13 @@ import {
 } from '@/layout';
 
 export interface DomScanner {
-	readonly scanBatch: (state: CollectionScanState) => Effect.Effect<{
-		batch: CollectionBatch;
-		nextState: CollectionScanState;
-	}>;
+	readonly scanBatch: (state: CollectionScanState) => Effect.Effect<
+		{
+			batch: CollectionBatch;
+			nextState: CollectionScanState;
+		},
+		SendToBackgroundFailed
+	>;
 	readonly isLoadingIndicatorPresent: () => Effect.Effect<boolean>;
 	readonly isErrorIndicatorPresent: () => Effect.Effect<boolean>;
 	readonly clickRetry: () => Effect.Effect<void>;
@@ -33,8 +38,17 @@ export function makeDomScannerLive(
 ): Layer.Layer<DomScannerTag> {
 	return Layer.succeed(DomScannerTag, {
 		scanBatch: (state) =>
-			Effect.promise(() =>
-				collectBatch(root, LIKES_PAGE_BASE_URL, state, layoutContext),
+			Effect.tryPromise({
+				try: () =>
+					collectBatch(root, LIKES_PAGE_BASE_URL, state, layoutContext),
+				catch: (err) =>
+					new SendToBackgroundFailed({
+						reason: `DOM scan failed: ${errorToReason(err)}`,
+					}),
+			}).pipe(
+				Effect.tapError((err) =>
+					Effect.logWarning('scanBatch failed', err.reason),
+				),
 			),
 		isLoadingIndicatorPresent: () =>
 			Effect.sync(() => {

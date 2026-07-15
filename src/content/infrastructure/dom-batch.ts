@@ -20,10 +20,11 @@ export interface BatchOptions {
 }
 
 function defaultSchedulerYield(): (() => Promise<void>) | undefined {
-	const schedulerYield = window.scheduler?.yield;
-	if (schedulerYield === undefined) return undefined;
+	const scheduler = window.scheduler;
+	const schedulerYield = scheduler?.yield;
+	if (scheduler === undefined || schedulerYield === undefined) return undefined;
 
-	return () => schedulerYield();
+	return () => schedulerYield.call(scheduler);
 }
 
 function defaultYieldToMainDependencies(): YieldToMainDependencies {

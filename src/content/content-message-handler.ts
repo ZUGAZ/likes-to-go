@@ -19,7 +19,7 @@ import {
 	detectSupportedCollectionPage,
 } from '@/content/model/page-detection';
 import type { ContentEnv } from '@/content/runtime/content-env';
-import { Effect, Either, Exit, Fiber, Runtime } from 'effect';
+import { Cause, Effect, Either, Exit, Fiber, Runtime } from 'effect';
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
 export type ContentScriptCtx = Pick<
@@ -29,6 +29,7 @@ export type ContentScriptCtx = Pick<
 
 export interface ContentMessageHandlerDeps {
 	readonly onToggleMascot: () => void;
+	readonly isMascotVisible: () => boolean;
 }
 
 type DetectionFailureRequest =
@@ -63,6 +64,31 @@ function reportDetectionFailure(
 	);
 }
 
+function collectionFailureMessage(cause: unknown): string {
+	if (
+		typeof cause === 'object' &&
+		cause !== null &&
+		'message' in cause &&
+		typeof cause.message === 'string'
+	) {
+		return cause.message;
+	}
+
+	return 'Collection failed unexpectedly';
+}
+
+function pageDetectionFailureReason(error: unknown): string {
+	if (error instanceof UnsupportedCollectionPage) {
+		return error.reason;
+	}
+
+	if (error instanceof CollectionPageLoginRequired) {
+		return error.reason;
+	}
+
+	return 'unknown';
+}
+
 export function createContentMessageHandler(
 	runtime: Runtime.Runtime<ContentEnv>,
 	ctx: ContentScriptCtx,
@@ -92,43 +118,97 @@ export function createContentMessageHandler(
 			onLeft: () => false,
 			onRight: (msg) => {
 				if (isStartCollection(msg)) {
+					void Runtime.runPromise(runtime)(
+						Effect.log('StartCollection tab message received'),
+					);
 					interuptFiber();
 
 					const program = Effect.gen(function* () {
-						yield* Effect.log('StartCollection received');
+						yield* Effect.log('StartCollection pipeline program begin');
 
 						return yield* detectSupportedCollectionPage({
 							pageDocument: document,
 						}).pipe(
+							Effect.tapError((error) =>
+								Effect.logWarning('StartCollection page detection failed', {
+									reason: pageDetectionFailureReason(error),
+								}),
+							),
 							Effect.matchEffect({
 								onFailure: (error) =>
 									reportDetectionFailure(pageDetectionErrorToRequest(error)),
 								onSuccess: ({ root, layoutContext }) =>
-									collectionPipeline.pipe(
-										Effect.provide(makeCollectionLive(root, layoutContext)),
+									Effect.log(
+										'StartCollection page detected, running collection pipeline',
+									).pipe(
+										Effect.zipRight(
+											collectionPipeline.pipe(
+												Effect.provide(makeCollectionLive(root, layoutContext)),
+											),
+										),
 									),
 							}),
 						);
-					}).pipe(Effect.catchAll(Effect.succeed));
+					}).pipe(
+						Effect.tapError((cause) =>
+							Effect.logError('content StartCollection program failed', cause),
+						),
+						Effect.catchAll((cause) =>
+							Effect.succeed(
+								OutcomeError({
+									message: collectionFailureMessage(cause),
+								}),
+							),
+						),
+						Effect.catchAllDefect((defect) =>
+							Effect.gen(function* () {
+								yield* Effect.logError(
+									'content StartCollection program defect',
+									defect,
+								);
+								return OutcomeError({
+									message: collectionFailureMessage(defect),
+								});
+							}),
+						),
+					);
 
 					fiber = Runtime.runFork(runtime)(program);
 
-					void (async () => {
-						await Runtime.runPromise(runtime)(
-							Fiber.await(fiber).pipe(
-								Effect.tap((exit) => {
-									fiber = null;
-									if (Exit.isInterrupted(exit)) {
-										return Effect.log('content collection interrupted');
-									}
-									return Effect.void;
-								}),
-							),
-						);
-						sendResponse();
-					})();
+					void Runtime.runPromise(runtime)(
+						Fiber.await(fiber).pipe(
+							Effect.tap((exit) => {
+								fiber = null;
+								if (Exit.isInterrupted(exit)) {
+									return Effect.log('content collection interrupted');
+								}
+								return Exit.match(exit, {
+									onFailure: (cause) =>
+										Effect.logWarning(
+											'content collection fiber died',
+											Cause.pretty(cause),
+										),
+									onSuccess: (outcome) =>
+										Effect.log('content collection finished', {
+											outcome: outcome._tag,
+											...(outcome._tag === 'Error'
+												? { message: outcome.message }
+												: {}),
+										}),
+								});
+							}),
+						),
+					);
 
-					return true;
+					// Acknowledge immediately so background SendStartToTab can finish
+					// before the pipeline sends TracksBatch (avoids message deadlock).
+					sendResponse();
+					void Runtime.runPromise(runtime)(
+						Effect.log(
+							'StartCollection tab message ack sent, pipeline fiber forked',
+						),
+					);
+					return false;
 				}
 
 				if (isCancelCollection(msg)) {
@@ -141,7 +221,15 @@ export function createContentMessageHandler(
 				}
 
 				if (isToggleMascot(msg)) {
-					deps.onToggleMascot();
+					void Runtime.runPromise(runtime)(
+						Effect.gen(function* () {
+							yield* Effect.log('ToggleMascot received');
+							deps.onToggleMascot();
+							yield* Effect.log('overlay visibility toggled', {
+								visible: deps.isMascotVisible(),
+							});
+						}),
+					);
 					sendResponse();
 					return false;
 				}

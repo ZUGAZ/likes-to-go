@@ -1,8 +1,9 @@
+import { Effect, Runtime } from 'effect';
 import { render } from 'solid-js/web';
-import type { Runtime } from 'effect';
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 
+import { applyBeatOverlayRootStyles } from '@/content/beat-overlay/apply-beat-overlay-root-styles';
 import { MascotOverlayRoot } from '@/content/components/mascot-overlay/mascot-overlay-root';
 import { resolveContentMascotPoseUrl } from '@/content/infrastructure/resolve-mascot-pose-url';
 import type { MascotVisibilityControls } from '@/mascot/visibility';
@@ -18,13 +19,13 @@ export async function mountBeatOverlay(
 ): Promise<BeatOverlayHandle> {
 	const ui = await createShadowRootUi(ctx, {
 		name: 'likes-to-go-beat',
-		position: 'overlay',
+		// Inline mode: WXT overlay positioning sets inline styles on shadow html.
+		// Placement is owned by `.beat-overlay-root` in main.css instead.
+		position: 'inline',
 		anchor: 'body',
-		alignment: 'bottom-right',
 		isolateEvents: true,
-		zIndex: 2_147_483_646,
-		onMount: (uiContainer, _shadow, shadowHost) => {
-			shadowHost.classList.add('beat-overlay-host');
+		onMount: (uiContainer, shadow, shadowHost) => {
+			applyBeatOverlayRootStyles(shadow);
 
 			return render(
 				() => (
@@ -33,6 +34,11 @@ export async function mountBeatOverlay(
 						visibility={visibility}
 						shadowHost={shadowHost}
 						resolvePoseUrl={resolveContentMascotPoseUrl}
+						onHostVisibilityChange={(attrs) => {
+							void Runtime.runPromise(runtime)(
+								Effect.log('overlay host visibility', attrs),
+							);
+						}}
 					/>
 				),
 				uiContainer,

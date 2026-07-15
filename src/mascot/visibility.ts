@@ -1,5 +1,14 @@
 import { createSignal } from 'solid-js';
 
+export type MascotVisibilityTransition = 'summon' | 'dismiss' | 'toggle';
+
+export interface MascotVisibilityOptions {
+	readonly onTransition?: (
+		action: MascotVisibilityTransition,
+		visible: boolean,
+	) => void;
+}
+
 export interface MascotVisibilityControls {
 	readonly isVisible: () => boolean;
 	readonly summon: () => void;
@@ -9,13 +18,27 @@ export interface MascotVisibilityControls {
 
 export function createMascotVisibility(
 	initiallyVisible: boolean,
+	options?: MascotVisibilityOptions,
 ): MascotVisibilityControls {
 	const [isVisible, setIsVisible] = createSignal(initiallyVisible);
+	const onTransition = options?.onTransition;
 
 	return {
 		isVisible,
-		summon: () => setIsVisible(true),
-		dismiss: () => setIsVisible(false),
-		toggle: () => setIsVisible((v) => !v),
+		summon: () => {
+			setIsVisible(true);
+			onTransition?.('summon', true);
+		},
+		dismiss: () => {
+			setIsVisible(false);
+			onTransition?.('dismiss', false);
+		},
+		toggle: () => {
+			setIsVisible((v) => {
+				const visible = !v;
+				onTransition?.('toggle', visible);
+				return visible;
+			});
+		},
 	};
 }

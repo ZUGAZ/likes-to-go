@@ -8,6 +8,7 @@ export function startPopup(mountPopup: (runtime: PopupRuntime) => void): void {
 		Effect.gen(function* () {
 			const runtime = yield* makePopupRuntime();
 			mountPopup(runtime);
+			yield* Effect.log('popup opened');
 			return yield* Effect.never;
 		}),
 	);

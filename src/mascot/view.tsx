@@ -8,7 +8,10 @@ import { Mascot } from '@/mascot/mascot';
 import { SpeechBalloon } from '@/mascot/speech-balloon';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 
+export type BeatPresentation = 'popup' | 'overlay';
+
 export interface BeatViewProps {
+	readonly presentation?: BeatPresentation;
 	readonly theme: Accessor<ResolvedPopupTheme>;
 	readonly state: Accessor<BeatState>;
 	readonly isVisible: Accessor<boolean>;
@@ -22,11 +25,16 @@ export interface BeatViewProps {
 	readonly onDismiss?: () => void;
 }
 
+const beatRootClass = (presentation: BeatPresentation | undefined) =>
+	presentation === 'overlay'
+		? 'beat-root w-[640px] max-w-[calc(100vw-2rem)] bg-transparent font-sans text-sm'
+		: 'beat-root w-[640px] max-w-[calc(100vw-2rem)] bg-white p-4 font-sans text-neutral-900 text-sm dark:bg-neutral-950 dark:text-neutral-100';
+
 export function BeatView(props: BeatViewProps) {
 	return (
 		<Show when={props.isVisible()}>
 			<main
-				class="beat-root w-[280px] overflow-x-hidden bg-white p-4 font-sans text-neutral-900 text-sm dark:bg-neutral-950 dark:text-neutral-100"
+				class={beatRootClass(props.presentation)}
 				data-theme={props.theme()}
 				style={{ 'color-scheme': props.theme() }}
 			>
@@ -37,23 +45,12 @@ export function BeatView(props: BeatViewProps) {
 				>
 					<Transition name="fade" mode="outin">
 						<Switch fallback={null}>
-							<Match when={props.state() === 'initializing'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-
-							<Match when={props.state() === 'initial'}>
+							<Match
+								when={
+									props.state() === 'initializing' ||
+									props.state() === 'initial'
+								}
+							>
 								<div class="beat-layout">
 									<Mascot
 										poseUrl={props.poseUrl()}

@@ -52,8 +52,11 @@ export function runSendStartToTab(
 		);
 
 	return Effect.gen(function* () {
-		yield* Effect.log('background SendStartToTab', tabId);
+		yield* Effect.log('background SendStartToTab begin', { tabId });
 		yield* focusTabEffect;
 		yield* sendWithRetry(SEND_START_RETRY_DELAYS_MS);
+		yield* Effect.log('background SendStartToTab content ack received', {
+			tabId,
+		});
 	}).pipe(Effect.withLogSpan('runSendStartToTab'));
 }

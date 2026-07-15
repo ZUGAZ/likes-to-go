@@ -77,7 +77,10 @@ export function handleMessageEffect(
 ): Effect.Effect<GetStateResponse, never, BackgroundEnv> {
 	void sender;
 	return Effect.gen(function* () {
-		yield* Effect.log('incomming message', message._tag);
+		yield* Effect.log('incoming message', message._tag, {
+			senderTabId: sender.tab?.id,
+			senderFrameId: sender.frameId,
+		});
 
 		if (isToggleMascot(message)) {
 			yield* Effect.logWarning(
@@ -93,6 +96,12 @@ export function handleMessageEffect(
 
 		const ref = yield* StateRefTag;
 		const state = yield* Ref.get(ref);
-		return collectionStateToGetStateResponse(state);
+		const response = collectionStateToGetStateResponse(state);
+		yield* Effect.log('handleMessage responding', message._tag, {
+			status: response.status,
+			trackCount: response.trackCount,
+			stateTag: state._tag,
+		});
+		return response;
 	}).pipe(Effect.withLogSpan('handleMessage'));
 }

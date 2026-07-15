@@ -69,8 +69,10 @@
 
 .beat-mascot {
 	flex-shrink: 0;
-	width: 4rem;
-	height: 4rem;
+	width: min(18.75rem, calc(100vw - 4rem));
+	aspect-ratio: 1;
+	height: auto;
+	transform: translate(80px, -20px);
 }
 
 .beat-mascot img {
@@ -80,28 +82,69 @@
 }
 
 .beat-balloon {
-	position: relative;
 	flex: 1;
-	min-width: 0;
+	min-width: 12rem;
+	--beat-balloon-bg: white;
+	--beat-balloon-ring: rgb(229 229 229); /* neutral-200 */
 }
 
-/* CSS triangle tail pointing left toward the mascot */
+:where([data-theme='dark']) .beat-balloon {
+	--beat-balloon-bg: rgb(23 23 23); /* neutral-900 */
+	--beat-balloon-ring: rgb(64 64 64); /* neutral-700 */
+}
+
+.beat-balloon__panel {
+	position: relative;
+}
+
+/* Comic-style tail pointing left toward the mascot */
 .beat-balloon__tail {
 	position: absolute;
-	top: 0.75rem;
-	left: -0.5rem;
-	width: 0;
-	height: 0;
-	border-top: 0.375rem solid transparent;
-	border-bottom: 0.375rem solid transparent;
-	border-right: 0.5rem solid var(--beat-balloon-tail-color, white);
+	top: 4.5rem;
+	left: -1.75rem;
+	z-index: 0;
+	width: 2.25rem;
+	height: 3.25rem;
+	pointer-events: none;
 }
 
-:where([data-theme='dark']) .beat-balloon__tail {
-	--beat-balloon-tail-color: rgb(23 23 23); /* neutral-900 */
+.beat-balloon__tail path {
+	fill: var(--beat-balloon-bg);
+	stroke: var(--beat-balloon-ring);
+	stroke-width: 1;
+	stroke-linejoin: round;
 }
 
-/* Content overlay host — pointer-events toggled by MascotOverlayRoot */
-.beat-overlay-host {
-	margin: 1rem;
+.beat-balloon__body {
+	position: relative;
+	z-index: 1;
+}
+
+@media (max-width: 639px) {
+	.beat-layout {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.beat-balloon {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.beat-balloon__tail {
+		top: -2.75rem;
+		left: 3rem;
+		transform: rotate(-90deg);
+		transform-origin: 50% 100%;
+	}
+}
+
+/* Content overlay shell — shadow-root html, not the likes-to-go-beat host */
+.beat-overlay-root {
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	z-index: 2147483646;
+	max-width: calc(100vw - 2rem);
+	background: transparent;
 }

@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import { Effect, Option, Schema } from 'effect';
 import { batch, createSignal, untrack } from 'solid-js';
 
 import {
@@ -14,6 +14,7 @@ import {
 import {
 	CancelCollectionRequest,
 	DownloadExportRequest,
+	GetStateResponseSchema,
 	StartCollectionRequest,
 } from '@/common/model/request-message';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
@@ -144,13 +145,36 @@ export function createMascotViewModel(
 	const syncTheme = getResolvedPopupThemeEffect().pipe(Effect.tap(setTheme));
 
 	const syncState = Effect.gen(function* () {
+		yield* Effect.log('mascot syncState start');
 		yield* syncTheme;
 		yield* getState().pipe(Effect.tap(applyGetStateResponse));
+		yield* Effect.log('mascot syncState complete');
 	});
 
 	const startCollection = Effect.gen(function* () {
+		yield* Effect.log('startCollection begin');
 		setToLoading();
 		yield* sendToBackgroundEffect(StartCollectionRequest()).pipe(
+			Effect.tap((response) =>
+				Effect.gen(function* () {
+					const decoded = yield* Schema.decodeUnknown(GetStateResponseSchema)(
+						response,
+					).pipe(Effect.option);
+					if (Option.isSome(decoded)) {
+						yield* Effect.log('startCollection background responded', {
+							status: decoded.value.status,
+							trackCount: decoded.value.trackCount,
+						});
+						return;
+					}
+					yield* Effect.logWarning(
+						'startCollection background responded with unexpected payload',
+					);
+				}),
+			),
+			Effect.tapError((err) =>
+				Effect.logWarning('startCollection send failed', err.reason),
+			),
 			Effect.catchAll((err) =>
 				Effect.sync(() => {
 					applyModel({

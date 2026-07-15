@@ -28,6 +28,33 @@ describe('yieldToMain', () => {
 		expect(calls).toEqual(['raf', 'scheduler']);
 	});
 
+	it('calls scheduler.yield with scheduler as receiver', async () => {
+		class TestScheduler {
+			receiverDuringYield: unknown;
+
+			yield(): Promise<void> {
+				this.receiverDuringYield = this;
+				return Promise.resolve();
+			}
+		}
+
+		const scheduler = new TestScheduler();
+
+		await yieldToMain({
+			requestAnimationFrame: (callback) => {
+				callback(0);
+				return 1;
+			},
+			schedulerYield: () => scheduler.yield.call(scheduler),
+			setTimeout: (callback) => {
+				callback();
+				return 1;
+			},
+		});
+
+		expect(scheduler.receiverDuringYield).toBe(scheduler);
+	});
+
 	it('falls back to setTimeout when scheduler.yield is unavailable', async () => {
 		const calls: string[] = [];
 

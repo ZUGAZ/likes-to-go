@@ -110,9 +110,8 @@ describe('mountBeatOverlay', () => {
 			ctx,
 			expect.objectContaining({
 				name: 'likes-to-go-beat',
-				position: 'overlay',
+				position: 'inline',
 				anchor: 'body',
-				alignment: 'bottom-right',
 				isolateEvents: true,
 			}),
 		);
@@ -121,9 +120,11 @@ describe('mountBeatOverlay', () => {
 		const uiContainer = document.createElement('div');
 		const shadowHost = document.createElement('div');
 		const shadow = shadowHost.attachShadow({ mode: 'open' });
+		const shadowHtml = document.createElement('html');
+		shadow.append(shadowHtml);
 
 		const unmount = capturedOnMount?.(uiContainer, shadow, shadowHost);
-		expect(shadowHost.classList.contains('beat-overlay-host')).toBe(true);
+		expect(shadowHtml.classList.contains('beat-overlay-root')).toBe(true);
 		expect(typeof unmount).toBe('function');
 
 		capturedOnRemove?.(unmount);

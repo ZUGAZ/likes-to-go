@@ -23,14 +23,16 @@ export function sendToTabEffect(
 	tabId: number,
 	message: RequestMessage,
 ): Effect.Effect<unknown, SendToTabMessagingFailed> {
-	return Effect.tryPromise({
-		try: () => sendToTab(tabId, message),
-		catch: (err: unknown) =>
-			new SendToTabMessagingFailed({
-				reason: errorToReason(err),
-			}),
-	}).pipe(
-		Effect.tap(() => Effect.log('Message:', message._tag)),
-		Effect.withLogSpan('sendToTab'),
-	);
+	return Effect.gen(function* () {
+		yield* Effect.log('sendToTab dispatching', message._tag, { tabId });
+		const response = yield* Effect.tryPromise({
+			try: () => sendToTab(tabId, message),
+			catch: (err: unknown) =>
+				new SendToTabMessagingFailed({
+					reason: errorToReason(err),
+				}),
+		});
+		yield* Effect.log('sendToTab responded', message._tag, { tabId });
+		return response;
+	}).pipe(Effect.withLogSpan('sendToTab'));
 }

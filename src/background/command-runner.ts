@@ -76,7 +76,18 @@ export function runCommand(
 				Effect.catchAll(dispatchEffect),
 			);
 		} else if (isSendStartToTab(cmd)) {
-			yield* runSendStartToTab(cmd.tabId).pipe(Effect.catchAll(dispatchEffect));
+			yield* runSendStartToTab(cmd.tabId).pipe(
+				Effect.tap(() =>
+					Effect.log('command SendStartToTab complete', cmd.tabId),
+				),
+				Effect.catchAll((error) =>
+					Effect.logWarning('command SendStartToTab failed', {
+						tabId: cmd.tabId,
+						message: error.message,
+						reason: error.reason,
+					}).pipe(Effect.zipRight(dispatchEffect(error))),
+				),
+			);
 		} else if (isDownloadExportCommand(cmd)) {
 			yield* runDownloadExport(cmd.tracks).pipe(
 				Effect.matchEffect({

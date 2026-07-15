@@ -21,14 +21,16 @@ export function sendToBackground(
 export function sendToBackgroundEffect(
 	message: BackgroundRequestMessage,
 ): Effect.Effect<unknown, SendToBackgroundFailed> {
-	return Effect.tryPromise({
-		try: () => sendToBackground(message),
-		catch: (err: unknown) =>
-			new SendToBackgroundFailed({
-				reason: errorToReason(err),
-			}),
-	}).pipe(
-		Effect.tap(() => Effect.log('Message:', message._tag)),
-		Effect.withLogSpan('sendToBackground'),
-	);
+	return Effect.gen(function* () {
+		yield* Effect.log('sendToBackground dispatching', message._tag);
+		const response = yield* Effect.tryPromise({
+			try: () => sendToBackground(message),
+			catch: (err: unknown) =>
+				new SendToBackgroundFailed({
+					reason: errorToReason(err),
+				}),
+		});
+		yield* Effect.log('sendToBackground responded', message._tag);
+		return response;
+	}).pipe(Effect.withLogSpan('sendToBackground'));
 }

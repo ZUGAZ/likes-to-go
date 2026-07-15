@@ -7,7 +7,7 @@ import {
 import { registerActionClickedListener } from '@/background/infrastructure/action-popup';
 import type { BackgroundEnv } from '@/background/runtime/background-env';
 import { isSoundCloudUrl } from '@/common/model/url/is-soundcloud-url';
-import { Runtime } from 'effect';
+import { Effect, Runtime } from 'effect';
 
 export function registerActionPopupListener(
 	runtime: Runtime.Runtime<BackgroundEnv>,
@@ -17,7 +17,12 @@ export function registerActionPopupListener(
 		if (tabId === undefined) return;
 		if (!isSoundCloudUrl(tab.url)) return;
 
-		void Runtime.runPromise(runtime)(runToggleMascotOnTabEffect(tabId));
+		void Runtime.runPromise(runtime)(
+			Effect.gen(function* () {
+				yield* Effect.log('action icon clicked', { tabId, url: tab.url });
+				yield* runToggleMascotOnTabEffect(tabId);
+			}),
+		);
 	});
 
 	chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {

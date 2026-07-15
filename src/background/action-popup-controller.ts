@@ -31,6 +31,13 @@ export function syncTabActionPopupEffect(
 	const popupPath = actionPopupPathForUrl(rawUrl);
 
 	return setTabActionPopupEffect(tabId, popupPath).pipe(
+		Effect.tap(() =>
+			Effect.log('set tab action popup', {
+				tabId,
+				popupPath,
+				url: rawUrl,
+			}),
+		),
 		Effect.catchAll((error: SetTabActionPopupFailed) =>
 			Effect.logWarning('Failed to set tab action popup', {
 				tabId: error.tabId,
@@ -92,6 +99,7 @@ function sendToggleMascotWithRetry(
 	const sendEffect = sendToTabEffect(tabId, ToggleMascotRequest());
 
 	return sendEffect.pipe(
+		Effect.tap(() => Effect.log('ToggleMascot sent', { tabId })),
 		Effect.catchAll((error) => {
 			const [delayMs, ...remainingDelaysMs] = delaysMs;
 			if (

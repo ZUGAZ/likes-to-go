@@ -261,6 +261,7 @@ export const collectionPipeline: Effect.Effect<
 	never,
 	DomScannerTag | BackgroundSenderTag | ScrollerTag | DocumentVisibilityTag
 > = Effect.gen(function* () {
+	yield* Effect.log('collection pipeline started');
 	const sender = yield* BackgroundSenderTag;
 
 	let current: LoopState = initialLoopState;

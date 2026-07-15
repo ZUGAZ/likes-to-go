@@ -106,6 +106,30 @@ describe('BeatView', () => {
 		expect(root?.getAttribute('style')).toContain('color-scheme: dark');
 	});
 
+	it('uses a transparent root for overlay presentation', () => {
+		const view = render(() => (
+			<BeatView
+				presentation="overlay"
+				theme={() => 'light'}
+				state={() => 'initial'}
+				isVisible={() => true}
+				poseUrl={() => STUB_POSE_URL}
+				isStatusBusy={() => false}
+				balloonCopy={() => 'Hello'}
+				options={() => []}
+				footnoteCopy={() => undefined}
+				liveStatusMessage={() => undefined}
+				onAction={vi.fn()}
+			/>
+		));
+		unmountFns.push(view.unmount);
+
+		const root = view.container.querySelector('main');
+		expect(root?.classList.contains('bg-transparent')).toBe(true);
+		expect(root?.classList.contains('bg-white')).toBe(false);
+		expect(root?.classList.contains('p-4')).toBe(false);
+	});
+
 	it('renders balloon copy from persona for initial state', () => {
 		const view = renderBeatView({ state: 'initial' });
 		const expectedCopy = resolveBalloonCopy('initial', {
@@ -328,6 +352,24 @@ describe('BeatView', () => {
 		});
 		expect(view.queryByText(initialCopy)).toBeNull();
 		expect(view.getByText(processingCopy)).toBeTruthy();
+	});
+
+	it('keeps layout mounted when boot transitions initializing to initial', async () => {
+		const view = renderBeatView({ state: 'initializing' });
+
+		expect(view.container.querySelector('.beat-layout')).toBeTruthy();
+
+		view.setState('initial');
+		await Promise.resolve();
+
+		const initialCopy = resolveBalloonCopy('initial', {
+			trackCount: 0,
+			skippedTrackCount: 0,
+			source: 'likes-page',
+			message: undefined,
+		});
+		expect(view.getByText(initialCopy)).toBeTruthy();
+		expect(view.container.querySelector('.beat-layout')).toBeTruthy();
 	});
 
 	it('renders the mascot image', () => {
