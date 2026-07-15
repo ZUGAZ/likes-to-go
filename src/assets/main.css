@@ -48,10 +48,14 @@
 		animation: none;
 	}
 
-	/* Solid Transition still owns state swaps; CSS removes the perceptible delay. */
+	/*
+	 * Keep a 1ms opacity transition so solid-transition-group still receives
+	 * transitionend. `transition: none` leaves mode="outin" stuck on
+	 * fade-exit-to (opacity 0) because done() never runs.
+	 */
 	.fade-enter-active,
 	.fade-exit-active {
-		transition: none;
+		transition-duration: 1ms;
 	}
 }
 

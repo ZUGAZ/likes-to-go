@@ -1,4 +1,4 @@
-import { Match, Show, Switch, type Accessor } from 'solid-js';
+import { Show, type Accessor } from 'solid-js';
 import { Transition } from 'solid-transition-group';
 
 import type { BeatActionId, BeatPersonaOption } from '@/mascot/persona';
@@ -30,6 +30,13 @@ const beatRootClass = (presentation: BeatPresentation | undefined) =>
 		? 'beat-root w-[640px] max-w-[calc(100vw-2rem)] bg-transparent font-sans text-sm'
 		: 'beat-root w-[640px] max-w-[calc(100vw-2rem)] bg-white p-4 font-sans text-neutral-900 text-sm dark:bg-neutral-950 dark:text-neutral-100';
 
+/** Boot (`initializing`) shares a fade key with `initial` so syncState does not out-in exit. */
+const beatFadeKey = (state: BeatState): BeatState =>
+	state === 'initializing' ? 'initial' : state;
+
+const isErrorBeatState = (state: BeatState): boolean =>
+	state === 'error' || state === 'login-required';
+
 export function BeatView(props: BeatViewProps) {
 	return (
 		<Show when={props.isVisible()}>
@@ -44,13 +51,8 @@ export function BeatView(props: BeatViewProps) {
 					liveMessage={props.liveStatusMessage()}
 				>
 					<Transition name="fade" mode="outin">
-						<Switch fallback={null}>
-							<Match
-								when={
-									props.state() === 'initializing' ||
-									props.state() === 'initial'
-								}
-							>
+						<Show when={beatFadeKey(props.state())} keyed>
+							{(state) => (
 								<div class="beat-layout">
 									<Mascot
 										poseUrl={props.poseUrl()}
@@ -60,126 +62,13 @@ export function BeatView(props: BeatViewProps) {
 										copy={props.balloonCopy()}
 										options={props.options()}
 										footnoteCopy={props.footnoteCopy()}
+										isError={isErrorBeatState(state)}
 										onAction={props.onAction}
 										onDismiss={props.onDismiss}
 									/>
 								</div>
-							</Match>
-
-							<Match when={props.state() === 'loading'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-
-							<Match when={props.state() === 'checking-login'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-
-							<Match when={props.state() === 'processing'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-
-							<Match when={props.state() === 'paused'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-
-							<Match when={props.state() === 'done'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-
-							<Match when={props.state() === 'login-required'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										isError={true}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-
-							<Match when={props.state() === 'error'}>
-								<div class="beat-layout">
-									<Mascot
-										poseUrl={props.poseUrl()}
-										isAnimating={props.isStatusBusy()}
-									/>
-									<SpeechBalloon
-										copy={props.balloonCopy()}
-										options={props.options()}
-										footnoteCopy={props.footnoteCopy()}
-										isError={true}
-										onAction={props.onAction}
-										onDismiss={props.onDismiss}
-									/>
-								</div>
-							</Match>
-						</Switch>
+							)}
+						</Show>
 					</Transition>
 				</BeatStatus>
 			</main>

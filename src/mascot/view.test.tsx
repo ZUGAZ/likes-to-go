@@ -356,8 +356,9 @@ describe('BeatView', () => {
 
 	it('keeps layout mounted when boot transitions initializing to initial', async () => {
 		const view = renderBeatView({ state: 'initializing' });
+		const layout = view.container.querySelector('.beat-layout');
 
-		expect(view.container.querySelector('.beat-layout')).toBeTruthy();
+		expect(layout).toBeTruthy();
 
 		view.setState('initial');
 		await Promise.resolve();
@@ -369,7 +370,8 @@ describe('BeatView', () => {
 			message: undefined,
 		});
 		expect(view.getByText(initialCopy)).toBeTruthy();
-		expect(view.container.querySelector('.beat-layout')).toBeTruthy();
+		// Same fade key — node identity must stay so out-in never applies fade-exit-to.
+		expect(view.container.querySelector('.beat-layout')).toBe(layout);
 	});
 
 	it('renders the mascot image', () => {
