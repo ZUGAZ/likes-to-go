@@ -30,6 +30,24 @@ To load the extension in Chrome:
 
 `pnpm build` produces `.output/chrome-mv3` for production or sideload testing — do not use that directory while the dev server is running.
 
+### Storybook
+
+Use Storybook to inspect **Beat** presentation UI (mascot, balloons, and related popup visuals) without loading the extension in Chrome or exercising background/content messaging.
+
+```bash
+pnpm storybook
+```
+
+Storybook listens on port **6006** (`http://localhost:6006`). WXT `pnpm dev` stays on port **3000** for extension HMR — the two dev servers can run at the same time.
+
+For a static preview build:
+
+```bash
+pnpm build-storybook
+```
+
+Output is written to `storybook-static/`, which is gitignored — do not commit it.
+
 ### Developing with Dev Containers (WSL + Windows Chrome)
 
 Optional workflow for developers on **Windows with WSL** who run a Dev Container while loading the extension in **native Windows Chrome**.
@@ -45,6 +63,8 @@ The devcontainer bind-mounts your WSL checkout. Only `node_modules` uses a Docke
 3. Load unpacked **once** from `.output/chrome-mv3-dev` (via WSL UNC path in Windows Chrome).
 4. Confirm port **3000** appears in the Cursor **Ports** panel.
 5. Edit code — WXT reloads automatically via HMR when the WebSocket reaches the dev server.
+
+Storybook (`pnpm storybook`) is a separate dev server on port **6006** — forward it from the Ports panel if you use the Beat UI workbench in the container.
 
 **When to reload manually:** new entrypoints or manifest changes require a manual extension reload (`Alt+R` on `chrome://extensions`, or the Reload button).
 
