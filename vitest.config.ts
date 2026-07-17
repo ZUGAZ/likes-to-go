@@ -15,8 +15,13 @@ export default defineConfig({
 		setupFiles: ['vitest.setup.ts'],
 	},
 	resolve: {
-		alias: {
-			'@': resolve(__dirname, './src'),
-		},
+		alias: [
+			{
+				// Only `@/…` — do not steal scoped packages like `@testing-library/*`
+				find: /^@\//,
+				replacement: `${resolve(__dirname, './src')}/`,
+			},
+		],
 	},
 });
+

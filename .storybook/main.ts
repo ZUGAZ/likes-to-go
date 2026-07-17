@@ -14,10 +14,15 @@ const config = {
 		return mergeConfig(config, {
 			plugins: [tailwindcss()],
 			resolve: {
-				alias: {
-					'@': resolve(import.meta.dirname, '../src'),
-				},
+				alias: [
+					{
+						// Only `@/…` — do not steal scoped packages like `@testing-library/*`
+						find: /^@\//,
+						replacement: `${resolve(import.meta.dirname, '../src')}/`,
+					},
+				],
 			},
+
 			server: {
 				host: '0.0.0.0',
 			},
