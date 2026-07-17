@@ -2,6 +2,7 @@ node_modules/
 .output/
 .wxt/
 dist/
+storybook-static/
 *.zip
 .pnpm-store/
 .repos/effect
