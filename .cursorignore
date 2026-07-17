@@ -1,0 +1,9 @@
+﻿# Build output and tooling caches
+node_modules/
+.pnpm-store/
+.output/
+.wxt/
+dist/
+
+# Vendored Effect source (reference only — not project code)
+.repos/
