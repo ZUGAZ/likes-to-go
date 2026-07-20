@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import {
-	BeatViewStoryHost,
-	type BeatViewStoryArgs,
+    BeatViewStoryHost,
+    type BeatViewStoryArgs,
 } from '@/mascot/beat-view-story-host';
 import type { BeatState } from '@/mascot/model';
 

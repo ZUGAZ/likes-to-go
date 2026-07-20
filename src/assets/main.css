@@ -66,28 +66,63 @@
 }
 
 .beat-layout {
-	display: flex;
-	align-items: flex-start;
-	gap: 0.75rem;
+	--beat-mascot-size: min(18.75rem, calc(100vw - 4rem));
+	--beat-mascot-art-scale: 1.85;
+	/* Bundled 512×512 poses: mouth ~68% from art top; bottom-aligned scale shifts anchor. */
+	--beat-mouth-art-ratio: 0.68;
+	--beat-mouth-y-ratio: calc(
+		1 - var(--beat-mascot-art-scale) +
+			(var(--beat-mouth-art-ratio) * var(--beat-mascot-art-scale))
+	);
+	--beat-tail-y: 1.25rem;
+
+	display: grid;
+	grid-template-columns: var(--beat-mascot-size) minmax(12rem, 1fr);
+	column-gap: 0;
+	align-items: start;
 }
 
 .beat-mascot {
-	flex-shrink: 0;
-	width: min(18.75rem, calc(100vw - 4rem));
+	width: var(--beat-mascot-size);
 	aspect-ratio: 1;
-	height: auto;
-	transform: translate(80px, -20px);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	overflow: visible;
 }
 
 .beat-mascot img {
-	width: 100%;
-	height: 100%;
+	width: calc(100% * var(--beat-mascot-art-scale));
+	height: calc(100% * var(--beat-mascot-art-scale));
 	object-fit: contain;
+	object-position: center bottom;
 }
 
+/*
+ * Comic speech bubble (pseudo-element tail).
+ * Pattern adapted from https://dev.to/codingdudecom/css-comic-book-style-speech-bubble-5h6a
+ */
 .beat-balloon {
-	flex: 1;
-	min-width: 12rem;
+	--arrow-w: 0.625rem;
+	--arrow-h: 1rem;
+	--bubble-corners: 1rem;
+	--border-size: 1px;
+
+	min-width: 0;
+	margin-top: calc(
+		var(--beat-mascot-size) * var(--beat-mouth-y-ratio) - var(--beat-tail-y)
+	);
+	margin-left: 0.5rem;
+	padding: 0.75rem;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	border-radius: var(--bubble-corners);
+	background: var(--beat-balloon-bg);
+	box-shadow: 0 0 0 var(--border-size) var(--beat-balloon-ring);
+	font-size: 0.875rem;
+	line-height: 1.25rem;
 	--beat-balloon-bg: white;
 	--beat-balloon-ring: rgb(229 229 229); /* neutral-200 */
 }
@@ -97,49 +132,141 @@
 	--beat-balloon-ring: rgb(64 64 64); /* neutral-700 */
 }
 
-.beat-balloon__panel {
-	position: relative;
-}
-
-/* Comic-style tail pointing left toward the mascot */
-.beat-balloon__tail {
+.beat-balloon::before,
+.beat-balloon::after {
+	content: '';
 	position: absolute;
-	top: 4.5rem;
-	left: -1.75rem;
-	z-index: 0;
-	width: 2.25rem;
-	height: 3.25rem;
+	border-style: solid;
 	pointer-events: none;
 }
 
-.beat-balloon__tail path {
-	fill: var(--beat-balloon-bg);
-	stroke: var(--beat-balloon-ring);
-	stroke-width: 1;
-	stroke-linejoin: round;
+/* Left tail — points toward Beat on the left (`.l` variant from article). */
+.beat-balloon::after {
+	bottom: auto;
+	left: calc(-1 * var(--arrow-h) * 2 + 0.5px);
+	top: calc(var(--beat-tail-y) - var(--arrow-w));
+	border-width: var(--arrow-w) var(--arrow-h);
+	border-color: transparent var(--beat-balloon-bg) transparent transparent;
 }
 
-.beat-balloon__body {
-	position: relative;
-	z-index: 1;
+.beat-balloon::before {
+	bottom: auto;
+	left: calc(-1 * var(--arrow-h) * 2 - 2.5 * var(--border-size));
+	top: calc(var(--beat-tail-y) - var(--arrow-w) - var(--border-size));
+	border-width: calc(var(--arrow-w) + var(--border-size))
+		calc(var(--arrow-h) + var(--border-size));
+	border-color: transparent var(--beat-balloon-ring) transparent transparent;
+}
+
+.beat-balloon__copy {
+	color: rgb(38 38 38); /* neutral-800 */
+}
+
+:where([data-theme='dark']) .beat-balloon__copy {
+	color: rgb(229 229 229); /* neutral-200 */
+}
+
+.beat-balloon__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.beat-balloon__action {
+	border-radius: 0.5rem;
+	background-color: rgb(23 23 23); /* neutral-900 */
+	padding: 0.375rem 0.75rem;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: white;
+}
+
+.beat-balloon__action:hover {
+	background-color: rgb(64 64 64); /* neutral-700 */
+}
+
+.beat-balloon__action:focus-visible {
+	outline: 2px solid rgb(23 23 23);
+	outline-offset: 2px;
+}
+
+:where([data-theme='dark']) .beat-balloon__action {
+	background-color: rgb(245 245 245); /* neutral-100 */
+	color: rgb(10 10 10); /* neutral-950 */
+}
+
+:where([data-theme='dark']) .beat-balloon__action:hover {
+	background-color: white;
+}
+
+:where([data-theme='dark']) .beat-balloon__action:focus-visible {
+	outline-color: rgb(245 245 245);
+	outline-offset: 2px;
+}
+
+.beat-balloon__footnote {
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: rgb(115 115 115); /* neutral-500 */
+}
+
+:where([data-theme='dark']) .beat-balloon__footnote {
+	color: rgb(163 163 163); /* neutral-400 */
+}
+
+.beat-balloon__dismiss {
+	align-self: flex-end;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: rgb(163 163 163); /* neutral-400 */
+}
+
+.beat-balloon__dismiss:hover {
+	color: rgb(82 82 82); /* neutral-600 */
+}
+
+.beat-balloon__dismiss:focus-visible {
+	outline: 2px solid rgb(163 163 163);
+	outline-offset: 1px;
+}
+
+:where([data-theme='dark']) .beat-balloon__dismiss {
+	color: rgb(115 115 115); /* neutral-500 */
+}
+
+:where([data-theme='dark']) .beat-balloon__dismiss:hover {
+	color: rgb(212 212 212); /* neutral-300 */
 }
 
 @media (max-width: 639px) {
 	.beat-layout {
-		flex-direction: column;
-		align-items: center;
+		grid-template-columns: 1fr;
+		justify-items: center;
+		row-gap: 0.5rem;
 	}
 
 	.beat-balloon {
 		width: 100%;
-		min-width: 0;
+		margin-top: 0;
+		margin-left: 0;
 	}
 
-	.beat-balloon__tail {
-		top: -2.75rem;
+	/* Top tail — Beat sits above on narrow viewports (`.t` variant from article). */
+	.beat-balloon::after {
+		bottom: auto;
 		left: 3rem;
-		transform: rotate(-90deg);
-		transform-origin: 50% 100%;
+		top: calc(-1 * var(--arrow-h) * 2 + 0.5px);
+		border-width: var(--arrow-h) var(--arrow-w);
+		border-color: transparent transparent var(--beat-balloon-bg);
+	}
+
+	.beat-balloon::before {
+		bottom: auto;
+		left: calc(3rem - var(--border-size));
+		top: calc(-1 * var(--arrow-h) * 2 - 2.5 * var(--border-size));
+		border-width: calc(var(--arrow-h) + var(--border-size))
+			calc(var(--arrow-w) + var(--border-size));
+		border-color: transparent transparent var(--beat-balloon-ring);
 	}
 }
 

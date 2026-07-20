@@ -1,12 +1,12 @@
 import { Show, type Accessor } from 'solid-js';
 import { Transition } from 'solid-transition-group';
 
-import type { BeatActionId, BeatPersonaOption } from '@/mascot/persona';
-import type { BeatState } from '@/mascot/model';
+import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import { BeatStatus } from '@/mascot/beat-status';
 import { Mascot } from '@/mascot/mascot';
+import type { BeatState } from '@/mascot/model';
+import type { BeatActionId, BeatPersonaOption } from '@/mascot/persona';
 import { SpeechBalloon } from '@/mascot/speech-balloon';
-import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 
 export type BeatPresentation = 'popup' | 'overlay';
 
