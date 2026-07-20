@@ -67,13 +67,12 @@
 
 .beat-layout {
 	--beat-mascot-size: min(18.75rem, calc(100vw - 4rem));
-	--beat-mascot-art-scale: 1.85;
-	/* Bundled 512×512 poses: mouth ~68% from art top; bottom-aligned scale shifts anchor. */
-	--beat-mouth-art-ratio: 0.68;
-	--beat-mouth-y-ratio: calc(
-		1 - var(--beat-mascot-art-scale) +
-			(var(--beat-mouth-art-ratio) * var(--beat-mascot-art-scale))
-	);
+	/*
+	 * Framing contract (512×512 normalized poses, south-extent baseline):
+	 * --beat-mouth-art-ratio = mouth-center Y ÷ canvas height.
+	 * Measured on idle/working/sad after reexport (~0.41–0.42); shared 0.42.
+	 */
+	--beat-mouth-art-ratio: 0.42;
 	--beat-tail-y: 1.25rem;
 
 	display: grid;
@@ -92,8 +91,8 @@
 }
 
 .beat-mascot img {
-	width: calc(100% * var(--beat-mascot-art-scale));
-	height: calc(100% * var(--beat-mascot-art-scale));
+	width: 100%;
+	height: 100%;
 	object-fit: contain;
 	object-position: center bottom;
 }
@@ -110,7 +109,7 @@
 
 	min-width: 0;
 	margin-top: calc(
-		var(--beat-mascot-size) * var(--beat-mouth-y-ratio) - var(--beat-tail-y)
+		var(--beat-mascot-size) * var(--beat-mouth-art-ratio) - var(--beat-tail-y)
 	);
 	margin-left: 0.5rem;
 	padding: 0.75rem;
