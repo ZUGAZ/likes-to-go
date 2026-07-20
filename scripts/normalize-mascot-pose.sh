@@ -7,8 +7,9 @@
 # Do NOT use global `-transparent white` — that strips eye whites, gloves, and shoes.
 set -euo pipefail
 
-CHROMA_FUZZ=18%
-ALPHA_KEEP_THRESHOLD=35%
+# 35% fuzz clears magenta AA fringe; 50% alpha drops residual semi-transparent chroma.
+CHROMA_FUZZ=35%
+ALPHA_KEEP_THRESHOLD=50%
 TARGET_HEIGHT=460
 CANVAS=512x512
 
