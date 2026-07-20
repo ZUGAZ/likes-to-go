@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Normalize Beat mascot pose PNGs from raw generated art (private repo).
+# Normalize Beat mascot pose PNGs from caller-provided magenta-backed raw art.
 #
-# Raw sources: private/assets/poses/*-raw.png (magenta backdrop).
 # Canonical output: src/assets/mascot/*.png (only copy tracked in git).
 # Run `pnpm prebuild` or scripts/sync-mascot-public.sh to copy into public/mascot/.
 #
 # Do NOT use global `-transparent white` — that strips eye whites, gloves, and shoes.
 set -euo pipefail
+
+CHROMA_FUZZ=18%
+ALPHA_KEEP_THRESHOLD=35%
+TARGET_HEIGHT=460
+CANVAS=512x512
 
 if [[ $# -ne 2 ]]; then
 	echo "Usage: $0 <raw-input.png> <output-name.png>" >&2
@@ -18,15 +22,25 @@ input=$1
 output_name=$2
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 src_out="${repo_root}/src/assets/mascot/${output_name}"
-tmp=$(mktemp --suffix=.png)
+tmp1=$(mktemp --suffix=.png)
+tmp2=$(mktemp --suffix=.png)
+
+cleanup() {
+	rm -f "$tmp1" "$tmp2"
+}
+trap cleanup EXIT
+
+if [[ ! -f "$input" ]]; then
+	echo "Error: input file not found: $input" >&2
+	exit 1
+fi
 
 mkdir -p "${repo_root}/src/assets/mascot"
 
-convert "$input" -fuzz 6% -transparent magenta "$tmp"
-
-convert "$tmp" -trim +repage -resize 430x430\> -background none -gravity south \
-	-extent 512x512 -define png:color-type=6 "$src_out"
-
-rm -f "$tmp"
+convert "$input" -fuzz "$CHROMA_FUZZ" -transparent magenta "$tmp1"
+convert "$tmp1" \( +clone -alpha extract -threshold "$ALPHA_KEEP_THRESHOLD" \) \
+	-compose CopyOpacity -composite "$tmp2"
+convert "$tmp2" -trim +repage -resize "x${TARGET_HEIGHT}" -background none \
+	-gravity South -extent "$CANVAS" -define png:color-type=6 "$src_out"
 
 echo "Wrote ${src_out} (run scripts/sync-mascot-public.sh before build)"
