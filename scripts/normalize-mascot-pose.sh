@@ -42,6 +42,10 @@ convert "$input" -fuzz "$CHROMA_FUZZ" -transparent magenta "$tmp1"
 convert "$tmp1" \( +clone -alpha extract -threshold "$ALPHA_KEEP_THRESHOLD" \) \
 	-compose CopyOpacity -composite "$tmp2"
 convert "$tmp2" -trim +repage -resize "x${TARGET_HEIGHT}" -background none \
-	-gravity South -extent "$CANVAS" -define png:color-type=6 "$src_out"
+	-gravity South -extent "$CANVAS" "$tmp1"
+# Resize AA can reintroduce magenta fringe — key + hard alpha again on the canvas.
+convert "$tmp1" -fuzz 25% -transparent magenta "$tmp2"
+convert "$tmp2" \( +clone -alpha extract -threshold "$ALPHA_KEEP_THRESHOLD" \) \
+	-compose CopyOpacity -composite -define png:color-type=6 "$src_out"
 
 echo "Wrote ${src_out} (run scripts/sync-mascot-public.sh before build)"

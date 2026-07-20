@@ -70,9 +70,9 @@
 	/*
 	 * Framing contract (512×512 normalized poses, south-extent baseline):
 	 * --beat-mouth-art-ratio = mouth-center Y ÷ canvas height.
-	 * Measured on idle/working/sad after reexport (~0.41–0.42); shared 0.42.
+	 * Measured on idle smile (~y=268/512); tip offset tuned to 0.56 for CSS tail.
 	 */
-	--beat-mouth-art-ratio: 0.42;
+	--beat-mouth-art-ratio: 0.56;
 	--beat-tail-y: 1.25rem;
 
 	display: grid;

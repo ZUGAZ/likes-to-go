@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
+import { For } from 'solid-js';
+
 import { Mascot } from '@/mascot/mascot';
 import { resolveBundledPoseUrl } from '@/mascot/pose-assets';
 import type { BeatPoseKey } from '@/mascot/persona';
@@ -75,16 +77,18 @@ export const Dark: Story = {
 export const AllPoses: Story = {
 	render: () => (
 		<div class="grid grid-cols-2 gap-6 bg-white p-6 dark:bg-neutral-950">
-			{POSES.map((pose) => (
-				<div class="flex flex-col items-center gap-2">
-					<Mascot
-						poseUrl={resolveBundledPoseUrl(pose)}
-						isAnimating={pose === 'working'}
-						alt={`Beat ${pose} pose`}
-					/>
-					<span class="text-xs text-neutral-500">{pose}</span>
-				</div>
-			))}
+			<For each={POSES}>
+				{(pose) => (
+					<div class="flex flex-col items-center gap-2">
+						<Mascot
+							poseUrl={resolveBundledPoseUrl(pose)}
+							isAnimating={pose === 'working'}
+							alt={`Beat ${pose} pose`}
+						/>
+						<span class="text-xs text-neutral-500">{pose}</span>
+					</div>
+				)}
+			</For>
 		</div>
 	),
 };
