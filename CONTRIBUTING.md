@@ -215,6 +215,10 @@ Solid Testing Library integration tests. Correct state rendering, button actions
 
 Any function that transforms data or validates schemas benefits from property-based testing. If you can describe "for all valid inputs, this property holds," use fast-check.
 
+### E2E (Playwright)
+
+Default and CI runs use `pnpm test:e2e` with an ephemeral browser profile — no login, no stored credentials. For optional local real-site scenarios, you may point Playwright at a **gitignored** persistent profile under `.playwright/` via `PLAYWRIGHT_USER_DATA_DIR` (for example `PLAYWRIGHT_USER_DATA_DIR=.playwright/user-data pnpm test:e2e`). Never commit cookies, profiles, or `storageState` artifacts; CI does not set this variable and does not automate OAuth or SoundCloud login.
+
 ## 📋 Commit and release process
 
 ### Conventional Commits
