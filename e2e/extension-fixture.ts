@@ -15,7 +15,7 @@ const EXTENSION_ID_PATTERN = /^chrome-extension:\/\/([a-p]{32})\//;
 function assertExtensionBuilt(): void {
 	if (!existsSync(MANIFEST_PATH)) {
 		throw new Error(
-			`Unpacked extension missing at ${MANIFEST_PATH}. Run \`pnpm dev\` (or ensure \`.output/chrome-mv3-dev\` exists).`,
+			`Unpacked extension missing at ${MANIFEST_PATH}. Run \`pnpm build:dev\` or \`pnpm dev\` (or ensure \`.output/chrome-mv3-dev\` exists).`,
 		);
 	}
 }

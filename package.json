@@ -15,6 +15,7 @@
 		"dev": "bash scripts/sync-mascot-public.sh && wxt --host 0.0.0.0",
 		"prebuild": "bash scripts/sync-mascot-public.sh",
 		"build": "wxt build",
+		"build:dev": "wxt build -m development",
 		"package": "wxt zip",
 		"test": "vitest",
 		"test:run": "vitest run",

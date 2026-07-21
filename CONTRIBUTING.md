@@ -217,7 +217,21 @@ Any function that transforms data or validates schemas benefits from property-ba
 
 ### E2E (Playwright)
 
-Default and CI runs use `pnpm test:e2e` with an ephemeral browser profile — no login, no stored credentials. For optional local real-site scenarios, you may point Playwright at a **gitignored** persistent profile under `.playwright/` via `PLAYWRIGHT_USER_DATA_DIR` (for example `PLAYWRIGHT_USER_DATA_DIR=.playwright/user-data pnpm test:e2e`). Never commit cookies, profiles, or `storageState` artifacts; CI does not set this variable and does not automate OAuth or SoundCloud login.
+Playwright e2e is **local-only** — not a GitHub Actions gate. CI runs **quality** only (`pnpm lint`, `pnpm test:types`, `pnpm test:run`).
+
+**Local**
+
+1. Install the Chromium browser once: `pnpm exec playwright install chromium`
+2. Produce an unpacked dev build at `.output/chrome-mv3-dev`:
+   - `pnpm build:dev` — one-shot unpack, or
+   - `pnpm dev` — daily workflow with HMR
+3. Run `pnpm test:e2e`
+
+The default suite is extension shell smoke. It does not require Storybook or SoundCloud.
+
+**Storybook smoke** (optional, local only): start Storybook (`pnpm storybook`), then run `pnpm test:e2e:storybook`.
+
+For optional local real-site scenarios, you may point Playwright at a **gitignored** persistent profile under `.playwright/` via `PLAYWRIGHT_USER_DATA_DIR` (for example `PLAYWRIGHT_USER_DATA_DIR=.playwright/user-data pnpm test:e2e`). Never commit cookies, profiles, or `storageState` artifacts. Do not set `PLAYWRIGHT_USER_DATA_DIR` or Storybook env in CI if e2e is ever added later; the default suite does not use them.
 
 ## 📋 Commit and release process
 
