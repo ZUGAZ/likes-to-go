@@ -28,7 +28,8 @@ export interface BeatViewProps {
 const beatRootClass = (presentation: BeatPresentation | undefined) =>
 	presentation === 'overlay'
 		? 'beat-root w-[640px] max-w-[calc(100vw-2rem)] bg-transparent font-sans text-sm'
-		: 'beat-root w-[640px] max-w-[calc(100vw-2rem)] bg-white p-4 font-sans text-neutral-900 text-sm dark:bg-neutral-950 dark:text-neutral-100';
+		: /* Popup: fixed width — avoid max-w/100vw shrink-wrap in the action popup. */
+			'beat-root w-[640px] bg-white p-4 font-sans text-neutral-900 text-sm dark:bg-neutral-950 dark:text-neutral-100';
 
 /** Boot (`initializing`) shares a fade key with `initial` so syncState does not out-in exit. */
 const beatFadeKey = (state: BeatState): BeatState =>

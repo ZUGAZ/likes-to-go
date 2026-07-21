@@ -65,8 +65,21 @@
 	position: relative;
 }
 
+/*
+ * Chrome action popups shrink-wrap to content. Using 100vw for max-width creates a
+ * death spiral (tiny viewport → tiny content → tiny popup). Pin width on the popup
+ * document only (see entrypoints/popup/index.html) — not Storybook or overlay shadow.
+ */
+html.beat-popup-page,
+html.beat-popup-page body {
+	margin: 0;
+	width: 40rem;
+	min-width: 40rem;
+}
+
 .beat-layout {
-	--beat-mascot-size: min(18.75rem, calc(100vw - 4rem));
+	/* Fixed art size — do not tie to 100vw (popup shrink-wrap). */
+	--beat-mascot-size: 18.75rem;
 	/*
 	 * Framing contract (512×512 normalized poses, south-extent baseline):
 	 * --beat-mouth-art-ratio = smile Y ÷ canvas height.
@@ -266,6 +279,8 @@
 
 @media (max-width: 639px) {
 	.beat-layout {
+		/* Overlay / narrow hosts only — popup document is pinned ≥40rem. */
+		--beat-mascot-size: min(18.75rem, calc(100% - 1rem));
 		grid-template-columns: 1fr;
 		justify-items: center;
 		row-gap: 0.5rem;

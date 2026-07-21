@@ -19,7 +19,11 @@ export function registerActionPopupListener(
 
 		void Runtime.runPromise(runtime)(
 			Effect.gen(function* () {
-				yield* Effect.log('action icon clicked', { tabId, url: tab.url });
+				yield* Effect.log('action icon clicked', {
+					tabId,
+					url: tab.url,
+					wallMs: Date.now(),
+				});
 				yield* runToggleMascotOnTabEffect(tabId);
 			}),
 		);
