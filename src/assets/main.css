@@ -69,16 +69,19 @@
 	--beat-mascot-size: min(18.75rem, calc(100vw - 4rem));
 	/*
 	 * Framing contract (512×512 normalized poses, south-extent baseline):
-	 * --beat-mouth-art-ratio = mouth-center Y ÷ canvas height.
-	 * Measured on idle smile (~y=268/512); tip offset tuned to 0.56 for CSS tail.
+	 * --beat-mouth-art-ratio = mouth-center Y ÷ canvas height (idle smile ~0.50).
+	 * Balloon grows upward from a bottom-half tail locked to that Y.
 	 */
-	--beat-mouth-art-ratio: 0.56;
-	--beat-tail-y: 1.25rem;
+	--beat-mouth-art-ratio: 0.5;
+	/* Distance from balloon bottom to tail center (keeps tail in bottom half). */
+	--beat-tail-from-bottom: 1.5rem;
 
+	position: relative;
 	display: grid;
 	grid-template-columns: var(--beat-mascot-size) minmax(12rem, 1fr);
 	column-gap: 0;
 	align-items: start;
+	min-height: var(--beat-mascot-size);
 }
 
 .beat-mascot {
@@ -98,28 +101,37 @@
 }
 
 /*
- * Comic speech bubble (pseudo-element tail).
- * Pattern adapted from https://dev.to/codingdudecom/css-comic-book-style-speech-bubble-5h6a
+ * Comic speech bubble.
+ * Wide layout: absolute + translateY so the bubble grows upward from the mouth.
+ * Tail is a rotated square dug into the left edge (no border-triangle gap).
  */
 .beat-balloon {
-	--arrow-w: 0.625rem;
-	--arrow-h: 1rem;
+	--arrow-size: 0.75rem;
 	--bubble-corners: 1rem;
 	--border-size: 1px;
 
+	box-sizing: border-box;
 	min-width: 0;
-	margin-top: calc(
-		var(--beat-mascot-size) * var(--beat-mouth-art-ratio) - var(--beat-tail-y)
-	);
-	margin-left: 0.5rem;
+	width: calc(100% - var(--beat-mascot-size) - 0.5rem);
+	max-width: 100%;
+	position: absolute;
+	left: calc(var(--beat-mascot-size) + 0.5rem);
+	top: calc(var(--beat-mascot-size) * var(--beat-mouth-art-ratio));
+	/* Pin bottom-half tail to mouth; taller copy grows upward. */
+	transform: translateY(calc(-100% + var(--beat-tail-from-bottom)));
+	isolation: isolate;
 	padding: 0.75rem;
-	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
 	border-radius: var(--bubble-corners);
 	background: var(--beat-balloon-bg);
-	box-shadow: 0 0 0 var(--border-size) var(--beat-balloon-ring);
+	/* drop-shadow outlines bubble + ::after tail as one shape (no join gap). */
+	box-shadow: none;
+	filter: drop-shadow(1px 0 0 var(--beat-balloon-ring))
+		drop-shadow(-1px 0 0 var(--beat-balloon-ring))
+		drop-shadow(0 1px 0 var(--beat-balloon-ring))
+		drop-shadow(0 -1px 0 var(--beat-balloon-ring));
 	font-size: 0.875rem;
 	line-height: 1.25rem;
 	--beat-balloon-bg: white;
@@ -131,30 +143,24 @@
 	--beat-balloon-ring: rgb(64 64 64); /* neutral-700 */
 }
 
-.beat-balloon::before,
+.beat-balloon::before {
+	content: none;
+}
+
+/* Rotated square dug into the left edge; sits above the fill so the join is covered. */
 .beat-balloon::after {
 	content: '';
 	position: absolute;
-	border-style: solid;
+	z-index: 1;
+	box-sizing: border-box;
+	width: var(--arrow-size);
+	height: var(--arrow-size);
+	/* ~70% overlap into the bubble covers the left-edge outline at the join. */
+	left: calc(-0.3 * var(--arrow-size));
+	bottom: calc(var(--beat-tail-from-bottom) - 0.5 * var(--arrow-size));
+	background: var(--beat-balloon-bg);
+	transform: rotate(45deg);
 	pointer-events: none;
-}
-
-/* Left tail — points toward Beat on the left (`.l` variant from article). */
-.beat-balloon::after {
-	bottom: auto;
-	left: calc(-1 * var(--arrow-h) * 2 + 0.5px);
-	top: calc(var(--beat-tail-y) - var(--arrow-w));
-	border-width: var(--arrow-w) var(--arrow-h);
-	border-color: transparent var(--beat-balloon-bg) transparent transparent;
-}
-
-.beat-balloon::before {
-	bottom: auto;
-	left: calc(-1 * var(--arrow-h) * 2 - 2.5 * var(--border-size));
-	top: calc(var(--beat-tail-y) - var(--arrow-w) - var(--border-size));
-	border-width: calc(var(--arrow-w) + var(--border-size))
-		calc(var(--arrow-h) + var(--border-size));
-	border-color: transparent var(--beat-balloon-ring) transparent transparent;
 }
 
 .beat-balloon__copy {
@@ -242,30 +248,25 @@
 		grid-template-columns: 1fr;
 		justify-items: center;
 		row-gap: 0.5rem;
+		min-height: 0;
 	}
 
 	.beat-balloon {
+		position: relative;
+		left: auto;
+		top: auto;
+		transform: none;
 		width: 100%;
 		margin-top: 0;
 		margin-left: 0;
 	}
 
-	/* Top tail — Beat sits above on narrow viewports (`.t` variant from article). */
+	/* Top tail — Beat sits above on narrow viewports. */
 	.beat-balloon::after {
-		bottom: auto;
 		left: 3rem;
-		top: calc(-1 * var(--arrow-h) * 2 + 0.5px);
-		border-width: var(--arrow-h) var(--arrow-w);
-		border-color: transparent transparent var(--beat-balloon-bg);
-	}
-
-	.beat-balloon::before {
+		right: auto;
+		top: calc(-0.5 * var(--arrow-size));
 		bottom: auto;
-		left: calc(3rem - var(--border-size));
-		top: calc(-1 * var(--arrow-h) * 2 - 2.5 * var(--border-size));
-		border-width: calc(var(--arrow-h) + var(--border-size))
-			calc(var(--arrow-w) + var(--border-size));
-		border-color: transparent transparent var(--beat-balloon-ring);
 	}
 }
 
