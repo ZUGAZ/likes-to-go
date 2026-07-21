@@ -1,27 +1,35 @@
-# ❤️ Chrome Web Store listing copy (v0.6.0)
+# ❤️ Chrome Web Store listing copy (Version 2.6.0)
 
 ## 🎵 Product positioning
 
-Your music taste in a file.
-
-A Chrome extension that saves your SoundCloud likes as a file. No accounts, no servers, no audio downloaded. Your data, to go.
+Hi — I'm Beat. I help you export your SoundCloud likes as a clean JSON backup. No accounts, no servers, no audio downloaded. Your data, to go.
 
 ## 📌 Short description
 
-Save your SoundCloud likes as a clean JSON file for personal backup.
+I'm Beat. I help you export your SoundCloud likes as a personal JSON backup. Your data stays yours.
 
-## 📝 Full description draft
+## 📝 Full description
 
-Likes to Go exports your SoundCloud likes into a clean JSON file you can keep and reuse.
+Hi — I'm Beat, the little heart in Likes to Go. I help you export your SoundCloud likes into a clean JSON file you can keep as a personal backup.
 
-What it does:
+How it works:
 
-- Open your SoundCloud likes page.
-- Click the extension icon.
-- Click **❤️ Likes to go**.
-- Wait for collection to complete, then click **💚 Ready to go** to download.
+1. Open your SoundCloud likes page (Badges or List view).
+2. Click the Likes to Go toolbar icon.
+   - On a SoundCloud tab, I appear in-page.
+   - On other tabs, the icon opens the popup — same me, same buttons.
+3. Click Start export.
+4. When I'm done, click Download backup to save your file.
 
-The export includes track title, artist, URL, and optional artwork/user links when available.
+Your backup includes track title, artist, URL, and optional artwork or user links when they're available on the page. Optional metadata like genre, tags, and counts may appear from List view when SoundCloud shows them.
+
+Privacy, briefly:
+
+- Your data stays in your browser session.
+- No accounts, no external backend, no analytics.
+- Metadata only — audio is never downloaded.
+
+Version 2.6.0
 
 ## 🔒 Privacy
 
@@ -42,3 +50,7 @@ Likes to Go processes SoundCloud page data locally in the browser to create a us
 - `assets/icons/icon-32.png` (32x32)
 - `assets/icons/icon-48.png` (48x48)
 - `assets/icons/icon-128.png` (128x128, CWS listing icon)
+
+### 🖼️ Store screenshot
+
+Beat idle screenshot for the listing — forthcoming with intro image assets.

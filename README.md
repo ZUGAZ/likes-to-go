@@ -1,15 +1,15 @@
 # ❤️ Likes to Go
 
-**Your music taste in a file**
+**Hi — I'm Beat.** I'm a little heart who helps you export your SoundCloud likes as a clean JSON backup. No accounts, no servers, no audio downloaded. Your data, to go.
 
-A Chrome extension that saves your SoundCloud likes as a file. No accounts, no servers, no audio downloaded. Your data, to go.
+![Beat](docs/images/beat-intro.png)
 
 ## 🎵 What it does
 
-You have hundreds (or thousands) of liked tracks on SoundCloud. This extension lets you save them as a clean JSON file -- a personal backup of your music library.
+You have hundreds (or thousands) of liked tracks on SoundCloud. I'll save them as a clean JSON file — a personal backup of your music library.
 
 - Open your SoundCloud likes page
-- Hit the button
+- Summon me and hit **Start export**
 - Get a file with every track: title, artist, URL, artwork, and more
 
 That's it. Your likes, your file, your hard drive.
@@ -29,19 +29,22 @@ That's it. Your likes, your file, your hard drive.
 
 ## 🚀 Usage
 
-1. Click the Likes to Go toolbar icon.
-2. Click **❤️ Likes to go**.
-3. Wait for collection to complete, then click **💚 Ready to go** to download.
+1. Open your SoundCloud likes page (or any tab — see below).
+2. Click the Likes to Go toolbar icon.
+   - On a **SoundCloud** tab, I appear **in-page** on the likes page.
+   - On **other** tabs, the toolbar icon opens the **popup** — same me, same buttons.
+3. Click **Start export**.
+4. Wait until I'm done, then click **Download backup** to save your file.
 
 ## Supported SoundCloud views
 
-Likes to Go supports exporting from your SoundCloud likes page when it is shown as **Badges** or **List** view. Use SoundCloud's view switcher on your likes page to pick either layout before you start an export.
+I can export from your SoundCloud likes page when it's shown as **Badges** or **List** view. Use SoundCloud's view switcher on your likes page to pick either layout before you start.
 
-If the export fails because the page layout is not recognized, switch to the other supported view and try again. Other likes page layouts are not supported in this release.
+If the export fails because the page layout isn't recognized, switch to the other supported view and try again. Other likes page layouts aren't supported in this release.
 
 ## Output format
 
-The export payload currently follows `format_version: 1`:
+Here's what I save today — the export payload follows `format_version: 1`:
 
 ```json
 {
@@ -107,14 +110,14 @@ Field notes:
 
 ## Privacy
 
-- Your data stays in your browser session.
-- No accounts, no sign-up flow, and no external backend.
+- Your data stays in your browser session — I never send it anywhere.
+- No accounts, no sign-up, and no external backend.
 - No analytics or telemetry.
-- Only track metadata is exported; audio is never downloaded.
+- Only track metadata goes into your backup; audio is never downloaded.
 
 ## Support
 
-Have a question or found a problem while exporting your likes? [Open a GitHub issue](https://github.com/ZUGAZ/likes-to-go/issues/new).
+Need a hand or found a snag while exporting? [Open a GitHub issue](https://github.com/ZUGAZ/likes-to-go/issues/new) — I'll be glad you did.
 
 ## License
 
