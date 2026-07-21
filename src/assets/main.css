@@ -69,12 +69,12 @@
 	--beat-mascot-size: min(18.75rem, calc(100vw - 4rem));
 	/*
 	 * Framing contract (512×512 normalized poses, south-extent baseline):
-	 * --beat-mouth-art-ratio = mouth-center Y ÷ canvas height (idle smile ~0.50).
+	 * --beat-mouth-art-ratio = smile-stroke Y ÷ canvas height (idle ~0.52).
 	 * Balloon grows upward from a bottom-half tail locked to that Y.
 	 */
-	--beat-mouth-art-ratio: 0.5;
+	--beat-mouth-art-ratio: 0.52;
 	/* Distance from balloon bottom to tail center (keeps tail in bottom half). */
-	--beat-tail-from-bottom: 1.5rem;
+	--beat-tail-from-bottom: 1.25rem;
 
 	position: relative;
 	display: grid;
@@ -103,7 +103,8 @@
 /*
  * Comic speech bubble.
  * Wide layout: absolute + translateY so the bubble grows upward from the mouth.
- * Tail is a rotated square dug into the left edge (no border-triangle gap).
+ * Tail: nested rotated squares (ring under fill) so the join shares one border —
+ * drop-shadow left a V-notch where the diamond met the left edge.
  */
 .beat-balloon {
 	--arrow-size: 0.75rem;
@@ -124,14 +125,11 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
+	border: var(--border-size) solid var(--beat-balloon-ring);
 	border-radius: var(--bubble-corners);
 	background: var(--beat-balloon-bg);
-	/* drop-shadow outlines bubble + ::after tail as one shape (no join gap). */
 	box-shadow: none;
-	filter: drop-shadow(1px 0 0 var(--beat-balloon-ring))
-		drop-shadow(-1px 0 0 var(--beat-balloon-ring))
-		drop-shadow(0 1px 0 var(--beat-balloon-ring))
-		drop-shadow(0 -1px 0 var(--beat-balloon-ring));
+	filter: none;
 	font-size: 0.875rem;
 	line-height: 1.25rem;
 	--beat-balloon-bg: white;
@@ -143,11 +141,25 @@
 	--beat-balloon-ring: rgb(64 64 64); /* neutral-700 */
 }
 
+/* Outer diamond — ring color forms the tail stroke. */
 .beat-balloon::before {
-	content: none;
+	content: '';
+	position: absolute;
+	z-index: 0;
+	box-sizing: border-box;
+	width: var(--arrow-size);
+	height: var(--arrow-size);
+	left: calc(-0.5 * var(--arrow-size) - var(--border-size));
+	bottom: calc(var(--beat-tail-from-bottom) - 0.5 * var(--arrow-size));
+	background: var(--beat-balloon-ring);
+	transform: rotate(45deg);
+	pointer-events: none;
 }
 
-/* Rotated square dug into the left edge; sits above the fill so the join is covered. */
+/*
+ * Inner diamond — same size, nudged into the bubble so it hides the outer
+ * diamond's right tip and the balloon's left border at the join.
+ */
 .beat-balloon::after {
 	content: '';
 	position: absolute;
@@ -155,8 +167,8 @@
 	box-sizing: border-box;
 	width: var(--arrow-size);
 	height: var(--arrow-size);
-	/* ~70% overlap into the bubble covers the left-edge outline at the join. */
-	left: calc(-0.3 * var(--arrow-size));
+	/* Nudge past the outer diamond + left border so no seam shows at the join. */
+	left: calc(-0.5 * var(--arrow-size) + 2 * var(--border-size));
 	bottom: calc(var(--beat-tail-from-bottom) - 0.5 * var(--arrow-size));
 	background: var(--beat-balloon-bg);
 	transform: rotate(45deg);
@@ -262,10 +274,17 @@
 	}
 
 	/* Top tail — Beat sits above on narrow viewports. */
+	.beat-balloon::before {
+		left: 3rem;
+		right: auto;
+		top: calc(-0.5 * var(--arrow-size) - var(--border-size));
+		bottom: auto;
+	}
+
 	.beat-balloon::after {
 		left: 3rem;
 		right: auto;
-		top: calc(-0.5 * var(--arrow-size));
+		top: calc(-0.5 * var(--arrow-size) + var(--border-size));
 		bottom: auto;
 	}
 }
