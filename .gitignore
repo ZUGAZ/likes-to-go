@@ -7,3 +7,7 @@ storybook-static/
 .pnpm-store/
 .repos/effect
 public/mascot/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
