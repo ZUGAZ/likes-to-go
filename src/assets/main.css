@@ -69,12 +69,17 @@
 	--beat-mascot-size: min(18.75rem, calc(100vw - 4rem));
 	/*
 	 * Framing contract (512×512 normalized poses, south-extent baseline):
-	 * --beat-mouth-art-ratio = smile-stroke Y ÷ canvas height (idle ~0.52).
-	 * Balloon grows upward from a bottom-half tail locked to that Y.
+	 * --beat-mouth-art-ratio = smile Y ÷ canvas height.
+	 * Balloon grows upward from a bottom-left corner tail locked to that Y.
 	 */
-	--beat-mouth-art-ratio: 0.52;
-	/* Distance from balloon bottom to tail center (keeps tail in bottom half). */
-	--beat-tail-from-bottom: 1.25rem;
+	--beat-mouth-art-ratio: 0.5;
+	/*
+	 * Tip sits this far above the balloon's bottom edge (half of --arrow-height),
+	 * so the stub hugs the bottom-left corner.
+	 */
+	--beat-tail-from-bottom: 0.3rem;
+	/* Horizontal gap between mascot frame and balloon (negative overlaps empty art padding). */
+	--beat-balloon-gap: -0.75rem;
 
 	position: relative;
 	display: grid;
@@ -101,77 +106,80 @@
 }
 
 /*
+ * Dark theme: black line art (limbs, headphones) vanishes on dark UI.
+ * Cartoon sticker trick — thin light silhouette ring via drop-shadow (follows PNG alpha).
+ */
+:where([data-theme='dark']) .beat-mascot img {
+	filter: drop-shadow(1px 0 0 rgb(255 255 255 / 0.9))
+		drop-shadow(-1px 0 0 rgb(255 255 255 / 0.9))
+		drop-shadow(0 1px 0 rgb(255 255 255 / 0.9))
+		drop-shadow(0 -1px 0 rgb(255 255 255 / 0.9));
+}
+
+/*
  * Comic speech bubble.
  * Wide layout: absolute + translateY so the bubble grows upward from the mouth.
- * Tail: nested rotated squares (ring under fill) so the join shares one border —
- * drop-shadow left a V-notch where the diamond met the left edge.
+ * Tail: short left-pointing stub at the bottom-left corner (not a mid-side diamond).
  */
 .beat-balloon {
-	--arrow-size: 0.75rem;
+	--arrow-width: 0.875rem;
+	--arrow-height: 0.6rem;
 	--bubble-corners: 1rem;
-	--border-size: 1px;
 
 	box-sizing: border-box;
 	min-width: 0;
-	width: calc(100% - var(--beat-mascot-size) - 0.5rem);
+	width: calc(100% - var(--beat-mascot-size) - var(--beat-balloon-gap));
 	max-width: 100%;
 	position: absolute;
-	left: calc(var(--beat-mascot-size) + 0.5rem);
+	left: calc(var(--beat-mascot-size) + var(--beat-balloon-gap));
 	top: calc(var(--beat-mascot-size) * var(--beat-mouth-art-ratio));
-	/* Pin bottom-half tail to mouth; taller copy grows upward. */
+	/* Pin corner-tail tip to mouth; taller copy grows upward. */
 	transform: translateY(calc(-100% + var(--beat-tail-from-bottom)));
 	isolation: isolate;
-	padding: 0.75rem;
+	padding: 0.875rem;
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
-	border: var(--border-size) solid var(--beat-balloon-ring);
+	border: none;
 	border-radius: var(--bubble-corners);
+	/* Keep the bottom-left corner sharp so the stub meets a real corner. */
+	border-bottom-left-radius: 0;
 	background: var(--beat-balloon-bg);
 	box-shadow: none;
-	filter: none;
-	font-size: 0.875rem;
-	line-height: 1.25rem;
+	/* drop-shadow outlines bubble + ::after as one shape (matches 1px ring). */
+	filter: drop-shadow(1px 0 0 var(--beat-balloon-ring))
+		drop-shadow(-1px 0 0 var(--beat-balloon-ring))
+		drop-shadow(0 1px 0 var(--beat-balloon-ring))
+		drop-shadow(0 -1px 0 var(--beat-balloon-ring));
+	font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+	font-size: 1.0625rem;
+	line-height: 1.4rem;
 	--beat-balloon-bg: white;
 	--beat-balloon-ring: rgb(229 229 229); /* neutral-200 */
 }
 
 :where([data-theme='dark']) .beat-balloon {
-	--beat-balloon-bg: rgb(23 23 23); /* neutral-900 */
-	--beat-balloon-ring: rgb(64 64 64); /* neutral-700 */
+	--beat-balloon-bg: rgb(38 38 38); /* neutral-800 — lifts off page (neutral-950) */
+	--beat-balloon-ring: rgb(163 163 163); /* neutral-400 — readable outline on dark */
 }
 
-/* Outer diamond — ring color forms the tail stroke. */
 .beat-balloon::before {
-	content: '';
-	position: absolute;
-	z-index: 0;
-	box-sizing: border-box;
-	width: var(--arrow-size);
-	height: var(--arrow-size);
-	left: calc(-0.5 * var(--arrow-size) - var(--border-size));
-	bottom: calc(var(--beat-tail-from-bottom) - 0.5 * var(--arrow-size));
-	background: var(--beat-balloon-ring);
-	transform: rotate(45deg);
-	pointer-events: none;
+	content: none;
 }
 
-/*
- * Inner diamond — same size, nudged into the bubble so it hides the outer
- * diamond's right tip and the balloon's left border at the join.
- */
+/* Short left stub seated on the bottom-left corner. */
 .beat-balloon::after {
 	content: '';
 	position: absolute;
 	z-index: 1;
 	box-sizing: border-box;
-	width: var(--arrow-size);
-	height: var(--arrow-size);
-	/* Nudge past the outer diamond + left border so no seam shows at the join. */
-	left: calc(-0.5 * var(--arrow-size) + 2 * var(--border-size));
-	bottom: calc(var(--beat-tail-from-bottom) - 0.5 * var(--arrow-size));
+	width: var(--arrow-width);
+	height: var(--arrow-height);
+	left: calc(-1 * var(--arrow-width) + 1px);
+	bottom: 0;
 	background: var(--beat-balloon-bg);
-	transform: rotate(45deg);
+	/* Tip on the left midline; base flush with the balloon's left edge. */
+	clip-path: polygon(100% 0, 0 50%, 100% 100%);
 	pointer-events: none;
 }
 
@@ -193,8 +201,9 @@
 	border-radius: 0.5rem;
 	background-color: rgb(23 23 23); /* neutral-900 */
 	padding: 0.375rem 0.75rem;
-	font-size: 0.75rem;
-	line-height: 1rem;
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.125rem;
 	color: white;
 }
 
@@ -271,21 +280,19 @@
 		width: 100%;
 		margin-top: 0;
 		margin-left: 0;
+		border-bottom-left-radius: var(--bubble-corners);
+		border-top-left-radius: 0;
 	}
 
-	/* Top tail — Beat sits above on narrow viewports. */
-	.beat-balloon::before {
-		left: 3rem;
-		right: auto;
-		top: calc(-0.5 * var(--arrow-size) - var(--border-size));
-		bottom: auto;
-	}
-
+	/* Top stub — Beat sits above on narrow viewports. */
 	.beat-balloon::after {
-		left: 3rem;
+		left: 1.25rem;
 		right: auto;
-		top: calc(-0.5 * var(--arrow-size) + var(--border-size));
+		top: calc(-1 * var(--arrow-height) + 1px);
 		bottom: auto;
+		width: var(--arrow-height);
+		height: var(--arrow-width);
+		clip-path: polygon(0 100%, 50% 0, 100% 100%);
 	}
 }
 
