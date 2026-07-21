@@ -53,4 +53,4 @@ Likes to Go processes SoundCloud page data locally in the browser to create a us
 
 ### 🖼️ Store screenshot
 
-Beat idle screenshot for the listing — forthcoming with intro image assets.
+- `docs/cws/assets/screenshots/beat-intro.png` (1280×800) — Beat idle intro (Storybook BeatView initial)
