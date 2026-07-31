@@ -1,16 +1,18 @@
-# ❤️ Chrome Web Store listing copy (Version 2.6.0)
+# ❤️ Chrome Web Store listing copy
 
 ## 🎵 Product positioning
 
-Hi — I'm Beat. I help you export your SoundCloud likes as a clean JSON backup. No accounts, no servers, no audio downloaded. Your data, to go.
+Hi — I'm Beat, a little heart who helps you export your SoundCloud likes as a file. No accounts, no servers, no audio downloaded. Your data, to go.
+
+![Beat](assets/screenshots/beat-intro.png)
 
 ## 📌 Short description
 
-I'm Beat. I help you export your SoundCloud likes as a personal JSON backup. Your data stays yours.
+I'm Beat. I help you export your SoundCloud likes as a file you can keep. Your data stays yours.
 
 ## 📝 Full description
 
-Hi — I'm Beat, the little heart in Likes to Go. I help you export your SoundCloud likes into a clean JSON file you can keep as a personal backup.
+Hi — I'm Beat, a little heart who helps you export your SoundCloud likes as a file. No accounts, no servers, no audio downloaded. Your data, to go.
 
 How it works:
 
@@ -23,20 +25,12 @@ How it works:
 
 Your backup includes track title, artist, URL, and optional artwork or user links when they're available on the page. Optional metadata like genre, tags, and counts may appear from List view when SoundCloud shows them.
 
-Privacy, briefly:
-
-- Your data stays in your browser session.
-- No accounts, no external backend, no analytics.
-- Metadata only — audio is never downloaded.
-
-Version 2.6.0
-
 ## 🔒 Privacy
 
-- Your data stays in your browser session.
-- No accounts, no sign-up flow, and no external backend.
+- Your data stays in your browser session — I never send it anywhere.
+- No accounts, no sign-up, and no external backend.
 - No analytics or telemetry.
-- Only track metadata is exported; audio is never downloaded.
+- Only track metadata goes into your backup; audio is never downloaded.
 
 ## 🛡️ Privacy justification text (store form draft)
 
