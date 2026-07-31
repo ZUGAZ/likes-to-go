@@ -1,6 +1,6 @@
 {
 	"name": "Likes to Go",
-	"version": "1.3.0",
+	"version": "2.6.0",
 	"private": true,
 	"type": "module",
 	"description": "Your music taste in a file. A Chrome extension that saves your SoundCloud likes as a file. Your data, to go.",
