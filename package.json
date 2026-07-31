@@ -26,6 +26,7 @@
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
+		"ci:quality": "bash scripts/ci-quality.sh",
 		"storybook": "storybook dev -p 6006 --host 0.0.0.0",
 		"build-storybook": "storybook build",
 		"prepare": "bash scripts/prepare-effect.sh && husky",
