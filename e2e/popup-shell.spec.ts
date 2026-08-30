@@ -1,28 +1,15 @@
-import type { BrowserContext } from '@playwright/test';
-
 import {
 	attachConsoleOnFailure,
 	installConsoleCapture,
 } from './console-capture';
 import { expect, test } from './extension-fixture';
+import { seedSoundCloudSessionCookie } from './soundcloud-mock/seed-session';
 
-async function seedSoundCloudSessionCookie(
-	context: BrowserContext,
-): Promise<void> {
-	await context.addCookies([
-		{
-			name: 'oauth_token',
-			value: 'playwright-shell-smoke',
-			url: 'https://soundcloud.com',
-		},
-	]);
-}
-
-test('popup shell settles with Beat UI', async (
-	{ context, extensionId },
-	testInfo,
-) => {
-	await seedSoundCloudSessionCookie(context);
+test('popup shell settles with Beat UI', async ({
+	context,
+	extensionId,
+}, testInfo) => {
+	await seedSoundCloudSessionCookie(context, 'playwright-shell-smoke');
 
 	const page = await context.newPage();
 	const consoleCapture = installConsoleCapture(page);
