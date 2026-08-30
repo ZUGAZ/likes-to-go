@@ -3,9 +3,10 @@ set -euo pipefail
 
 # Local quality gate. Superset of the GitHub Actions "quality" job
 # (.github/workflows/ci.yml): lint → typecheck → unit tests → knip →
-# release-equivalent package guard. Additionally verifies mascot WebP
-# regeneration against this environment's ImageMagick/libwebp (not mirrored
-# on GitHub runners — those builds produce different bytes).
+# release-equivalent package (one zip, then WAR + size-budget checks).
+# Additionally verifies mascot WebP regeneration against this environment's
+# ImageMagick/libwebp (not mirrored on GitHub runners — those builds produce
+# different bytes).
 # Run before release (or anytime locally).
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

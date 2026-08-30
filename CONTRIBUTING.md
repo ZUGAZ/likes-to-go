@@ -86,6 +86,19 @@ If the extension console shows `WebSocket connection to 'ws://localhost:3000/' f
 
 See the [WXT Dev Containers FAQ](https://wxt.dev/guide/resources/faq.html#how-do-i-run-my-wxt-project-with-docker-devcontainers).
 
+## ⚡ Performance
+
+Production Chrome loads packaged files from the unpacked extension directory (`pnpm package` → `.output/chrome-mv3`). `pnpm dev` is different: the popup is transformed and served through Vite/HMR on forwarded port 3000, so first-open delay in development is not a production bundle measurement.
+
+Measure production output before treating latency as a size regression:
+
+```bash
+pnpm package
+pnpm report:package-size
+```
+
+`pnpm verify:package-size` checks the same tree against `scripts/package-size-budgets.json`. Raise a ceiling only with an explicit, reviewed budget edit. Do not treat Vite/HMR delay as a production performance problem.
+
 ## 🏛️ Architecture
 
 Four layers. Dependencies flow downward only. No circular imports.

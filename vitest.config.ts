@@ -12,6 +12,7 @@ export default defineConfig({
 			'src/**/*.test.tsx',
 			'cws-manifest-limits.test.ts',
 			'verify-package-war.test.ts',
+			'verify-package-size.test.ts',
 		],
 		setupFiles: ['vitest.setup.ts'],
 	},
@@ -25,4 +26,3 @@ export default defineConfig({
 		],
 	},
 });
-

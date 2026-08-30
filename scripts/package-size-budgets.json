@@ -1,0 +1,78 @@
+{
+	"format_version": 1,
+	"recorded_at": "2026-08-30T15:48:42.419Z",
+	"total_bytes": 737604,
+	"classes": [
+		{
+			"id": "background.js",
+			"type": "path",
+			"path": "background.js",
+			"max_bytes": 191039
+		},
+		{
+			"id": "content-scripts/likes.js",
+			"type": "path",
+			"path": "content-scripts/likes.js",
+			"max_bytes": 228942
+		},
+		{
+			"id": "content-scripts/likes.css",
+			"type": "path",
+			"path": "content-scripts/likes.css",
+			"max_bytes": 13974
+		},
+		{
+			"id": "chunks/popup.js",
+			"type": "glob",
+			"glob": "chunks/popup-*.js",
+			"expected_count": 1,
+			"max_bytes": 196299
+		},
+		{
+			"id": "assets/popup.css",
+			"type": "glob",
+			"glob": "assets/popup-*.css",
+			"expected_count": 1,
+			"max_bytes": 13974
+		},
+		{
+			"id": "mascot",
+			"type": "glob",
+			"glob": "mascot/*.webp",
+			"expected_count": 4,
+			"expected_files": [
+				"mascot/idle.webp",
+				"mascot/working.webp",
+				"mascot/happy.webp",
+				"mascot/sad.webp"
+			],
+			"max_bytes": 88674
+		},
+		{
+			"id": "icons",
+			"type": "glob",
+			"glob": "icons/*.png",
+			"expected_count": 4,
+			"expected_files": [
+				"icons/16.png",
+				"icons/32.png",
+				"icons/48.png",
+				"icons/128.png"
+			],
+			"max_bytes": 3236
+		},
+		{
+			"id": "popup.html",
+			"type": "path",
+			"path": "popup.html",
+			"max_bytes": 585
+		},
+		{
+			"id": "manifest.json",
+			"type": "path",
+			"path": "manifest.json",
+			"max_bytes": 881
+		}
+	],
+	"forbidden": ["assets/*.png", "mascot/*.png"]
+}
