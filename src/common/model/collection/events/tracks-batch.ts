@@ -2,7 +2,7 @@ import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
 import { Data, Schema } from 'effect';
 
-export const TracksBatchEventSchema = taggedStruct('TracksBatch', {
+const TracksBatchEventSchema = taggedStruct('TracksBatch', {
 	tracks: Schema.Array(TrackSchema),
 	skippedTrackCount: Schema.Number,
 });

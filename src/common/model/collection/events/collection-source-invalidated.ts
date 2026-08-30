@@ -4,7 +4,7 @@ import { Data, Schema } from 'effect';
 export const COLLECTION_SOURCE_INVALIDATED_MESSAGE =
 	'Collection stopped because the selected SoundCloud page changed.';
 
-export const CollectionSourceInvalidatedEventSchema = taggedStruct(
+const CollectionSourceInvalidatedEventSchema = taggedStruct(
 	'CollectionSourceInvalidated',
 	{
 		message: Schema.String,

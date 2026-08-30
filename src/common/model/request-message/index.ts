@@ -31,16 +31,11 @@ export {
 	ToggleMascotRequest,
 	ToggleMascotSchema,
 } from './toggle-mascot';
-export type { ToggleMascot } from './toggle-mascot';
 
-export {
-	CollectionStatusSchema,
-	GetStateResponseSchema,
-} from './get-state-response';
+export { GetStateResponseSchema } from './get-state-response';
 export type {
 	CollectionStatus,
 	GetStateResponse,
 	MessageResponse,
 } from './get-state-response';
-export { SourceSchema } from '@/common/model/source';
 export type { Source } from '@/common/model/source';

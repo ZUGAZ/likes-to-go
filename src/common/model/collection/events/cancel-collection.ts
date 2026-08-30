@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const CancelCollectionEventSchema = taggedStruct('CancelCollection');
+const CancelCollectionEventSchema = taggedStruct('CancelCollection');
 
 export type CancelCollection = Schema.Schema.Type<
 	typeof CancelCollectionEventSchema

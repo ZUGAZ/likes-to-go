@@ -11,7 +11,7 @@ import {
 import type { Track } from '@/common/model/track';
 import { errorToReason } from '@/common/model/error-to-reason';
 
-export interface TracksBatchPayload {
+interface TracksBatchPayload {
 	readonly tracks: readonly Track[];
 	readonly skippedTrackCount: number;
 }

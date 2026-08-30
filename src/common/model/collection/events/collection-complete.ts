@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const CollectionCompleteEventSchema = taggedStruct('CollectionComplete');
+const CollectionCompleteEventSchema = taggedStruct('CollectionComplete');
 
 export type CollectionComplete = Schema.Schema.Type<
 	typeof CollectionCompleteEventSchema

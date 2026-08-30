@@ -1,4 +1,3 @@
-import { taggedStruct } from '@/common/model/tagged-struct';
 import { nextDelayMs, planNextPace } from '@/common/model/pacing';
 import {
 	ERROR_RETRY_DELAY_MS,
@@ -20,32 +19,17 @@ import {
 	EMPTY_LIKES_LIST_MESSAGE,
 	UNREADABLE_LIKES_LIST_MESSAGE,
 } from '@/content/model/collection-error-messages';
-import { Data, Effect, Schema } from 'effect';
+import { Data, Effect } from 'effect';
 
-const CompletedSchema = taggedStruct('Completed');
-const CancelledSchema = taggedStruct('Cancelled');
-const OutcomeErrorSchema = taggedStruct('Error', {
-	message: Schema.String,
-});
-
-export const CollectionOutcomeSchema = Schema.Union(
-	CompletedSchema,
-	CancelledSchema,
-	OutcomeErrorSchema,
-);
-
-export type CollectionOutcome = Schema.Schema.Type<
-	typeof CollectionOutcomeSchema
->;
-
-type Completed = Schema.Schema.Type<typeof CompletedSchema>;
+type Completed = { readonly _tag: 'Completed' };
 export const Completed = Data.tagged<Completed>('Completed');
 
-type Cancelled = Schema.Schema.Type<typeof CancelledSchema>;
-export const Cancelled = Data.tagged<Cancelled>('Cancelled');
+type Cancelled = { readonly _tag: 'Cancelled' };
 
-type OutcomeError = Schema.Schema.Type<typeof OutcomeErrorSchema>;
+type OutcomeError = { readonly _tag: 'Error'; readonly message: string };
 export const OutcomeError = Data.tagged<OutcomeError>('Error');
+
+export type CollectionOutcome = Completed | Cancelled | OutcomeError;
 
 class InlineErrorPersisted extends Data.TaggedError('InlineErrorPersisted')<{
 	readonly reason: string;

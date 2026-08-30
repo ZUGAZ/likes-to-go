@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const CheckLoginSchema = taggedStruct('CheckLogin');
+const CheckLoginSchema = taggedStruct('CheckLogin');
 
 export type CheckLogin = Schema.Schema.Type<typeof CheckLoginSchema>;
 

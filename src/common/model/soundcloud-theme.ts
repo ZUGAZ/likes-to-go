@@ -10,11 +10,7 @@ export type SoundcloudThemePreference = Schema.Schema.Type<
 	typeof SoundcloudThemePreferenceSchema
 >;
 
-export const ResolvedPopupThemeSchema = Schema.Literal('light', 'dark');
-
-export type ResolvedPopupTheme = Schema.Schema.Type<
-	typeof ResolvedPopupThemeSchema
->;
+export type ResolvedPopupTheme = 'light' | 'dark';
 
 export function resolveTheme(
 	preference: SoundcloudThemePreference,

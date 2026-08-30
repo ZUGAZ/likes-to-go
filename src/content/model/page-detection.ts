@@ -17,7 +17,7 @@ import {
 } from '@/layout';
 import { Data, Effect } from 'effect';
 
-export const WAIT_FOR_TRACK_LIST_CONTAINER_MS = 5_000;
+const WAIT_FOR_TRACK_LIST_CONTAINER_MS = 5_000;
 export const WAIT_FOR_LIST_TO_SETTLE_MS = 5_000;
 
 export interface SupportedCollectionPage {

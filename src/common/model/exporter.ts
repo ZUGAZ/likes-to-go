@@ -1,7 +1,7 @@
 import type { Track } from '@/common/model/track';
 
 /** JSON-serializable track shape per v1 schema (url as string; optional fields omitted when absent). */
-export interface ExportTrack {
+interface ExportTrack {
 	readonly title: string;
 	readonly artist: string;
 	readonly url: string;

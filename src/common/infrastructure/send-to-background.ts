@@ -12,9 +12,7 @@ export class SendToBackgroundFailed extends Data.TaggedError(
  * Send a request to the background script. Returns a Promise that resolves with the response
  * (e.g. GetStateResponse for GetState) or rejects on channel error.
  */
-export function sendToBackground(
-	message: BackgroundRequestMessage,
-): Promise<unknown> {
+function sendToBackground(message: BackgroundRequestMessage): Promise<unknown> {
 	return chrome.runtime.sendMessage(message);
 }
 

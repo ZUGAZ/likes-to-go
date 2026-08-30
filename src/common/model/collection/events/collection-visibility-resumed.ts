@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const CollectionVisibilityResumedEventSchema = taggedStruct(
+const CollectionVisibilityResumedEventSchema = taggedStruct(
 	'CollectionVisibilityResumed',
 );
 

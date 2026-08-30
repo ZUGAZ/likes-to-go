@@ -32,7 +32,7 @@ type BindEffectEntry<Entry> = Entry extends (
 		? () => void
 		: never;
 
-export type BoundEffects<E> = {
+type BoundEffects<E> = {
 	readonly [K in keyof E]: BindEffectEntry<E[K]>;
 };
 

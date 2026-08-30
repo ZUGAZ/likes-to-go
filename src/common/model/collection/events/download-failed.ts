@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const DownloadFailedSchema = taggedStruct('DownloadFailed', {
+const DownloadFailedSchema = taggedStruct('DownloadFailed', {
 	message: Schema.String,
 	reason: Schema.String,
 });

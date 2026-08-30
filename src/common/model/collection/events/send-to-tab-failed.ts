@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const SendToTabFailedSchema = taggedStruct('SendToTabFailed', {
+const SendToTabFailedSchema = taggedStruct('SendToTabFailed', {
 	message: Schema.String,
 	reason: Schema.String,
 });

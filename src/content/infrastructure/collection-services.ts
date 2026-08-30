@@ -14,20 +14,11 @@ import {
 } from '@/content/infrastructure/document-visibility';
 import { ScrollerLive, ScrollerTag } from '@/content/infrastructure/scroller';
 
-export {
-	BackgroundSenderTag,
-	type BackgroundSender,
-} from '@/content/infrastructure/background-sender';
+export { BackgroundSenderTag } from '@/content/infrastructure/background-sender';
 export { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
-export {
-	DomScannerTag,
-	type DomScanner,
-} from '@/content/infrastructure/dom-scanner';
-export {
-	DocumentVisibilityTag,
-	type DocumentVisibility,
-} from '@/content/infrastructure/document-visibility';
-export { ScrollerTag, type Scroller } from '@/content/infrastructure/scroller';
+export { DomScannerTag } from '@/content/infrastructure/dom-scanner';
+export { DocumentVisibilityTag } from '@/content/infrastructure/document-visibility';
+export { ScrollerTag } from '@/content/infrastructure/scroller';
 
 export function makeCollectionLive(
 	root: Element,

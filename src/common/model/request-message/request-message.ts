@@ -5,26 +5,26 @@ import { type ToggleMascot, ToggleMascotSchema } from './toggle-mascot';
 
 // --- Request message schemas (discriminated union) ---
 
-export const StartCollectionSchema = taggedStruct('StartCollection');
-export const TracksBatchSchema = taggedStruct('TracksBatch', {
+const StartCollectionSchema = taggedStruct('StartCollection');
+const TracksBatchSchema = taggedStruct('TracksBatch', {
 	tracks: Schema.Array(TrackSchema),
 	skippedTrackCount: Schema.Number,
 });
-export const CollectionCompleteSchema = taggedStruct('CollectionComplete');
-export const CollectionVisibilityPausedSchema = taggedStruct(
+const CollectionCompleteSchema = taggedStruct('CollectionComplete');
+const CollectionVisibilityPausedSchema = taggedStruct(
 	'CollectionVisibilityPaused',
 );
-export const CollectionVisibilityResumedSchema = taggedStruct(
+const CollectionVisibilityResumedSchema = taggedStruct(
 	'CollectionVisibilityResumed',
 );
-export const CollectionErrorSchema = taggedStruct('CollectionError', {
+const CollectionErrorSchema = taggedStruct('CollectionError', {
 	message: Schema.String,
 	reason: Schema.String,
 });
-export const CancelCollectionSchema = taggedStruct('CancelCollection');
-export const DownloadExportSchema = taggedStruct('DownloadExport');
-export const GetStateSchema = taggedStruct('GetState');
-export const LoginRequiredSchema = taggedStruct('LoginRequired', {
+const CancelCollectionSchema = taggedStruct('CancelCollection');
+const DownloadExportSchema = taggedStruct('DownloadExport');
+const GetStateSchema = taggedStruct('GetState');
+const LoginRequiredSchema = taggedStruct('LoginRequired', {
 	message: Schema.String,
 	reason: Schema.String,
 });

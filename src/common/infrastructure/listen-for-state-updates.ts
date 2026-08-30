@@ -5,7 +5,7 @@ import {
 import type { CollectionStatus, Source } from '@/common/model/request-message';
 import { Data, Effect, Schema } from 'effect';
 
-export class DecodeStateUpdateFailed extends Data.TaggedError(
+class DecodeStateUpdateFailed extends Data.TaggedError(
 	'DecodeStateUpdateFailed',
 )<{
 	readonly reason: string;
@@ -34,7 +34,7 @@ function popupStateUpdateToPayload(
 /**
  * Decode unknown popup state update messages at the Chrome listener boundary.
  */
-export function decodeStateUpdatePayload(
+function decodeStateUpdatePayload(
 	raw: unknown,
 ): Effect.Effect<StateUpdatePayload, DecodeStateUpdateFailed> {
 	return Schema.decodeUnknown(PopupStateUpdateSchema)(raw).pipe(
@@ -71,10 +71,4 @@ export function listenForStateUpdatesEffect(
 			chrome.runtime.onMessage.removeListener(listener);
 		};
 	});
-}
-
-export function listenForStateUpdates(
-	onStateUpdate: (payload: StateUpdatePayload) => void,
-): () => void {
-	return Effect.runSync(listenForStateUpdatesEffect(onStateUpdate));
 }

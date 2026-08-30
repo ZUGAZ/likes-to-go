@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const CollectionErrorEventSchema = taggedStruct('CollectionError', {
+const CollectionErrorEventSchema = taggedStruct('CollectionError', {
 	message: Schema.String,
 	reason: Schema.String,
 });

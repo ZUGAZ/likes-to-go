@@ -94,11 +94,3 @@ export function planNextPace({
 		actionTimestampsMs: updatedTimestamps,
 	};
 }
-
-/**
- * Promise that resolves after ms. Used by content script for pacing.
- * Placed here so tests can mock or use fake timers.
- */
-export function delayMs(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}

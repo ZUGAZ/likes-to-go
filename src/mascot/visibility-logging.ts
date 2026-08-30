@@ -6,7 +6,7 @@ import {
 	type MascotVisibilityTransition,
 } from '@/mascot/visibility';
 
-export function logMascotVisibilityTransitionEffect(
+function logMascotVisibilityTransitionEffect(
 	action: MascotVisibilityTransition,
 	visible: boolean,
 ): Effect.Effect<void> {

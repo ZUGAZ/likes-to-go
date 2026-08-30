@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const SendStartToTabSchema = taggedStruct('SendStartToTab', {
+const SendStartToTabSchema = taggedStruct('SendStartToTab', {
 	tabId: Schema.Number,
 });
 

@@ -2,16 +2,16 @@
 export const TRACK_LIST_CONTAINER = '.lazyLoadingList__list';
 
 /** CSS selector for SoundCloud's infinite-scroll loading spinner (end-of-feed sentinel). */
-export const LOADING_INDICATOR = '.loading.regular.m-padded';
+const LOADING_INDICATOR = '.loading.regular.m-padded';
 
 /** CSS selector for SoundCloud's inline error container shown after the track list. */
-export const ERROR_INDICATOR = '.inlineError';
+const ERROR_INDICATOR = '.inlineError';
 
 /** CSS selector for the "Retry" anchor inside the inline error container. */
 export const RETRY_BUTTON = '.inlineError .sc-button';
 
 /** CSS selector for the user navigation element in the header (present only when logged in). */
-export const USER_NAV = '.header__userNav';
+const USER_NAV = '.header__userNav';
 
 /**
  * DOM check for the infinite-scroll loading spinner.

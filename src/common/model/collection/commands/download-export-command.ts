@@ -2,7 +2,7 @@ import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
 import { Data, Schema } from 'effect';
 
-export const DownloadExportCommandSchema = taggedStruct('DownloadExport', {
+const DownloadExportCommandSchema = taggedStruct('DownloadExport', {
 	tracks: Schema.Array(TrackSchema),
 });
 

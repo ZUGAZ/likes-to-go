@@ -1,33 +1,21 @@
-import { taggedStruct } from '@/common/model/tagged-struct';
-import { Context, Data, Effect, Ref, Schema } from 'effect';
+import { Context, Data, Effect, Ref } from 'effect';
 
-export const ExtensionPopupSurfaceSchema = taggedStruct('ExtensionPopup');
-
-export type ExtensionPopupSurface = Schema.Schema.Type<
-	typeof ExtensionPopupSurfaceSchema
->;
+export type ExtensionPopupSurface = {
+	readonly _tag: 'ExtensionPopup';
+};
 
 export const ExtensionPopupSurface =
 	Data.tagged<ExtensionPopupSurface>('ExtensionPopup');
 
-export const ContentOverlaySurfaceSchema = taggedStruct('ContentOverlay', {
-	tabId: Schema.Number,
-});
+export type ContentOverlaySurface = {
+	readonly _tag: 'ContentOverlay';
+	readonly tabId: number;
+};
 
-export type ContentOverlaySurface = Schema.Schema.Type<
-	typeof ContentOverlaySurfaceSchema
->;
+export const ContentOverlaySurface =
+	Data.tagged<ContentOverlaySurface>('ContentOverlay');
 
-export const ContentOverlaySurface = Data.tagged<ContentOverlaySurface>(
-	'ContentOverlay',
-);
-
-export const MascotUiSurfaceSchema = Schema.Union(
-	ExtensionPopupSurfaceSchema,
-	ContentOverlaySurfaceSchema,
-);
-
-export type MascotUiSurface = Schema.Schema.Type<typeof MascotUiSurfaceSchema>;
+export type MascotUiSurface = ExtensionPopupSurface | ContentOverlaySurface;
 
 export const defaultMascotUiSurface = (): MascotUiSurface =>
 	ExtensionPopupSurface();

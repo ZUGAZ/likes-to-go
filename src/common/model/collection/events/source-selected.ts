@@ -2,7 +2,7 @@ import { SourceSchema } from '@/common/model/source';
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const SourceSelectedEventSchema = taggedStruct('SourceSelected', {
+const SourceSelectedEventSchema = taggedStruct('SourceSelected', {
 	source: SourceSchema,
 });
 

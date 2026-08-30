@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const LoginRequiredEventSchema = taggedStruct('LoginRequired', {
+const LoginRequiredEventSchema = taggedStruct('LoginRequired', {
 	message: Schema.String,
 	reason: Schema.String,
 });

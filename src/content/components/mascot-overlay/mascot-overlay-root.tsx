@@ -5,7 +5,7 @@ import { BeatContainer } from '@/mascot/container';
 import type { BeatPoseKey } from '@/mascot/persona';
 import type { MascotVisibilityControls } from '@/mascot/visibility';
 
-export interface MascotOverlayHostVisibility {
+interface MascotOverlayHostVisibility {
 	readonly visible: boolean;
 	readonly ariaHidden: string;
 	readonly pointerEvents: string;
