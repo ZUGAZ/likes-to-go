@@ -6,6 +6,7 @@ export default defineConfig({
 		'extension-load.spec.ts',
 		'popup-shell.spec.ts',
 		'soundcloud-mock-harness.spec.ts',
+		'export-via-popup.spec.ts',
 	],
 	fullyParallel: false,
 	workers: 1,
