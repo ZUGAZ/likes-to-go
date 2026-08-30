@@ -6,7 +6,6 @@ storybook-static/
 *.zip
 .pnpm-store/
 .repos/effect
-public/mascot/
 test-results/
 playwright-report/
 blob-report/

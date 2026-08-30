@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Package extension
-        run: pnpm package
+        run: pnpm ci:release-equivalent
 
       - name: Rename release zip
         id: create_zip

@@ -11,6 +11,7 @@ export default defineConfig({
 			'src/**/*.test.ts',
 			'src/**/*.test.tsx',
 			'cws-manifest-limits.test.ts',
+			'verify-package-war.test.ts',
 		],
 		setupFiles: ['vitest.setup.ts'],
 	},

@@ -47,7 +47,7 @@ jobs:
 
       - name: Package extension
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        run: pnpm package
+        run: pnpm ci:release-equivalent
 
       - name: Rename release zip
         if: ${{ steps.release.outputs.release_created == 'true' }}

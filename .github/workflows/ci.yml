@@ -33,3 +33,6 @@ jobs:
 
       - name: Unit tests
         run: pnpm test:run
+
+      - name: Release-equivalent package
+        run: pnpm ci:release-equivalent

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Copy canonical mascot PNGs into WXT public/ for chrome.runtime.getURL paths.
+# Manual regeneration: copy canonical mascot PNGs into WXT public/ for
+# chrome.runtime.getURL paths. Not a build hook — after running this, commit
+# both src/assets/mascot/*.png and public/mascot/*.png.
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
@@ -8,3 +10,4 @@ dest_dir="${repo_root}/public/mascot"
 
 mkdir -p "$dest_dir"
 cp "${src_dir}"/*.png "$dest_dir/"
+echo "Wrote ${dest_dir}/*.png — commit both canonical and public copies."
