@@ -1,0 +1,42 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+	// WXT `srcDir: 'src'` — custom plugin `entry` replaces defaults (root `entrypoints/**`).
+	"entry": ["src/entrypoints/**/*.{ts,tsx,html}", "scripts/*.{ts,sh}"],
+	"project": [
+		// `.css` / `.mdx` stay in-graph so Tailwind and Storybook compilers follow imports.
+		"src/**/*.{js,ts,tsx,jsx,css,mdx}",
+		"scripts/**/*.ts",
+		"e2e/**/*.ts",
+		".storybook/**/*.{js,ts,tsx}",
+		"*.{js,ts,tsx}",
+		"!.output/**",
+		"!.wxt/**",
+		"!docs/**",
+		"!storybook-static/**",
+		"!.repos/**",
+	],
+	"paths": {
+		"@/*": ["./src/*"],
+	},
+	"wxt": {
+		"entry": ["src/entrypoints/**/*.{ts,tsx,html}"],
+	},
+	"playwright": {
+		"config": ["playwright.config.ts", "playwright.storybook.config.ts"],
+	},
+	"ignoreDependencies": [
+		// Ambient `chrome.*` types; nothing imports the package name for Knip to resolve.
+		"@types/chrome",
+	],
+	"rules": {
+		"files": "error",
+		"dependencies": "error",
+		"unlisted": "error",
+		"binaries": "error",
+		"unresolved": "error",
+		"exports": "error",
+		"types": "error",
+		"duplicates": "error",
+		"cycles": "warn",
+	},
+}
