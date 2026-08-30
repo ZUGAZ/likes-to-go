@@ -2,8 +2,9 @@
 # Normalize Beat mascot pose PNGs from caller-provided magenta-backed raw art.
 #
 # Canonical output: src/assets/mascot/*.png.
-# After changing masters, run scripts/sync-mascot-public.sh and commit both the
-# canonical copies and public/mascot/*.png. Not a build hook.
+# After changing masters, run scripts/optimize-mascot-webp.sh (or the
+# compatibility wrapper scripts/sync-mascot-public.sh) and commit both the
+# canonical PNG masters and public/mascot/*.webp. Not a build hook.
 #
 # Do NOT use global `-transparent white` — that strips eye whites, gloves, and shoes.
 set -euo pipefail
@@ -49,4 +50,4 @@ convert "$tmp1" -fuzz 25% -transparent magenta "$tmp2"
 convert "$tmp2" \( +clone -alpha extract -threshold "$ALPHA_KEEP_THRESHOLD" \) \
 	-compose CopyOpacity -composite -define png:color-type=6 "$src_out"
 
-echo "Wrote ${src_out} — run scripts/sync-mascot-public.sh, then commit both copies."
+echo "Wrote ${src_out} — run scripts/optimize-mascot-webp.sh, then commit PNG masters and public WebP copies."

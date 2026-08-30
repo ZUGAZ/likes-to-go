@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Mascot } from '@/mascot/mascot';
-import { resolveBundledPoseUrl } from '@/mascot/pose-assets';
+import { resolveStorybookMascotPoseUrl } from '@/mascot/resolve-storybook-mascot-pose-url';
 import { SpeechBalloon } from '@/mascot/speech-balloon';
 
 type BeatLayoutStoryArgs = {
@@ -29,15 +29,13 @@ function BeatLayoutStoryHost(props: BeatLayoutStoryArgs) {
 			<main class={rootClass}>
 				<div class="beat-layout">
 					<Mascot
-						poseUrl={resolveBundledPoseUrl('idle')}
+						poseUrl={resolveStorybookMascotPoseUrl('idle')}
 						isAnimating={props.isAnimating}
 						alt="Beat idle pose"
 					/>
 					<SpeechBalloon
 						copy="Hey! Ready to back up your SoundCloud likes?"
-						options={[
-							{ label: 'Start export', actionId: 'start' },
-						]}
+						options={[{ label: 'Start export', actionId: 'start' }]}
 						footnoteCopy={undefined}
 						onAction={() => undefined}
 						onDismiss={undefined}

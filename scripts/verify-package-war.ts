@@ -6,10 +6,10 @@ import { Data, Effect, Either, Schema } from 'effect';
 export const DEFAULT_OUTPUT_DIR = '.output/chrome-mv3';
 
 export const EXPECTED_MASCOT_POSE_PATHS: readonly string[] = [
-	'mascot/idle.png',
-	'mascot/working.png',
-	'mascot/happy.png',
-	'mascot/sad.png',
+	'mascot/idle.webp',
+	'mascot/working.webp',
+	'mascot/happy.webp',
+	'mascot/sad.webp',
 ];
 
 const GLOB_META_CHARACTERS = /[*?[]/u;

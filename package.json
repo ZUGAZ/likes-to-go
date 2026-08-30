@@ -18,6 +18,8 @@
 		"package": "wxt zip",
 		"verify:package-war": "node --experimental-strip-types scripts/verify-package-war.ts",
 		"ci:release-equivalent": "pnpm package && pnpm verify:package-war",
+		"optimize:mascot": "bash scripts/optimize-mascot-webp.sh",
+		"optimize:mascot:check": "bash scripts/optimize-mascot-webp.sh --check",
 		"test": "vitest",
 		"test:run": "vitest run",
 		"test:e2e": "playwright test",

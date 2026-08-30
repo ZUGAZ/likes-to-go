@@ -12,7 +12,7 @@ import {
 	type BeatSource,
 	type BeatState,
 } from '@/mascot/model';
-import { resolveBundledPoseUrl } from '@/mascot/pose-assets';
+import { resolveStorybookMascotPoseUrl } from '@/mascot/resolve-storybook-mascot-pose-url';
 import { BeatView, type BeatPresentation } from '@/mascot/view';
 
 export type BeatViewStoryArgs = {
@@ -55,7 +55,7 @@ function BeatViewStoryPresentation(props: BeatViewStoryArgs) {
 			theme={() => props.theme}
 			state={() => props.state}
 			isVisible={() => true}
-			poseUrl={() => resolveBundledPoseUrl(mapStateToPose(props.state))}
+			poseUrl={() => resolveStorybookMascotPoseUrl(mapStateToPose(props.state))}
 			isStatusBusy={() => mapStateToBusy(props.state)}
 			balloonCopy={() => mapStateToBalloonCopy(props.state, buildCopyContext())}
 			options={() => mapStateToOptions(props.state)}

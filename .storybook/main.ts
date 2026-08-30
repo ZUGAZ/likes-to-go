@@ -6,6 +6,7 @@ import { mergeConfig } from 'vite';
 const config = {
 	stories: ['../src/**/*.stories.@(ts|tsx)'],
 	addons: ['@storybook/addon-docs'],
+	staticDirs: ['../public'],
 	framework: {
 		name: 'storybook-solidjs-vite',
 		options: {},

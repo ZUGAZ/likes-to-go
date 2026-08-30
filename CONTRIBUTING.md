@@ -217,7 +217,7 @@ Any function that transforms data or validates schemas benefits from property-ba
 
 ### E2E (Playwright)
 
-Playwright e2e is **local-only** — not a GitHub Actions gate. CI runs **quality** only (`pnpm lint`, `pnpm test:types`, `pnpm test:run`, `pnpm knip`, then `pnpm ci:release-equivalent`). Locally, run the same gate with `pnpm ci:quality` before a release.
+Playwright e2e is **local-only** — not a GitHub Actions gate. CI runs **quality** only (`pnpm lint`, `pnpm test:types`, `pnpm test:run`, `pnpm knip`, then `pnpm ci:release-equivalent`). Run `pnpm ci:quality` locally before a release: it covers everything CI does and additionally runs `pnpm optimize:mascot:check`, which stays local because WebP bytes differ between ImageMagick builds.
 
 **Local**
 

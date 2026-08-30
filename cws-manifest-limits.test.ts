@@ -18,17 +18,19 @@ describe('CWS manifest limits', () => {
 		);
 	});
 
-	it('exposes mascot PNGs to SoundCloud only via web_accessible_resources', () => {
+	it('exposes mascot WebPs to SoundCloud only via web_accessible_resources', () => {
 		expect(mascotWebAccessibleResources).toEqual([
 			{
-				resources: ['mascot/*.png'],
+				resources: ['mascot/*.webp'],
 				matches: ['https://*.soundcloud.com/*'],
 			},
 		]);
 	});
 
 	it('keeps ACTION_DEFAULT_POPUP_PATH aligned with the WXT popup entrypoint', () => {
-		const entrypointDir = resolve(`src/entrypoints/${WXT_POPUP_ENTRYPOINT_NAME}`);
+		const entrypointDir = resolve(
+			`src/entrypoints/${WXT_POPUP_ENTRYPOINT_NAME}`,
+		);
 		expect(existsSync(entrypointDir)).toBe(true);
 		expect(ACTION_DEFAULT_POPUP_PATH).toBe(`${WXT_POPUP_ENTRYPOINT_NAME}.html`);
 	});

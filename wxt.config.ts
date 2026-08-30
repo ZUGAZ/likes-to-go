@@ -2,10 +2,10 @@ import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'node:path';
 import { defineConfig } from 'wxt';
 
-/** Mascot PNGs exposed to content scripts on SoundCloud via chrome.runtime.getURL. */
+/** Mascot WebP poses exposed to content scripts on SoundCloud via chrome.runtime.getURL. */
 export const mascotWebAccessibleResources = [
 	{
-		resources: ['mascot/*.png'],
+		resources: ['mascot/*.webp'],
 		matches: ['https://*.soundcloud.com/*'],
 	},
 ];
@@ -43,6 +43,5 @@ export default defineConfig({
 			],
 			extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
 		},
-
 	}),
 });

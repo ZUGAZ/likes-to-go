@@ -65,16 +65,16 @@ function manifestWithResources(
 function writeCompletePoseOutput(
 	outputDir: string,
 	resourceGroups: readonly (readonly string[])[] = [
-		['mascot/*.png'],
+		['mascot/*.webp'],
 		['content-scripts/likes.css'],
 	],
 ): void {
 	writeFiles(outputDir, {
 		'manifest.json': manifestWithResources(resourceGroups),
-		'mascot/idle.png': 'idle',
-		'mascot/working.png': 'working',
-		'mascot/happy.png': 'happy',
-		'mascot/sad.png': 'sad',
+		'mascot/idle.webp': 'idle',
+		'mascot/working.webp': 'working',
+		'mascot/happy.webp': 'happy',
+		'mascot/sad.webp': 'sad',
 		'content-scripts/likes.css': 'css',
 	});
 }
@@ -151,14 +151,14 @@ describe('verifyPackageWar', () => {
 	it('fails when a WAR literal is missing from the output', () => {
 		const outputDir = makeTempOutput();
 		writeFiles(outputDir, {
-			'manifest.json': manifestWithResources([['mascot/idle.png']]),
+			'manifest.json': manifestWithResources([['mascot/idle.webp']]),
 		});
 
 		Either.match(runVerify(outputDir), {
 			onLeft: (error) => {
 				expect(error).toBeInstanceOf(WarPatternUnmatched);
 				if (error instanceof WarPatternUnmatched) {
-					expect(error.patterns).toEqual(['mascot/idle.png']);
+					expect(error.patterns).toEqual(['mascot/idle.webp']);
 				}
 			},
 			onRight: () => {
@@ -223,10 +223,10 @@ describe('verifyPackageWar', () => {
 		const outputDir = makeTempOutput();
 		writeFiles(outputDir, {
 			'manifest.json': manifestWithResources([
-				['mascot/*.png'],
+				['mascot/*.webp'],
 				['content-scripts/likes.css'],
 			]),
-			'mascot/idle.png': 'idle',
+			'mascot/idle.webp': 'idle',
 			'content-scripts/likes.css': 'css',
 		});
 
@@ -235,13 +235,13 @@ describe('verifyPackageWar', () => {
 				expect(error).toBeInstanceOf(ExpectedMascotPosesMissing);
 				if (error instanceof ExpectedMascotPosesMissing) {
 					expect(error.missingPaths).toEqual([
-						'mascot/working.png',
-						'mascot/happy.png',
-						'mascot/sad.png',
+						'mascot/working.webp',
+						'mascot/happy.webp',
+						'mascot/sad.webp',
 					]);
 				}
 				expect(formatVerifyPackageWarError(error)).toContain(
-					'mascot/working.png',
+					'mascot/working.webp',
 				);
 			},
 			onRight: () => {
@@ -264,8 +264,8 @@ describe('isUnsafeRelativeWarPath', () => {
 
 	it('allows relative literals and globs that stay inside output', () => {
 		const outputDir = '/tmp/extension-output';
-		expect(isUnsafeRelativeWarPath('mascot/idle.png', outputDir)).toBe(false);
-		expect(isUnsafeRelativeWarPath('mascot/*.png', outputDir)).toBe(false);
+		expect(isUnsafeRelativeWarPath('mascot/idle.webp', outputDir)).toBe(false);
+		expect(isUnsafeRelativeWarPath('mascot/*.webp', outputDir)).toBe(false);
 		expect(
 			isUnsafeRelativeWarPath('content-scripts/likes.css', outputDir),
 		).toBe(false);
@@ -307,20 +307,15 @@ describe('parseCliOutputDir', () => {
 	});
 });
 
-describe('canonical and public mascot copies', () => {
-	it('keeps each public pose byte-identical to its canonical master', () => {
+describe('public mascot WebP copies', () => {
+	it('tracks a WebP file for each pose', () => {
 		for (const pose of mascotPoses) {
-			const canonical = readFileSync(
-				path.join(repoRoot, 'src/assets/mascot', `${pose}.png`),
-			);
 			const published = readFileSync(
-				path.join(repoRoot, 'public/mascot', `${pose}.png`),
+				path.join(repoRoot, 'public/mascot', `${pose}.webp`),
 			);
-			if (!canonical.equals(published)) {
-				expect.fail(
-					`${pose} public copy is not byte-identical to src/assets/mascot/${pose}.png`,
-				);
-			}
+			expect(published.byteLength).toBeGreaterThan(0);
+			expect(published.toString('ascii', 0, 4)).toBe('RIFF');
+			expect(published.toString('ascii', 8, 12)).toBe('WEBP');
 		}
 	});
 });

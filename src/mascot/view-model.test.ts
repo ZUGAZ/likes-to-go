@@ -8,7 +8,7 @@ import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import { silentLoggerLayer } from '@/test/effect-log-test';
 
 import { createMascotViewModel } from '@/mascot/view-model';
-import { resolveBundledPoseUrl } from '@/mascot/pose-assets';
+import { poseResourcePath } from '@/mascot/pose-resource-path';
 import { createMascotVisibility } from '@/mascot/visibility';
 import type { BeatPoseKey } from '@/mascot/persona';
 import {
@@ -110,7 +110,7 @@ function makeVm(initiallyVisible = true) {
 	const vm = createMascotViewModel({
 		runtime: testRuntime,
 		visibility,
-		resolvePoseUrl: resolveBundledPoseUrl,
+		resolvePoseUrl: poseResourcePath,
 	});
 	return { vm, visibility, runtime: testRuntime };
 }
@@ -507,7 +507,7 @@ describe('MascotViewModel — poseUrl', () => {
 	it('resolves pose URL via resolvePoseUrl', () => {
 		const { vm } = makeVm();
 
-		expect(vm.poseUrl()).toMatch(/\.png$/);
+		expect(vm.poseUrl()).toMatch(/\.webp$/);
 	});
 
 	it('uses custom resolvePoseUrl when provided', () => {

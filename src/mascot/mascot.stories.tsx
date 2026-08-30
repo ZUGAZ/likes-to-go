@@ -3,8 +3,8 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { For } from 'solid-js';
 
 import { Mascot } from '@/mascot/mascot';
-import { resolveBundledPoseUrl } from '@/mascot/pose-assets';
 import type { BeatPoseKey } from '@/mascot/persona';
+import { resolveStorybookMascotPoseUrl } from '@/mascot/resolve-storybook-mascot-pose-url';
 
 const POSES: ReadonlyArray<BeatPoseKey> = ['idle', 'working', 'happy', 'sad'];
 
@@ -22,7 +22,7 @@ function MascotStoryHost(props: MascotStoryArgs) {
 			class="bg-white p-6 dark:bg-neutral-950"
 		>
 			<Mascot
-				poseUrl={resolveBundledPoseUrl(props.pose)}
+				poseUrl={resolveStorybookMascotPoseUrl(props.pose)}
 				isAnimating={props.isAnimating}
 				alt={`Beat ${props.pose} pose`}
 			/>
@@ -81,7 +81,7 @@ export const AllPoses: Story = {
 				{(pose) => (
 					<div class="flex flex-col items-center gap-2">
 						<Mascot
-							poseUrl={resolveBundledPoseUrl(pose)}
+							poseUrl={resolveStorybookMascotPoseUrl(pose)}
 							isAnimating={pose === 'working'}
 							alt={`Beat ${pose} pose`}
 						/>
