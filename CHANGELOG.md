@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.6.1](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v2.6.0...likes-to-go-v2.6.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* 🖼️ ship declared mascot web-accessible files from clean builds ([f0d225d](https://github.com/ZUGAZ/likes-to-go/commit/f0d225df480ae7cca7ff85e5008afad604cce18d))
+
+
+### Performance Improvements
+
+* 🖼️ ship Beat poses as quantized lossless WebP ([a4d6d39](https://github.com/ZUGAZ/likes-to-go/commit/a4d6d39e29b67837bf1cc7958c3036a20022e4f9))
+
 ## [2.6.0](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v2.5.0...likes-to-go-v2.6.0) (2026-07-31)
 
 
