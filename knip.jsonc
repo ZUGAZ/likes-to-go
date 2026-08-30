@@ -22,7 +22,11 @@
 		"entry": ["src/entrypoints/**/*.{ts,tsx,html}"],
 	},
 	"playwright": {
-		"config": ["playwright.config.ts", "playwright.storybook.config.ts"],
+		"config": [
+			"playwright.config.ts",
+			"playwright.ci.config.ts",
+			"playwright.storybook.config.ts",
+		],
 	},
 	"ignoreDependencies": [
 		// Ambient `chrome.*` types; nothing imports the package name for Knip to resolve.

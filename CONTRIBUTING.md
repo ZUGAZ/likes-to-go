@@ -230,9 +230,23 @@ Any function that transforms data or validates schemas benefits from property-ba
 
 ### E2E (Playwright)
 
-Playwright e2e is **local-only** — not a GitHub Actions gate. CI runs **quality** only (`pnpm lint`, `pnpm test:types`, `pnpm test:run`, `pnpm knip`, then `pnpm ci:release-equivalent`). Run `pnpm ci:quality` locally before a release: it covers everything CI does and additionally runs `pnpm optimize:mascot:check`, which stays local because WebP bytes differ between ImageMagick builds.
+CI has two independent jobs. **quality** is `pnpm lint`, `pnpm test:types`, `pnpm test:run`, `pnpm knip`, then `pnpm ci:release-equivalent`. **e2e** is the mock-export lane (`pnpm test:e2e:ci`). Run `pnpm ci:quality` locally before a release: it covers the quality job and additionally runs `pnpm optimize:mascot:check`, which stays local because WebP bytes differ between ImageMagick builds. `pnpm ci:quality` does **not** run Playwright. Reproduce the e2e job with `bash scripts/ci-e2e.sh`.
 
-**Local**
+**Live-account E2E never runs in CI.** GitHub Actions never opens live SoundCloud and never uses an auth profile or credentials.
+
+**CI mock export** — production unpack (`.output/chrome-mv3` from `pnpm build`) against a mocked SoundCloud origin. One worker. Specs: `soundcloud-mock-harness`, `export-via-popup`, `export-via-overlay`. No dev server, Storybook, or live account.
+
+```bash
+# Same sequence as the Actions e2e job
+bash scripts/ci-e2e.sh
+
+# Or the same steps by hand
+pnpm exec playwright install --with-deps chromium
+pnpm build
+pnpm test:e2e:ci
+```
+
+**Local dev shell** — extension load and popup smoke against `.output/chrome-mv3-dev` (not used by CI).
 
 1. Install the Chromium browser once: `pnpm exec playwright install chromium`
 2. Produce an unpacked dev build at `.output/chrome-mv3-dev`:
@@ -240,11 +254,11 @@ Playwright e2e is **local-only** — not a GitHub Actions gate. CI runs **qualit
    - `pnpm dev` — daily workflow with HMR
 3. Run `pnpm test:e2e`
 
-The default suite is extension shell smoke. It does not require Storybook or SoundCloud.
+The default `pnpm test:e2e` config is the local suite (dev-unpack shell plus the mock-export specs if a production unpack is also present). It does not require Storybook or live SoundCloud.
 
-**Storybook smoke** (optional, local only): start Storybook (`pnpm storybook`), then run `pnpm test:e2e:storybook`.
+**Local Storybook** (optional): start Storybook (`pnpm storybook`), then run `pnpm test:e2e:storybook`. Not a CI gate.
 
-For optional local real-site scenarios, you may point Playwright at a **gitignored** persistent profile under `.playwright/` via `PLAYWRIGHT_USER_DATA_DIR` (for example `PLAYWRIGHT_USER_DATA_DIR=.playwright/user-data pnpm test:e2e`). Never commit cookies, profiles, or `storageState` artifacts. Do not set `PLAYWRIGHT_USER_DATA_DIR` or Storybook env in CI if e2e is ever added later; the default suite does not use them.
+**Optional real-profile** (local only): point Playwright at a **gitignored** persistent profile under `.playwright/` via `PLAYWRIGHT_USER_DATA_DIR` (for example `PLAYWRIGHT_USER_DATA_DIR=.playwright/user-data pnpm test:e2e`). Never commit cookies, profiles, or `storageState` artifacts. Do not set `PLAYWRIGHT_USER_DATA_DIR` or Storybook env in CI.
 
 ## 📋 Commit and release process
 
