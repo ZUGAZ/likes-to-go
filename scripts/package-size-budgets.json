@@ -1,39 +1,39 @@
 {
 	"format_version": 1,
-	"recorded_at": "2026-08-30T15:48:42.419Z",
-	"total_bytes": 737604,
+	"recorded_at": "2026-08-31T20:52:31.223Z",
+	"total_bytes": 761766,
 	"classes": [
 		{
 			"id": "background.js",
 			"type": "path",
 			"path": "background.js",
-			"max_bytes": 191039
+			"max_bytes": 194732
 		},
 		{
 			"id": "content-scripts/likes.js",
 			"type": "path",
 			"path": "content-scripts/likes.js",
-			"max_bytes": 228942
+			"max_bytes": 235299
 		},
 		{
 			"id": "content-scripts/likes.css",
 			"type": "path",
 			"path": "content-scripts/likes.css",
-			"max_bytes": 13974
+			"max_bytes": 17251
 		},
 		{
 			"id": "chunks/popup.js",
 			"type": "glob",
 			"glob": "chunks/popup-*.js",
 			"expected_count": 1,
-			"max_bytes": 196299
+			"max_bytes": 203869
 		},
 		{
 			"id": "assets/popup.css",
 			"type": "glob",
 			"glob": "assets/popup-*.css",
 			"expected_count": 1,
-			"max_bytes": 13974
+			"max_bytes": 17251
 		},
 		{
 			"id": "mascot",
@@ -71,7 +71,7 @@
 			"id": "manifest.json",
 			"type": "path",
 			"path": "manifest.json",
-			"max_bytes": 881
+			"max_bytes": 869
 		}
 	],
 	"forbidden": ["assets/*.png", "mascot/*.png"]
