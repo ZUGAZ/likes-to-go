@@ -22,4 +22,49 @@ test.describe('Storybook smoke', () => {
 			preview.getByRole('button', { name: 'Start export' }),
 		).toBeVisible();
 	});
+
+	test('Beat sticker ring is present in light, dark, and overlay', async ({
+		page,
+	}) => {
+		const baseUrl = storybookBaseUrl ?? 'http://127.0.0.1:6006';
+		const stories: ReadonlyArray<{
+			id: string;
+			expectedRingChannel: '229' | '255';
+		}> = [
+			{ id: 'mascot-beatview--initial', expectedRingChannel: '229' },
+			{ id: 'mascot-beatview--dark', expectedRingChannel: '255' },
+			{ id: 'mascot-beatview--overlay', expectedRingChannel: '229' },
+			{
+				id: 'mascot-beatview--overlay&args=theme:dark',
+				expectedRingChannel: '255',
+			},
+		];
+
+		for (const story of stories) {
+			await page.goto(`${baseUrl}/iframe.html?id=${story.id}`);
+
+			const img = page.locator('.beat-mascot img');
+			await expect(img).toBeVisible();
+
+			const { filter, overflow, ring } = await img.evaluate((element) => {
+				const mascot = element.closest('.beat-mascot');
+				if (mascot === null) {
+					return { filter: '', overflow: '', ring: '' };
+				}
+				return {
+					filter: getComputedStyle(element).filter,
+					overflow: getComputedStyle(mascot).overflow,
+					ring: getComputedStyle(mascot)
+						.getPropertyValue('--beat-mascot-ring')
+						.trim(),
+				};
+			});
+
+			expect(filter, story.id).toContain('drop-shadow');
+			expect(overflow, story.id).toBe('visible');
+			expect(ring.replaceAll(/\s/g, ''), story.id).toContain(
+				story.expectedRingChannel,
+			);
+		}
+	});
 });
