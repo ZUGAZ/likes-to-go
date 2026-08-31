@@ -12,12 +12,15 @@ import { Either, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
 
 describe('export format registry', () => {
-	it('decodes json and csv and rejects unknown format ids', () => {
+	it('decodes json, csv, and txt and rejects unknown format ids', () => {
 		expect(
 			Either.isRight(Schema.decodeUnknownEither(ExportFormatIdSchema)('json')),
 		).toBe(true);
 		expect(
 			Either.isRight(Schema.decodeUnknownEither(ExportFormatIdSchema)('csv')),
+		).toBe(true);
+		expect(
+			Either.isRight(Schema.decodeUnknownEither(ExportFormatIdSchema)('txt')),
 		).toBe(true);
 		expect(
 			Either.isLeft(Schema.decodeUnknownEither(ExportFormatIdSchema)('')),
@@ -31,13 +34,15 @@ describe('export format registry', () => {
 		expect(resolveExportFormatId({})).toBe('json');
 		expect(resolveExportFormatId({ format: 'json' })).toBe('json');
 		expect(resolveExportFormatId({ format: 'csv' })).toBe('csv');
+		expect(resolveExportFormatId({ format: 'txt' })).toBe('txt');
 	});
 
-	it('defaults to json and lists JSON then CSV', () => {
+	it('defaults to json and lists JSON, CSV, then Text', () => {
 		expect(defaultExportFormatId()).toBe('json');
 		expect(listExportFormats().map((format) => format.id)).toEqual([
 			'json',
 			'csv',
+			'txt',
 		]);
 	});
 
@@ -69,6 +74,22 @@ describe('export format registry', () => {
 			{
 				description: 'CSV export',
 				accept: { 'text/csv': ['.csv'] },
+			},
+		]);
+	});
+
+	it('returns locked Text metadata', () => {
+		const format = getExportFormat('txt');
+		expect(format.id).toBe('txt');
+		expect(format.label).toBe('Text');
+		expect(format.extension).toBe('txt');
+		expect(format.worksWith).toBe(
+			'Artist then title — Nicotine+, Sockseek, Soundiiz.',
+		);
+		expect(format.pickerTypes).toEqual([
+			{
+				description: 'Text',
+				accept: { 'text/plain': ['.txt'] },
 			},
 		]);
 	});

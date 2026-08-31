@@ -32,4 +32,17 @@ describe('renderExportBody', () => {
 		expect(body.split('\n')).toHaveLength(tracks.length + 1);
 		expect(body).not.toContain('http');
 	});
+
+	it('renders Text as Artist - Title lines without urls', () => {
+		const tracks = [
+			{
+				title: 'Around the World',
+				artist: 'Daft Punk',
+				url: new URL('https://soundcloud.com/daftpunk/around-the-world'),
+			},
+		];
+		expect(renderExportBody('txt', tracks)).toBe(
+			'Daft Punk - Around the World\n',
+		);
+	});
 });

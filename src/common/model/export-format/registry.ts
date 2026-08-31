@@ -2,6 +2,7 @@ import { csvExportFormat } from '@/common/model/export-format/csv';
 import type { ExportFormatId } from '@/common/model/export-format/export-format-id';
 import { jsonExportFormat } from '@/common/model/export-format/json';
 import type { SaveFilePickerType } from '@/common/model/export-format/save-file-picker-type';
+import { txtExportFormat } from '@/common/model/export-format/txt';
 import type { Track } from '@/common/model/track';
 import { Data } from 'effect';
 
@@ -23,6 +24,7 @@ export class ExportFormatNotFound extends Data.TaggedError(
 const exportFormats: readonly ExportFormatDefinition[] = [
 	jsonExportFormat,
 	csvExportFormat,
+	txtExportFormat,
 ];
 
 export function listExportFormats(): readonly ExportFormatDefinition[] {

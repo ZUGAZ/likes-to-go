@@ -26,6 +26,12 @@ describe('DownloadExport', () => {
 			);
 		});
 
+		it('constructor with txt format produces a value that satisfies the guard', () => {
+			expect(isDownloadExport(DownloadExportRequest({ format: 'txt' }))).toBe(
+				true,
+			);
+		});
+
 		it('rejects a different request tag', () => {
 			expect(isDownloadExport(StartCollectionRequest())).toBe(false);
 		});
@@ -63,6 +69,18 @@ describe('DownloadExport', () => {
 			expect(result.right.format).toBe('csv');
 		});
 
+		it('decodes a payload with format txt', () => {
+			const result = Schema.decodeUnknownEither(DownloadExportSchema)({
+				_tag: 'DownloadExport',
+				format: 'txt',
+			});
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isLeft(result)) {
+				throw new Error('Expected Right');
+			}
+			expect(result.right.format).toBe('txt');
+		});
+
 		it('rejects an unknown format id', () => {
 			const result = Schema.decodeUnknownEither(DownloadExportSchema)({
 				_tag: 'DownloadExport',
@@ -90,6 +108,14 @@ describe('DownloadExport', () => {
 			const result = parseRequestMessage({
 				_tag: 'DownloadExport',
 				format: 'csv',
+			});
+			expect(Either.isRight(result)).toBe(true);
+		});
+
+		it('returns Right for DownloadExport with format txt', () => {
+			const result = parseRequestMessage({
+				_tag: 'DownloadExport',
+				format: 'txt',
 			});
 			expect(Either.isRight(result)).toBe(true);
 		});

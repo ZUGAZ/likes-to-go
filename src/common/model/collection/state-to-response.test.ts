@@ -51,6 +51,15 @@ describe('collectionStateToDownloadExportResponse', () => {
 		expect(response.exportBody).not.toContain('http');
 	});
 
+	it('sets exportBody to Text when format is txt', () => {
+		const tracks = [validTrack()];
+		const saving = Saving({ tracks, skippedTrackCount: 0 });
+		const response = collectionStateToDownloadExportResponse(saving, 'txt');
+		expect(response.exportBody).toBe('Artist - Track\n');
+		expect(response.exportBody).not.toContain('http');
+		expect(response.exportBody).not.toContain('s:"');
+	});
+
 	it('includes skippedTrackCount for Done and Saving', () => {
 		const tracks = [validTrack()];
 		expect(
