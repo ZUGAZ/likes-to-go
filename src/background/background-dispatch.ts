@@ -1,8 +1,13 @@
 import { CommandRunnerTag } from '@/background/command-runner';
 import { CollectionStateStorageTag } from '@/background/infrastructure/collection-state-storage';
-import { rememberMascotUiSurfaceFromSender } from '@/background/mascot-ui-surface';
+import {
+	isExtensionPopupSender,
+	rememberMascotUiSurfaceFromSender,
+	shouldClaimMascotNotifySurface,
+} from '@/background/mascot-ui-surface';
 import {
 	maybeRevealOverlayEffect,
+	PopupPortCountRefTag,
 	rememberOverlayHandoffFromSender,
 	resetOverlayHandoffEffect,
 } from '@/background/overlay-handoff';
@@ -18,7 +23,6 @@ import { transition } from '@/common/model/collection/transition';
 import {
 	isCancelCollection,
 	isDownloadExport,
-	isGetStateRequest,
 	isStartCollection,
 	isToggleMascot,
 	isShowMascot,
@@ -27,10 +31,9 @@ import {
 } from '@/common/model/request-message';
 import { Effect, Ref } from 'effect';
 
-function isMascotUiRequest(message: RequestMessage): boolean {
+function claimsMascotNotifySurface(message: RequestMessage): boolean {
 	return (
 		isStartCollection(message) ||
-		isGetStateRequest(message) ||
 		isCancelCollection(message) ||
 		isDownloadExport(message)
 	);
@@ -115,7 +118,15 @@ export function handleMessageEffect(
 			yield* rememberOverlayHandoffFromSender(sender);
 		}
 
-		if (isMascotUiRequest(message)) {
+		const popupPortCountRef = yield* PopupPortCountRefTag;
+		const popupConnected = (yield* Ref.get(popupPortCountRef)) > 0;
+		if (
+			shouldClaimMascotNotifySurface({
+				claimsFromMessage: claimsMascotNotifySurface(message),
+				popupConnected,
+				senderIsExtensionPopup: isExtensionPopupSender(sender),
+			})
+		) {
 			yield* rememberMascotUiSurfaceFromSender(sender);
 		}
 

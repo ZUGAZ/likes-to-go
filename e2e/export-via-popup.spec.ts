@@ -1,6 +1,5 @@
-import type { Page, TestInfo } from '@playwright/test';
+import type { TestInfo } from '@playwright/test';
 
-import { GetStateRequest } from '@/common/model/request-message';
 import { trackCard } from '@/layout/infrastructure/layouts/badges/selectors';
 import { TRACK_LIST_CONTAINER } from '@/layout/infrastructure/selectors/shared';
 
@@ -28,7 +27,6 @@ import {
 } from './soundcloud-mock/download-capture';
 import {
 	assertExpectedBadgesExportPayload,
-	EXPECTED_VALID_TRACK_COUNT,
 	expectedExportFilenameFromExportedAt,
 } from './soundcloud-mock/expected-badges-export';
 import { installSoundCloudMockRoutes } from './soundcloud-mock/install-routes';
@@ -39,30 +37,6 @@ const SPEC_TIMEOUT_MS = 90_000;
 const COLLECTION_WAIT_MS = 80_000;
 
 test.describe.configure({ timeout: SPEC_TIMEOUT_MS });
-
-function readDoneTrackCount(value: unknown): number | undefined {
-	if (typeof value !== 'object' || value === null) {
-		return undefined;
-	}
-
-	if (!('status' in value) || !('trackCount' in value)) {
-		return undefined;
-	}
-
-	if (value.status !== 'done' || typeof value.trackCount !== 'number') {
-		return undefined;
-	}
-
-	return value.trackCount;
-}
-
-async function sendGetStateFromPopup(popup: Page): Promise<unknown> {
-	const request = GetStateRequest();
-	return popup.evaluate(async (tag: 'GetState'): Promise<unknown> => {
-		const raw: unknown = await chrome.runtime.sendMessage({ _tag: tag });
-		return raw;
-	}, request._tag);
-}
 
 async function attachLikesConsoleOnFailure(
 	testInfo: TestInfo,
@@ -127,18 +101,10 @@ test('popup start export completes against mocked likes and downloads v1 JSON', 
 		await expect(overlayHost).toBeAttached();
 		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
 
-		await expect
-			.poll(
-				async () => {
-					try {
-						return readDoneTrackCount(await sendGetStateFromPopup(popup));
-					} catch {
-						return undefined;
-					}
-				},
-				{ timeout: COLLECTION_WAIT_MS },
-			)
-			.toBe(EXPECTED_VALID_TRACK_COUNT);
+		await expect(popup.getByText(/Gathering your likes/)).toBeVisible({
+			timeout: COLLECTION_WAIT_MS,
+		});
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
 
 		await expect(
 			popup.getByRole('button', { name: 'Download backup' }),

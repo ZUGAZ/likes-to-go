@@ -55,6 +55,22 @@ export function mascotUiSurfaceFromSender(
 	return ContentOverlaySurface({ tabId });
 }
 
+export function shouldClaimMascotNotifySurface(input: {
+	readonly claimsFromMessage: boolean;
+	readonly popupConnected: boolean;
+	readonly senderIsExtensionPopup: boolean;
+}): boolean {
+	if (!input.claimsFromMessage) {
+		return false;
+	}
+
+	if (input.popupConnected && !input.senderIsExtensionPopup) {
+		return false;
+	}
+
+	return true;
+}
+
 export function rememberMascotUiSurfaceFromSender(
 	sender: chrome.runtime.MessageSender,
 ): Effect.Effect<void, never, MascotUiSurfaceRefTag> {

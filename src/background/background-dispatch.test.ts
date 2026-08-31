@@ -8,6 +8,7 @@ import { CollectionStateStorageNoop } from '@/background/infrastructure/collecti
 import {
 	ContentOverlaySurface,
 	defaultMascotUiSurface,
+	ExtensionPopupSurface,
 	getMascotUiSurfaceEffect,
 	MascotUiSurfaceRefTag,
 } from '@/background/mascot-ui-surface';
@@ -703,6 +704,59 @@ describe('background dispatch', () => {
 		);
 
 		expect(sendTabMessageMock).not.toHaveBeenCalled();
+	});
+
+	it('keeps popup notify surface when overlay GetState arrives while the popup is open', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const testLayer = Layer.mergeAll(
+			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
+			makeMascotSessionRefLayer(1),
+			makeStubCommandRunner(recordedCommands),
+			CollectionStateStorageNoop,
+			silentLoggerLayer,
+		);
+
+		const surface = await Effect.runPromise(
+			Effect.gen(function* () {
+				yield* handleMessageEffect(
+					StartCollectionRequest(),
+					{} as chrome.runtime.MessageSender,
+				);
+				yield* handleMessageEffect(GetStateRequest(), {
+					tab: { id: 42 } as chrome.tabs.Tab,
+				});
+				return yield* getMascotUiSurfaceEffect();
+			}).pipe(Effect.provide(testLayer)),
+		);
+
+		expect(surface).toEqual(ExtensionPopupSurface());
+		expect(sendTabMessageMock).not.toHaveBeenCalled();
+	});
+
+	it('does not steal overlay notify surface when popup GetState arrives mid-run', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const testLayer = Layer.mergeAll(
+			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
+			makeMascotSessionRefLayer(0),
+			makeStubCommandRunner(recordedCommands),
+			CollectionStateStorageNoop,
+			silentLoggerLayer,
+		);
+
+		const surface = await Effect.runPromise(
+			Effect.gen(function* () {
+				yield* handleMessageEffect(StartCollectionRequest(), {
+					tab: { id: 42 } as chrome.tabs.Tab,
+				});
+				yield* handleMessageEffect(
+					GetStateRequest(),
+					{} as chrome.runtime.MessageSender,
+				);
+				return yield* getMascotUiSurfaceEffect();
+			}).pipe(Effect.provide(testLayer)),
+		);
+
+		expect(surface).toEqual(ContentOverlaySurface({ tabId: 42 }));
 	});
 
 	it('does not auto-show the overlay for an overlay-started export', async () => {

@@ -4,6 +4,7 @@ import {
 	ContentOverlaySurface,
 	ExtensionPopupSurface,
 	mascotUiSurfaceFromSender,
+	shouldClaimMascotNotifySurface,
 } from '@/background/mascot-ui-surface';
 import { resolveMascotNotifyDestination } from '@/background/resolve-mascot-notify-destination';
 
@@ -30,6 +31,48 @@ describe('mascotUiSurfaceFromSender', () => {
 				tab: { id: 42 } as chrome.tabs.Tab,
 			}),
 		).toEqual(ContentOverlaySurface({ tabId: 42 }));
+	});
+});
+
+describe('shouldClaimMascotNotifySurface', () => {
+	it('does not claim from GetState', () => {
+		expect(
+			shouldClaimMascotNotifySurface({
+				claimsFromMessage: false,
+				popupConnected: false,
+				senderIsExtensionPopup: false,
+			}),
+		).toBe(false);
+	});
+
+	it('keeps popup as the Beat when an overlay sender arrives while the popup is open', () => {
+		expect(
+			shouldClaimMascotNotifySurface({
+				claimsFromMessage: true,
+				popupConnected: true,
+				senderIsExtensionPopup: false,
+			}),
+		).toBe(false);
+	});
+
+	it('claims from popup StartCollection while the popup is open', () => {
+		expect(
+			shouldClaimMascotNotifySurface({
+				claimsFromMessage: true,
+				popupConnected: true,
+				senderIsExtensionPopup: true,
+			}),
+		).toBe(true);
+	});
+
+	it('claims from overlay StartCollection when the popup is gone', () => {
+		expect(
+			shouldClaimMascotNotifySurface({
+				claimsFromMessage: true,
+				popupConnected: false,
+				senderIsExtensionPopup: false,
+			}),
+		).toBe(true);
 	});
 });
 

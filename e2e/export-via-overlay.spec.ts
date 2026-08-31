@@ -206,8 +206,8 @@ function readEvaluateReturnedValue(value: unknown): unknown {
 
 /**
  * GetState from the likes tab's isolated content-script world.
- * Opening popup.html (sendGetState) remembers ExtensionPopup as the notify
- * surface and starves the overlay of `done`. Do not use that helper here.
+ * Popup-page sendGetState would talk to the background from an extension
+ * page, not this overlay's content-script listener.
  */
 async function attachContentWorldGetState(page: Page): Promise<{
 	readonly send: () => Promise<unknown>;
