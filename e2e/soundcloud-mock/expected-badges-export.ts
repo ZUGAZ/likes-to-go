@@ -1,7 +1,9 @@
 import { expect } from '@playwright/test';
 
 import { exportBackupFilename } from '@/common/model/export-backup-filename';
+import { renderExportBody } from '@/common/model/export-format/render-export-body';
 import type { ExportPayload } from '@/common/model/exporter';
+import type { Track } from '@/common/model/track';
 
 import { SOUNDCLOUD_LIKES_URL } from './constants';
 
@@ -92,6 +94,21 @@ export function expectedExportFilenameFromExportedAt(
 	exportedAt: string,
 ): string {
 	return exportBackupFilename(new Date(exportedAt), 'json');
+}
+
+function expectedBadgesModelTracks(): readonly Track[] {
+	return EXPECTED_BADGES_EXPORT_TRACKS.map((track) => ({
+		title: track.title,
+		artist: track.artist,
+		url: new URL(track.url),
+	}));
+}
+
+export function assertExpectedBadgesExportCsv(body: string): void {
+	expect(body).toBe(renderExportBody('csv', expectedBadgesModelTracks()));
+	expect(body.startsWith('title,artist')).toBe(true);
+	expect(body.split('\n')).toHaveLength(EXPECTED_VALID_TRACK_COUNT + 1);
+	expect(body).not.toContain('http');
 }
 
 export function assertExpectedBadgesExportPayload(

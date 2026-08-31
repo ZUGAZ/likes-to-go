@@ -26,6 +26,7 @@ import {
 	waitForCapturedSave,
 } from './soundcloud-mock/save-capture';
 import {
+	assertExpectedBadgesExportCsv,
 	assertExpectedBadgesExportPayload,
 	expectedExportFilenameFromExportedAt,
 } from './soundcloud-mock/expected-badges-export';
@@ -193,6 +194,90 @@ test('popup-started export shows the likes overlay after the popup closes', asyn
 		const captured = await waitForCapturedSave(saveCapture);
 		assertExpectedBadgesExportPayload(decodeSavedExportJson(captured.body));
 		expect(routes.continuedToNetwork()).toEqual([]);
+	} catch (error) {
+		await attachConsoleOnFailure(testInfo, popupConsole);
+		if (likesConsole !== undefined) {
+			await attachLikesConsoleOnFailure(testInfo, likesConsole);
+		}
+		throw error;
+	}
+});
+
+test('popup selects CSV and downloads backup against mocked likes', async ({
+	context,
+	extensionId,
+}, testInfo) => {
+	const routes = await installSoundCloudMockRoutes(context);
+	await seedSoundCloudSessionCookie(context, SESSION_COOKIE_VALUE);
+
+	const serviceWorker = await waitForExtensionServiceWorker(context);
+
+	const popup = await context.newPage();
+	const popupConsole = installConsoleCapture(popup);
+	let likesConsole: ConsoleCapture | undefined;
+
+	try {
+		await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+
+		await expect(
+			popup.getByRole('heading', { name: 'Likes to Go', level: 1 }),
+		).toBeVisible();
+		await expect(popup.locator('main.beat-root')).toBeVisible();
+
+		const startExport = popup.getByRole('button', { name: 'Start export' });
+		await expect(startExport).toBeVisible();
+
+		const likesPagePromise = context.waitForEvent('page');
+		await startExport.click();
+		const likesPage = await likesPagePromise;
+		likesConsole = installConsoleCapture(likesPage);
+
+		await expect(likesPage).toHaveURL(SOUNDCLOUD_LIKES_URL);
+		expect(new URL(likesPage.url()).origin).toBe(SOUNDCLOUD_ORIGIN);
+		expect(new URL(likesPage.url()).pathname).toBe(SOUNDCLOUD_LIKES_PATH);
+
+		await expect(likesPage.locator(USER_NAV_SELECTOR)).toHaveCount(1);
+		await expect(likesPage.locator(TRACK_LIST_CONTAINER)).toBeVisible();
+		await expect(likesPage.locator(trackCard).first()).toBeVisible();
+		await expect(likesPage.locator(LOADING_INDICATOR_SELECTOR)).toHaveCount(0);
+
+		expect(routes.documentUrls()).toContain(SOUNDCLOUD_LIKES_URL);
+		expect(routes.continuedToNetwork()).toEqual([]);
+
+		await waitForTabId(serviceWorker, SOUNDCLOUD_LIKES_URL);
+
+		const overlayHost = likesPage.locator(OVERLAY_HOST_SELECTOR);
+		await expect(overlayHost).toBeAttached();
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
+
+		await expect(popup.getByText(/Gathering your likes/)).toBeVisible({
+			timeout: COLLECTION_WAIT_MS,
+		});
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
+
+		await expect(
+			popup.getByRole('button', { name: 'Download backup' }),
+		).toBeVisible({ timeout: COLLECTION_WAIT_MS });
+
+		await expect(
+			popup.getByRole('group', { name: 'Backup format' }),
+		).toBeVisible();
+		await popup.getByText('CSV', { exact: true }).click();
+		await expect(popup.getByRole('radio', { name: /^CSV/ })).toBeChecked();
+
+		const saveCapture = await installSaveCapture(popup);
+		await popup.getByRole('button', { name: 'Download backup' }).click();
+
+		const captured = await waitForCapturedSave(saveCapture);
+		assertExpectedBadgesExportCsv(captured.body);
+		expect(captured.filename).toMatch(/^likes-to-go-\d{4}-\d{2}-\d{2}\.csv$/);
+
+		expect(routes.continuedToNetwork()).toEqual([]);
+
+		await expect(
+			popup.getByRole('button', { name: 'Start export' }),
+		).toBeVisible();
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
 	} catch (error) {
 		await attachConsoleOnFailure(testInfo, popupConsole);
 		if (likesConsole !== undefined) {

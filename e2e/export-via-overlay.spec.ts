@@ -413,6 +413,12 @@ test('overlay start export completes against mocked likes and downloads v1 JSON'
 			name: 'Download backup',
 		});
 		await expect(downloadBackup).toBeVisible({ timeout: COLLECTION_WAIT_MS });
+		await expect(
+			overlayHost.getByRole('group', { name: 'Backup format' }),
+		).toBeVisible();
+		await expect(
+			overlayHost.getByRole('radio', { name: /^JSON/ }),
+		).toBeChecked();
 
 		const saveCapture = await installSaveCapture(likesPage);
 		await downloadBackup.click();
