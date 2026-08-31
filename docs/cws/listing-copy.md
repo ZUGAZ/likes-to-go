@@ -21,9 +21,14 @@ How it works:
    - On a SoundCloud tab, I appear in-page.
    - On other tabs, the icon opens the popup — same me, same buttons.
 3. Click Start export.
-4. When I'm done, click Download backup to save your file.
+4. When I'm done, pick a format, then click Download backup to save your file.
 
-Your backup includes track title, artist, URL, and optional artwork or user links when they're available on the page.
+You pick the format after I finish. One collection. JSON is the full backup.
+
+JSON: Your full backup — keep it, or drop it in a chat.
+CSV: Title and artist — Soundiiz, Sockseek, TuneMyMusic.
+Text: Artist then title — Nicotine+, Sockseek, Soundiiz.
+M3U: Track links — not a playable stream.
 
 ## 🔒 Privacy
 
@@ -34,7 +39,7 @@ Your backup includes track title, artist, URL, and optional artwork or user link
 
 ## 🛡️ Privacy justification text (store form draft)
 
-Likes to Go processes SoundCloud page data locally in the browser to create a user-initiated JSON export. It does not send personal data to external servers, does not use analytics, and does not collect payment or authentication data.
+Likes to Go processes SoundCloud page data locally in the browser to create a user-initiated backup export. It does not send personal data to external servers, does not use analytics, and does not collect payment or authentication data.
 
 ## 🧰 Asset inventory
 

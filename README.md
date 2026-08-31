@@ -10,7 +10,7 @@ You have hundreds (or thousands) of liked tracks on SoundCloud. I'll save them a
 
 - Open your SoundCloud likes page
 - Click the Likes to Go ❤️ icon in your browser toolbar to call me up, then hit **Start export**
-- Get a file with every track: title, artist, URL, artwork, and more
+- Pick JSON, CSV, Text, or M3U and download your backup. JSON is the full backup.
 
 That's it. Your likes, your file, your hard drive.
 
@@ -40,7 +40,7 @@ Dev mode doesn't auto-update — repeat these steps for each new release.
    - On a **SoundCloud** tab, I appear **in-page**.
    - On **other** tabs, the icon opens the **popup** — same me, same buttons.
 3. Click **Start export**.
-4. When I'm done, click **Download backup** to save your file.
+4. When I'm done, pick a format, then click **Download backup** to save your file.
 
 ## 📚 Learn more
 

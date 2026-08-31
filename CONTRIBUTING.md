@@ -219,7 +219,7 @@ pnpm test:run
 DOM reader fixtures live in `tests/fixtures/`:
 
 - `badges-view.html` — Badges view card structure
-- `list-view.html` — List view card structure (including optional metadata markup used by list-only export fields)
+- `list-view.html` — List view card structure (fixture may still contain tags/counts markup; we ignore them)
 
 When SoundCloud markup changes, update the layout under `src/layout/infrastructure/layouts/` and the matching fixture.
 
