@@ -60,6 +60,15 @@ describe('collectionStateToDownloadExportResponse', () => {
 		expect(response.exportBody).not.toContain('s:"');
 	});
 
+	it('sets exportBody to M3U when format is m3u', () => {
+		const tracks = [validTrack()];
+		const saving = Saving({ tracks, skippedTrackCount: 0 });
+		const response = collectionStateToDownloadExportResponse(saving, 'm3u');
+		expect(response.exportBody).toBe(
+			'#EXTM3U\n#EXTINF:-1,Artist - Track\nhttps://soundcloud.com/artist/track\n',
+		);
+	});
+
 	it('includes skippedTrackCount for Done and Saving', () => {
 		const tracks = [validTrack()];
 		expect(

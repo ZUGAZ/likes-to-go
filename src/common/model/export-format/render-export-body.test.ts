@@ -45,4 +45,22 @@ describe('renderExportBody', () => {
 			'Daft Punk - Around the World\n',
 		);
 	});
+
+	it('renders M3U as EXTINF bookmarks with page URLs', () => {
+		const tracks = [
+			{
+				title: 'Title One',
+				artist: 'Artist One',
+				url: new URL('https://soundcloud.com/artist-one/title-one'),
+			},
+			{
+				title: 'Title Two',
+				artist: 'Artist Two',
+				url: new URL('https://soundcloud.com/artist-two/title-two'),
+			},
+		];
+		expect(renderExportBody('m3u', tracks)).toBe(
+			'#EXTM3U\n#EXTINF:-1,Artist One - Title One\nhttps://soundcloud.com/artist-one/title-one\n#EXTINF:-1,Artist Two - Title Two\nhttps://soundcloud.com/artist-two/title-two\n',
+		);
+	});
 });

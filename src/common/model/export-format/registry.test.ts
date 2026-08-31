@@ -12,7 +12,7 @@ import { Either, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
 
 describe('export format registry', () => {
-	it('decodes json, csv, and txt and rejects unknown format ids', () => {
+	it('decodes json, csv, txt, and m3u and rejects unknown format ids', () => {
 		expect(
 			Either.isRight(Schema.decodeUnknownEither(ExportFormatIdSchema)('json')),
 		).toBe(true);
@@ -21,6 +21,9 @@ describe('export format registry', () => {
 		).toBe(true);
 		expect(
 			Either.isRight(Schema.decodeUnknownEither(ExportFormatIdSchema)('txt')),
+		).toBe(true);
+		expect(
+			Either.isRight(Schema.decodeUnknownEither(ExportFormatIdSchema)('m3u')),
 		).toBe(true);
 		expect(
 			Either.isLeft(Schema.decodeUnknownEither(ExportFormatIdSchema)('')),
@@ -35,14 +38,16 @@ describe('export format registry', () => {
 		expect(resolveExportFormatId({ format: 'json' })).toBe('json');
 		expect(resolveExportFormatId({ format: 'csv' })).toBe('csv');
 		expect(resolveExportFormatId({ format: 'txt' })).toBe('txt');
+		expect(resolveExportFormatId({ format: 'm3u' })).toBe('m3u');
 	});
 
-	it('defaults to json and lists JSON, CSV, then Text', () => {
+	it('defaults to json and lists JSON, CSV, Text, then M3U', () => {
 		expect(defaultExportFormatId()).toBe('json');
 		expect(listExportFormats().map((format) => format.id)).toEqual([
 			'json',
 			'csv',
 			'txt',
+			'm3u',
 		]);
 	});
 
@@ -90,6 +95,20 @@ describe('export format registry', () => {
 			{
 				description: 'Text',
 				accept: { 'text/plain': ['.txt'] },
+			},
+		]);
+	});
+
+	it('returns locked M3U metadata', () => {
+		const format = getExportFormat('m3u');
+		expect(format.id).toBe('m3u');
+		expect(format.label).toBe('M3U');
+		expect(format.extension).toBe('m3u');
+		expect(format.worksWith).toBe('Track links — not a playable stream.');
+		expect(format.pickerTypes).toEqual([
+			{
+				description: 'M3U playlist',
+				accept: { 'audio/x-mpegurl': ['.m3u'] },
 			},
 		]);
 	});

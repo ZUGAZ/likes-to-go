@@ -32,6 +32,12 @@ describe('DownloadExport', () => {
 			);
 		});
 
+		it('constructor with m3u format produces a value that satisfies the guard', () => {
+			expect(isDownloadExport(DownloadExportRequest({ format: 'm3u' }))).toBe(
+				true,
+			);
+		});
+
 		it('rejects a different request tag', () => {
 			expect(isDownloadExport(StartCollectionRequest())).toBe(false);
 		});
@@ -81,6 +87,18 @@ describe('DownloadExport', () => {
 			expect(result.right.format).toBe('txt');
 		});
 
+		it('decodes a payload with format m3u', () => {
+			const result = Schema.decodeUnknownEither(DownloadExportSchema)({
+				_tag: 'DownloadExport',
+				format: 'm3u',
+			});
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isLeft(result)) {
+				throw new Error('Expected Right');
+			}
+			expect(result.right.format).toBe('m3u');
+		});
+
 		it('rejects an unknown format id', () => {
 			const result = Schema.decodeUnknownEither(DownloadExportSchema)({
 				_tag: 'DownloadExport',
@@ -116,6 +134,14 @@ describe('DownloadExport', () => {
 			const result = parseRequestMessage({
 				_tag: 'DownloadExport',
 				format: 'txt',
+			});
+			expect(Either.isRight(result)).toBe(true);
+		});
+
+		it('returns Right for DownloadExport with format m3u', () => {
+			const result = parseRequestMessage({
+				_tag: 'DownloadExport',
+				format: 'm3u',
 			});
 			expect(Either.isRight(result)).toBe(true);
 		});

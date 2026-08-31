@@ -1,6 +1,6 @@
 import { Schema } from 'effect';
 
-export const ExportFormatIdSchema = Schema.Literal('json', 'csv', 'txt');
+export const ExportFormatIdSchema = Schema.Literal('json', 'csv', 'txt', 'm3u');
 
 export type ExportFormatId = Schema.Schema.Type<typeof ExportFormatIdSchema>;
 
