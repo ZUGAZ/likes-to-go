@@ -13,11 +13,11 @@ const TXT_PICKER_TYPES: readonly SaveFilePickerType[] = [
 
 const LINE_BREAK = /\r\n|\n|\r/g;
 
-export function sanitizeExportLineField(value: string): string {
+function sanitizeExportLineField(value: string): string {
 	return value.replace(LINE_BREAK, ' ');
 }
 
-export function formatArtistTitleLine(track: Track): string {
+function formatArtistTitleLine(track: Track): string {
 	return `${sanitizeExportLineField(track.artist)} - ${sanitizeExportLineField(track.title)}`;
 }
 
