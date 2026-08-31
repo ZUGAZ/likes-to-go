@@ -32,6 +32,12 @@ export {
 	ToggleMascotSchema,
 } from './toggle-mascot';
 
+export {
+	isShowMascot,
+	ShowMascotRequest,
+	ShowMascotSchema,
+} from './show-mascot';
+
 export { GetStateResponseSchema } from './get-state-response';
 export type {
 	CollectionStatus,

@@ -10,6 +10,11 @@ import {
 	defaultMascotUiSurface,
 	MascotUiSurfaceRefTag,
 } from '@/background/mascot-ui-surface';
+import {
+	defaultOverlayHandoff,
+	OverlayHandoffRefTag,
+	PopupPortCountRefTag,
+} from '@/background/overlay-handoff';
 import { StateRefTag } from '@/background/state-ref';
 
 const StateRefLive: Layer.Layer<StateRefTag> = Layer.effect(
@@ -29,6 +34,16 @@ const MascotUiSurfaceRefLive: Layer.Layer<MascotUiSurfaceRefTag> = Layer.effect(
 	Ref.make(defaultMascotUiSurface()),
 );
 
+const OverlayHandoffRefLive: Layer.Layer<OverlayHandoffRefTag> = Layer.effect(
+	OverlayHandoffRefTag,
+	Ref.make(defaultOverlayHandoff()),
+);
+
+const PopupPortCountRefLive: Layer.Layer<PopupPortCountRefTag> = Layer.effect(
+	PopupPortCountRefTag,
+	Ref.make(0),
+);
+
 const CommandRunnerLive: Layer.Layer<CommandRunnerTag> = Layer.succeed(
 	CommandRunnerTag,
 	{ run: runCommand },
@@ -37,6 +52,8 @@ const CommandRunnerLive: Layer.Layer<CommandRunnerTag> = Layer.succeed(
 export const BackgroundLive = Layer.mergeAll(
 	StateRefLive,
 	MascotUiSurfaceRefLive,
+	OverlayHandoffRefLive,
+	PopupPortCountRefLive,
 	CommandRunnerLive,
 	CollectionStateStorageLive,
 	HeartLoggerLive,

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, layer } from '@effect/vitest';
 import { Effect, Fiber, TestClock, TestContext } from 'effect';
 import { vi } from 'vitest';
 import {
+	runShowMascotOnTabEffect,
 	runToggleMascotOnTabEffect,
 	syncAllTabsActionPopupEffect,
 	syncTabActionPopupEffect,
@@ -10,7 +11,10 @@ import {
 import { ACTION_DEFAULT_POPUP_PATH } from '@/background/action-popup-path';
 import { sendToTabEffect } from '@/common/infrastructure/chrome-messaging';
 import { SendToTabMessagingFailed } from '@/common/infrastructure/send-to-tab';
-import { ToggleMascotRequest } from '@/common/model/request-message';
+import {
+	ShowMascotRequest,
+	ToggleMascotRequest,
+} from '@/common/model/request-message';
 import { makeCapturingLogger } from '@/test/effect-log-test';
 
 vi.mock('@/common/infrastructure/chrome-messaging', () => ({
@@ -187,6 +191,21 @@ describe('action-popup-controller', () => {
 							]),
 						);
 					}).pipe(Effect.provide(TestContext.TestContext)),
+			);
+		});
+	});
+
+	describe('runShowMascotOnTabEffect', () => {
+		layer(makeCapturingLogger().layer)((it) => {
+			it.effect('sends ShowMascot to the tab', () =>
+				Effect.gen(function* () {
+					yield* runShowMascotOnTabEffect(7);
+
+					expect(sendToTabEffectMock).toHaveBeenCalledWith(
+						7,
+						ShowMascotRequest(),
+					);
+				}),
 			);
 		});
 	});

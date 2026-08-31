@@ -14,6 +14,8 @@ import { waitForExtensionServiceWorker } from './launch-extension';
 import { waitForTabId } from './soundcloud-mock/background-rpc';
 import {
 	LOADING_INDICATOR_SELECTOR,
+	OVERLAY_HOST_SELECTOR,
+	OVERLAY_ROOT_SELECTOR,
 	SOUNDCLOUD_LIKES_PATH,
 	SOUNDCLOUD_LIKES_URL,
 	SOUNDCLOUD_ORIGIN,
@@ -121,6 +123,10 @@ test('popup start export completes against mocked likes and downloads v1 JSON', 
 
 		await waitForTabId(serviceWorker, SOUNDCLOUD_LIKES_URL);
 
+		const overlayHost = likesPage.locator(OVERLAY_HOST_SELECTOR);
+		await expect(overlayHost).toBeAttached();
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
+
 		await expect
 			.poll(
 				async () => {
@@ -154,6 +160,72 @@ test('popup start export completes against mocked likes and downloads v1 JSON', 
 		await expect(
 			popup.getByRole('button', { name: 'Start export' }),
 		).toBeVisible();
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
+	} catch (error) {
+		await attachConsoleOnFailure(testInfo, popupConsole);
+		if (likesConsole !== undefined) {
+			await attachLikesConsoleOnFailure(testInfo, likesConsole);
+		}
+		throw error;
+	}
+});
+
+test('popup-started export shows the likes overlay after the popup closes', async ({
+	context,
+	extensionId,
+}, testInfo) => {
+	const routes = await installSoundCloudMockRoutes(context);
+	await seedSoundCloudSessionCookie(context, SESSION_COOKIE_VALUE);
+
+	const serviceWorker = await waitForExtensionServiceWorker(context);
+	await installDownloadCapture(serviceWorker);
+
+	const popup = await context.newPage();
+	const popupConsole = installConsoleCapture(popup);
+	let likesConsole: ConsoleCapture | undefined;
+
+	try {
+		await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+
+		await expect(
+			popup.getByRole('heading', { name: 'Likes to Go', level: 1 }),
+		).toBeVisible();
+
+		const likesPagePromise = context.waitForEvent('page');
+		await popup.getByRole('button', { name: 'Start export' }).click();
+		const likesPage = await likesPagePromise;
+		likesConsole = installConsoleCapture(likesPage);
+
+		await expect(likesPage).toHaveURL(SOUNDCLOUD_LIKES_URL);
+		await expect(likesPage.locator(USER_NAV_SELECTOR)).toHaveCount(1);
+		await expect(likesPage.locator(TRACK_LIST_CONTAINER)).toBeVisible();
+		await expect(likesPage.locator(trackCard).first()).toBeVisible();
+
+		const overlayHost = likesPage.locator(OVERLAY_HOST_SELECTOR);
+		await expect(overlayHost).toBeAttached();
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'true');
+
+		await waitForTabId(serviceWorker, SOUNDCLOUD_LIKES_URL);
+		await popup.close();
+
+		await expect(overlayHost).toHaveAttribute('aria-hidden', 'false');
+		await expect(overlayHost.locator(OVERLAY_ROOT_SELECTOR)).toBeVisible();
+		await expect(
+			overlayHost.getByRole('heading', { name: 'Likes to Go', level: 1 }),
+		).toBeVisible();
+		await expect(
+			overlayHost.getByRole('button', { name: /^(Stop|Download backup)$/ }),
+		).toBeVisible({ timeout: COLLECTION_WAIT_MS });
+
+		const downloadBackup = overlayHost.getByRole('button', {
+			name: 'Download backup',
+		});
+		await expect(downloadBackup).toBeVisible({ timeout: COLLECTION_WAIT_MS });
+		await downloadBackup.click();
+
+		const captured = await waitForCapturedDownload(serviceWorker);
+		assertExpectedBadgesExportPayload(decodeExportDataUrl(captured.url));
+		expect(routes.continuedToNetwork()).toEqual([]);
 	} catch (error) {
 		await attachConsoleOnFailure(testInfo, popupConsole);
 		if (likesConsole !== undefined) {

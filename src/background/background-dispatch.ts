@@ -1,6 +1,11 @@
 import { CommandRunnerTag } from '@/background/command-runner';
 import { CollectionStateStorageTag } from '@/background/infrastructure/collection-state-storage';
 import { rememberMascotUiSurfaceFromSender } from '@/background/mascot-ui-surface';
+import {
+	maybeRevealOverlayEffect,
+	rememberOverlayHandoffFromSender,
+	resetOverlayHandoffEffect,
+} from '@/background/overlay-handoff';
 import type { BackgroundEnv } from '@/background/runtime/background-env';
 import { StateRefTag } from '@/background/state-ref';
 import type { CollectionCommand } from '@/common/model/collection/command';
@@ -16,6 +21,7 @@ import {
 	isGetStateRequest,
 	isStartCollection,
 	isToggleMascot,
+	isShowMascot,
 	type GetStateResponse,
 	type RequestMessage,
 } from '@/common/model/request-message';
@@ -78,6 +84,7 @@ export function dispatchEffect(
 		);
 
 		yield* Effect.forEach(result.commands, runCommandEffect);
+		yield* maybeRevealOverlayEffect();
 	}).pipe(Effect.withLogSpan('Dispatch'));
 }
 
@@ -91,13 +98,21 @@ export function handleMessageEffect(
 			senderFrameId: sender.frameId,
 		});
 
-		if (isToggleMascot(message)) {
+		if (isToggleMascot(message) || isShowMascot(message)) {
 			yield* Effect.logWarning(
-				'ToggleMascot received by background; this is a content-only message',
+				`${message._tag} received by background; this is a content-only message`,
 			);
 			const ref = yield* StateRefTag;
 			const state = yield* Ref.get(ref);
 			return collectionStateToGetStateResponse(state);
+		}
+
+		if (isCancelCollection(message)) {
+			yield* resetOverlayHandoffEffect();
+		}
+
+		if (isStartCollection(message)) {
+			yield* rememberOverlayHandoffFromSender(sender);
 		}
 
 		if (isMascotUiRequest(message)) {

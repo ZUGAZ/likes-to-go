@@ -12,6 +12,18 @@ describe('mascotUiSurfaceFromSender', () => {
 		expect(mascotUiSurfaceFromSender({})).toEqual(ExtensionPopupSurface());
 	});
 
+	it('maps extension-page senders with a tab to ExtensionPopup', () => {
+		expect(
+			mascotUiSurfaceFromSender({
+				url: 'chrome-extension://id/popup.html',
+				tab: {
+					id: 9,
+					url: 'chrome-extension://id/popup.html',
+				} as chrome.tabs.Tab,
+			}),
+		).toEqual(ExtensionPopupSurface());
+	});
+
 	it('maps content-script senders to ContentOverlay with tab id', () => {
 		expect(
 			mascotUiSurfaceFromSender({

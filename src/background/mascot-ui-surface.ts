@@ -25,13 +25,33 @@ export class MascotUiSurfaceRefTag extends Context.Tag('MascotUiSurfaceRef')<
 	Ref.Ref<MascotUiSurface>
 >() {}
 
+export function isExtensionPopupSender(
+	sender: chrome.runtime.MessageSender,
+): boolean {
+	if (sender.tab?.id === undefined) {
+		return true;
+	}
+
+	const senderUrl = sender.url ?? sender.tab.url;
+	if (senderUrl === undefined) {
+		return false;
+	}
+
+	return senderUrl.startsWith('chrome-extension:');
+}
+
 export function mascotUiSurfaceFromSender(
 	sender: chrome.runtime.MessageSender,
 ): MascotUiSurface {
+	if (isExtensionPopupSender(sender)) {
+		return ExtensionPopupSurface();
+	}
+
 	const tabId = sender.tab?.id;
 	if (tabId === undefined) {
 		return ExtensionPopupSurface();
 	}
+
 	return ContentOverlaySurface({ tabId });
 }
 

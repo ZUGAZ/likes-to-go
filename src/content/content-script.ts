@@ -16,6 +16,7 @@ export async function initContentScript(
 
 			const handler = createContentMessageHandler(runtime, ctx, {
 				onToggleMascot: visibility.toggle,
+				onShowMascot: visibility.summon,
 				isMascotVisible: visibility.isVisible,
 			});
 

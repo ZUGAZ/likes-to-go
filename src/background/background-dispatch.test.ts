@@ -6,9 +6,16 @@ import { handleCollectionTabNavigationEffect } from '@/background/collection-tab
 import { CommandRunnerTag } from '@/background/command-runner';
 import { CollectionStateStorageNoop } from '@/background/infrastructure/collection-state-storage';
 import {
+	ContentOverlaySurface,
 	defaultMascotUiSurface,
+	getMascotUiSurfaceEffect,
 	MascotUiSurfaceRefTag,
 } from '@/background/mascot-ui-surface';
+import {
+	defaultOverlayHandoff,
+	OverlayHandoffRefTag,
+	PopupPortCountRefTag,
+} from '@/background/overlay-handoff';
 import { StateRefTag } from '@/background/state-ref';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
@@ -24,6 +31,8 @@ import { initialCollectionState } from '@/common/model/collection/transition';
 import {
 	CancelCollectionRequest,
 	GetStateRequest,
+	isShowMascot,
+	ShowMascotRequest,
 	StartCollectionRequest,
 	type GetStateResponse,
 } from '@/common/model/request-message';
@@ -99,10 +108,17 @@ function tabsToSource(tabs: readonly TestTab[]): Source {
 	return isSoundCloudUrl(tabs[0]?.url) ? 'active-soundcloud-tab' : 'likes-page';
 }
 
-const mascotUiSurfaceRefLayer = Layer.effect(
-	MascotUiSurfaceRefTag,
-	Ref.make(defaultMascotUiSurface()),
-);
+function makeMascotSessionRefLayer(
+	popupPortCount = 0,
+): Layer.Layer<
+	MascotUiSurfaceRefTag | OverlayHandoffRefTag | PopupPortCountRefTag
+> {
+	return Layer.mergeAll(
+		Layer.effect(MascotUiSurfaceRefTag, Ref.make(defaultMascotUiSurface())),
+		Layer.effect(OverlayHandoffRefTag, Ref.make(defaultOverlayHandoff())),
+		Layer.effect(PopupPortCountRefTag, Ref.make(popupPortCount)),
+	);
+}
 
 describe('background dispatch', () => {
 	type GetCookie = (details: {
@@ -110,12 +126,16 @@ describe('background dispatch', () => {
 		readonly name: string;
 	}) => Promise<chrome.cookies.Cookie | null>;
 	type QueryTabs = (queryInfo: chrome.tabs.QueryInfo) => Promise<TestTab[]>;
+	type SendTabMessage = (tabId: number, message: unknown) => Promise<unknown>;
 	const getCookieMock = vi.fn<GetCookie>();
 	const queryTabsMock = vi.fn<QueryTabs>();
+	const sendTabMessageMock = vi.fn<SendTabMessage>();
 
 	beforeEach(() => {
 		getCookieMock.mockReset();
 		queryTabsMock.mockReset();
+		sendTabMessageMock.mockReset();
+		sendTabMessageMock.mockResolvedValue(undefined);
 		getCookieMock.mockResolvedValue({
 			domain: 'soundcloud.com',
 			expirationDate: 1,
@@ -145,6 +165,7 @@ describe('background dispatch', () => {
 				},
 				tabs: {
 					query: queryTabsMock,
+					sendMessage: sendTabMessageMock,
 				},
 			},
 		});
@@ -159,7 +180,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -215,7 +236,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -263,7 +284,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -313,7 +334,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -355,7 +376,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -398,7 +419,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -443,7 +464,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -492,7 +513,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -530,7 +551,7 @@ describe('background dispatch', () => {
 		);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -564,7 +585,7 @@ describe('background dispatch', () => {
 		const runnerLayer = makeStubCommandRunner(recordedCommands);
 		const testLayer = Layer.mergeAll(
 			stateRefLayer,
-			mascotUiSurfaceRefLayer,
+			makeMascotSessionRefLayer(),
 			runnerLayer,
 			CollectionStateStorageNoop,
 			silentLoggerLayer,
@@ -591,5 +612,157 @@ describe('background dispatch', () => {
 		expect(recordedCommands.length).toBe(2);
 		expect(recordedCommands[0]).toMatchObject({ _tag: 'NotifyPopup' });
 		expect(recordedCommands[1]).toMatchObject({ _tag: 'CheckLogin' });
+	});
+
+	it('reveals the likes-tab overlay after a popup-started export when the popup is gone', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const testLayer = Layer.mergeAll(
+			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
+			makeMascotSessionRefLayer(0),
+			makeStubCommandRunner(recordedCommands),
+			CollectionStateStorageNoop,
+			silentLoggerLayer,
+		);
+
+		const program = Effect.gen(function* () {
+			yield* handleMessageEffect(
+				StartCollectionRequest(),
+				{} as chrome.runtime.MessageSender,
+			);
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/you/likes',
+					tabId: 42,
+				}),
+			);
+			return yield* getMascotUiSurfaceEffect();
+		}).pipe(Effect.provide(testLayer));
+
+		const surface = await Effect.runPromise(program);
+
+		expect(surface).toEqual(ContentOverlaySurface({ tabId: 42 }));
+		expect(sendTabMessageMock).toHaveBeenCalledWith(42, ShowMascotRequest());
+	});
+
+	it('reveals after a popup-as-tab export when that extension page closes', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const testLayer = Layer.mergeAll(
+			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
+			makeMascotSessionRefLayer(0),
+			makeStubCommandRunner(recordedCommands),
+			CollectionStateStorageNoop,
+			silentLoggerLayer,
+		);
+
+		const program = Effect.gen(function* () {
+			yield* handleMessageEffect(StartCollectionRequest(), {
+				url: 'chrome-extension://id/popup.html',
+				tab: {
+					id: 99,
+					url: 'chrome-extension://id/popup.html',
+				} as chrome.tabs.Tab,
+			});
+			yield* dispatchEffect(
+				CollectionTabSelected({
+					sourceUrl: 'https://soundcloud.com/you/likes',
+					tabId: 42,
+				}),
+			);
+			return yield* getMascotUiSurfaceEffect();
+		}).pipe(Effect.provide(testLayer));
+
+		const surface = await Effect.runPromise(program);
+
+		expect(surface).toEqual(ContentOverlaySurface({ tabId: 42 }));
+		expect(sendTabMessageMock).toHaveBeenCalledWith(42, ShowMascotRequest());
+	});
+
+	it('does not auto-show the overlay when the popup is still open', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const testLayer = Layer.mergeAll(
+			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
+			makeMascotSessionRefLayer(1),
+			makeStubCommandRunner(recordedCommands),
+			CollectionStateStorageNoop,
+			silentLoggerLayer,
+		);
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				yield* handleMessageEffect(
+					StartCollectionRequest(),
+					{} as chrome.runtime.MessageSender,
+				);
+				yield* dispatchEffect(
+					CollectionTabSelected({
+						sourceUrl: 'https://soundcloud.com/you/likes',
+						tabId: 42,
+					}),
+				);
+			}).pipe(Effect.provide(testLayer)),
+		);
+
+		expect(sendTabMessageMock).not.toHaveBeenCalled();
+	});
+
+	it('does not auto-show the overlay for an overlay-started export', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const testLayer = Layer.mergeAll(
+			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
+			makeMascotSessionRefLayer(0),
+			makeStubCommandRunner(recordedCommands),
+			CollectionStateStorageNoop,
+			silentLoggerLayer,
+		);
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				yield* handleMessageEffect(StartCollectionRequest(), {
+					tab: { id: 42 } as chrome.tabs.Tab,
+				});
+				yield* dispatchEffect(
+					CollectionTabSelected({
+						sourceUrl: 'https://soundcloud.com/you/likes',
+						tabId: 42,
+					}),
+				);
+			}).pipe(Effect.provide(testLayer)),
+		);
+
+		expect(
+			sendTabMessageMock.mock.calls.filter((call) => isShowMascot(call[1])),
+		).toEqual([]);
+	});
+
+	it('does not re-summon the overlay after it was already revealed', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const testLayer = Layer.mergeAll(
+			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
+			makeMascotSessionRefLayer(0),
+			makeStubCommandRunner(recordedCommands),
+			CollectionStateStorageNoop,
+			silentLoggerLayer,
+		);
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				yield* handleMessageEffect(
+					StartCollectionRequest(),
+					{} as chrome.runtime.MessageSender,
+				);
+				yield* dispatchEffect(
+					CollectionTabSelected({
+						sourceUrl: 'https://soundcloud.com/you/likes',
+						tabId: 42,
+					}),
+				);
+				sendTabMessageMock.mockClear();
+				yield* dispatchEffect(CollectionComplete());
+			}).pipe(Effect.provide(testLayer)),
+		);
+
+		expect(
+			sendTabMessageMock.mock.calls.filter((call) => isShowMascot(call[1])),
+		).toEqual([]);
 	});
 });

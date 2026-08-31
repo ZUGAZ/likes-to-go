@@ -32,3 +32,10 @@ export function hasTracks(
 	| Schema.Schema.Type<typeof DoneStateSchema> {
 	return isCollecting(state) || isPaused(state) || isDone(state);
 }
+
+export function collectionTabId(state: CollectionState): number | undefined {
+	if (isCollecting(state) || isPaused(state)) {
+		return state.tabId;
+	}
+	return undefined;
+}

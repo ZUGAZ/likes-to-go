@@ -4,6 +4,7 @@ import {
 	isCollectionError,
 	isLoginRequired,
 	StartCollectionRequest,
+	ShowMascotRequest,
 	ToggleMascotRequest,
 } from '@/common/model/request-message';
 import { UNSUPPORTED_COLLECTION_PAGE_MESSAGE } from '@/content/model/collection-error-messages';
@@ -64,7 +65,11 @@ describe('createContentMessageHandler', () => {
 		onInvalidated: () => () => {},
 	};
 
-	const noopDeps = { onToggleMascot: () => {}, isMascotVisible: () => false };
+	const noopDeps = {
+		onToggleMascot: () => {},
+		onShowMascot: () => {},
+		isMascotVisible: () => false,
+	};
 
 	it('returns false for invalid message payload', () => {
 		document.body.innerHTML =
@@ -84,6 +89,7 @@ describe('createContentMessageHandler', () => {
 		const onToggleMascot = vi.fn();
 		const handler = createContentMessageHandler(runtime, ctx, {
 			onToggleMascot,
+			onShowMascot: () => {},
 			isMascotVisible: () => true,
 		});
 		const sendResponse = vi.fn();
@@ -96,6 +102,27 @@ describe('createContentMessageHandler', () => {
 
 		expect(handled).toBe(false);
 		expect(onToggleMascot).toHaveBeenCalledTimes(1);
+		expect(sendResponse).toHaveBeenCalledTimes(1);
+		expect(sendMessageMock).not.toHaveBeenCalled();
+	});
+
+	it('calls onShowMascot, sends no background message, and returns false', () => {
+		const onShowMascot = vi.fn();
+		const handler = createContentMessageHandler(runtime, ctx, {
+			onToggleMascot: () => {},
+			onShowMascot,
+			isMascotVisible: () => true,
+		});
+		const sendResponse = vi.fn();
+
+		const handled = handler(
+			ShowMascotRequest(),
+			{} as chrome.runtime.MessageSender,
+			sendResponse,
+		);
+
+		expect(handled).toBe(false);
+		expect(onShowMascot).toHaveBeenCalledTimes(1);
 		expect(sendResponse).toHaveBeenCalledTimes(1);
 		expect(sendMessageMock).not.toHaveBeenCalled();
 	});

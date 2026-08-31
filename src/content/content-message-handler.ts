@@ -6,6 +6,7 @@ import {
 	isCancelCollection,
 	isStartCollection,
 	isToggleMascot,
+	isShowMascot,
 } from '@/common/model/request-message';
 import { makeCollectionLive } from '@/content/infrastructure/collection-services';
 import {
@@ -29,6 +30,7 @@ export type ContentScriptCtx = Pick<
 
 export interface ContentMessageHandlerDeps {
 	readonly onToggleMascot: () => void;
+	readonly onShowMascot: () => void;
 	readonly isMascotVisible: () => boolean;
 }
 
@@ -226,6 +228,20 @@ export function createContentMessageHandler(
 							yield* Effect.log('ToggleMascot received');
 							deps.onToggleMascot();
 							yield* Effect.log('overlay visibility toggled', {
+								visible: deps.isMascotVisible(),
+							});
+						}),
+					);
+					sendResponse();
+					return false;
+				}
+
+				if (isShowMascot(msg)) {
+					void Runtime.runPromise(runtime)(
+						Effect.gen(function* () {
+							yield* Effect.log('ShowMascot received');
+							deps.onShowMascot();
+							yield* Effect.log('overlay visibility shown', {
 								visible: deps.isMascotVisible(),
 							});
 						}),
