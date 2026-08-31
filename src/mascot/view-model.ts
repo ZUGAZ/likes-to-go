@@ -31,7 +31,11 @@ import {
 	DownloadSucceededRequest,
 	StartCollectionRequest,
 } from '@/common/model/request-message';
-import { exportBackupFilename } from '@/common/model/exporter';
+import { exportBackupFilename } from '@/common/model/export-backup-filename';
+import {
+	defaultExportFormatId,
+	getExportFormat,
+} from '@/common/model/export-format/registry';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import type { ViewModelEffect } from '@/common/viewmodel/bind-viewmodel';
 import {
@@ -245,10 +249,13 @@ export function createMascotViewModel(
 	});
 
 	const download = Effect.gen(function* () {
+		const formatId = defaultExportFormatId();
+		const format = getExportFormat(formatId);
 		const pickerAbort = new AbortController();
 		savePickerAbort = pickerAbort;
 		const pending = yield* startSaveFilePicker(
-			exportBackupFilename(new Date()),
+			exportBackupFilename(new Date(), format.extension),
+			format.pickerTypes,
 			pickerAbort.signal,
 		).pipe(
 			Effect.catchTag('SaveFilePickerUnavailable', (err) =>
@@ -270,7 +277,7 @@ export function createMascotViewModel(
 		setToSaving();
 
 		const response = yield* sendToBackgroundEffect(
-			DownloadExportRequest(),
+			DownloadExportRequest({ format: formatId }),
 		).pipe(
 			Effect.flatMap(decodeGetStateResponse),
 			Effect.tap(applyGetStateResponse),
@@ -292,8 +299,8 @@ export function createMascotViewModel(
 			),
 		);
 
-		const exportJson = response.exportJson;
-		if (exportJson === undefined || exportJson.length === 0) {
+		const exportBody = response.exportBody;
+		if (exportBody === undefined || exportBody.length === 0) {
 			yield* awaitSaveFilePicker(pending).pipe(Effect.ignore);
 			yield* applyBackgroundReply(
 				DownloadFailedRequest({
@@ -320,7 +327,7 @@ export function createMascotViewModel(
 			),
 		);
 
-		yield* writeTextFile(handle, exportJson).pipe(
+		yield* writeTextFile(handle, exportBody).pipe(
 			Effect.catchTag('SaveFileWriteFailed', (err) =>
 				applyBackgroundReply(
 					DownloadFailedRequest({

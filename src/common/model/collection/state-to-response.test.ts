@@ -18,25 +18,28 @@ function validTrack() {
 }
 
 describe('collectionStateToDownloadExportResponse', () => {
-	it('includes export JSON only while saving', () => {
+	it('includes export body only while saving', () => {
 		const tracks = [validTrack()];
 		const saving = Saving({ tracks, skippedTrackCount: 0 });
 		const done = Done({ tracks, skippedTrackCount: 0 });
 
-		const savingResponse = collectionStateToDownloadExportResponse(saving);
+		const savingResponse = collectionStateToDownloadExportResponse(
+			saving,
+			'json',
+		);
 		expect(savingResponse.status).toBe('saving');
-		expect(typeof savingResponse.exportJson).toBe('string');
-		if (savingResponse.exportJson === undefined) {
-			throw new Error('expected export JSON while saving');
+		expect(typeof savingResponse.exportBody).toBe('string');
+		if (savingResponse.exportBody === undefined) {
+			throw new Error('expected export body while saving');
 		}
-		const parsed: unknown = JSON.parse(savingResponse.exportJson);
+		const parsed: unknown = JSON.parse(savingResponse.exportBody);
 		expect(parsed).toMatchObject({ format_version: 1, track_count: 1 });
 
 		expect(
-			collectionStateToGetStateResponse(saving).exportJson,
+			collectionStateToGetStateResponse(saving).exportBody,
 		).toBeUndefined();
 		expect(
-			collectionStateToDownloadExportResponse(done).exportJson,
+			collectionStateToDownloadExportResponse(done).exportBody,
 		).toBeUndefined();
 	});
 

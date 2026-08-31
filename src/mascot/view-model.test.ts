@@ -13,6 +13,7 @@ import {
 	SaveFilePickerCancelled,
 	SaveFilePickerUnavailable,
 } from '@/common/infrastructure/save-file-picker';
+import { getExportFormat } from '@/common/model/export-format/registry';
 import { createMascotVisibility } from '@/mascot/visibility';
 import type { BeatPoseKey } from '@/mascot/persona';
 import {
@@ -58,7 +59,10 @@ const { getStateMock, sendToBackgroundMock } = vi.hoisted(() => ({
 		}),
 	),
 	sendToBackgroundMock: vi.fn<
-		(message: { readonly _tag: string }) => Effect.Effect<unknown>
+		(message: {
+			readonly _tag: string;
+			readonly format?: string;
+		}) => Effect.Effect<unknown>
 	>(() => Effect.succeed(undefined)),
 }));
 
@@ -606,7 +610,7 @@ describe('MascotViewModel — download', () => {
 				return Effect.succeed({
 					status: 'saving',
 					trackCount: 1,
-					exportJson: '{"format_version":1}',
+					exportBody: '{"format_version":1}',
 				});
 			}
 			return Effect.succeed({ status: 'idle', trackCount: 0 });
@@ -619,7 +623,22 @@ describe('MascotViewModel — download', () => {
 		expect(order[0]).toBe('picker');
 		expect(order).toContain('DownloadExport');
 		expect(order).toContain('DownloadSucceeded');
-		expect(writeTextFileMock).toHaveBeenCalled();
+		const jsonFormat = getExportFormat('json');
+		expect(startSaveFilePickerMock).toHaveBeenCalledWith(
+			expect.stringMatching(/^likes-to-go-\d{4}-\d{2}-\d{2}\.json$/),
+			jsonFormat.pickerTypes,
+			expect.any(AbortSignal),
+		);
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) =>
+					message._tag === 'DownloadExport' && message.format === 'json',
+			),
+		).toBe(true);
+		expect(writeTextFileMock).toHaveBeenCalledWith(
+			expect.anything(),
+			'{"format_version":1}',
+		);
 		expect(vm.state()).toBe('initial');
 	});
 
@@ -632,7 +651,7 @@ describe('MascotViewModel — download', () => {
 				return Effect.succeed({
 					status: 'saving',
 					trackCount: 1,
-					exportJson: '{"format_version":1}',
+					exportBody: '{"format_version":1}',
 				});
 			}
 			return Effect.succeed({ status: 'done', trackCount: 1 });

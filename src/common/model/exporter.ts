@@ -56,7 +56,3 @@ export function buildExportPayload(input: ExportInput): ExportPayload {
 		tracks: input.tracks.map(trackToExportTrack),
 	};
 }
-
-export function exportBackupFilename(now: Date): string {
-	return `likes-to-go-${now.toISOString().slice(0, 10)}.json`;
-}

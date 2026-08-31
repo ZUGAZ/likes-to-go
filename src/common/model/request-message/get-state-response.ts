@@ -22,7 +22,7 @@ export const GetStateResponseSchema = Schema.Struct({
 	message: Schema.optional(Schema.String),
 	skippedTrackCount: Schema.optional(Schema.Number),
 	source: Schema.optional(SourceSchema),
-	exportJson: Schema.optional(Schema.String),
+	exportBody: Schema.optional(Schema.String),
 });
 
 export type GetStateResponse = Schema.Schema.Type<

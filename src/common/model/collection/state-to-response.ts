@@ -7,7 +7,9 @@ import { isPaused } from '@/common/model/collection/states/paused';
 import { isSaving } from '@/common/model/collection/states/saving';
 import { collectionStateToStatus } from '@/common/model/collection/state-to-status';
 import { COLLECTION_VISIBILITY_PAUSED_MESSAGE } from '@/common/model/collection/visibility-paused-message';
-import { buildExportPayload } from '@/common/model/exporter';
+import type { ExportFormatId } from '@/common/model/export-format/export-format-id';
+import { defaultExportFormatId } from '@/common/model/export-format/registry';
+import { renderExportBody } from '@/common/model/export-format/render-export-body';
 
 export function collectionStateToGetStateResponse(
 	state: CollectionState,
@@ -42,6 +44,7 @@ export function collectionStateToGetStateResponse(
 
 export function collectionStateToDownloadExportResponse(
 	state: CollectionState,
+	formatId: ExportFormatId = defaultExportFormatId(),
 ): GetStateResponse {
 	const base = collectionStateToGetStateResponse(state);
 	if (!isSaving(state)) {
@@ -50,6 +53,6 @@ export function collectionStateToDownloadExportResponse(
 
 	return {
 		...base,
-		exportJson: JSON.stringify(buildExportPayload({ tracks: state.tracks })),
+		exportBody: renderExportBody(formatId, state.tracks),
 	};
 }

@@ -1,3 +1,4 @@
+import { ExportFormatIdSchema } from '@/common/model/export-format/export-format-id';
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
 import { Data, Schema } from 'effect';
@@ -23,7 +24,9 @@ const CollectionErrorSchema = taggedStruct('CollectionError', {
 	reason: Schema.String,
 });
 const CancelCollectionSchema = taggedStruct('CancelCollection');
-const DownloadExportSchema = taggedStruct('DownloadExport');
+export const DownloadExportSchema = taggedStruct('DownloadExport', {
+	format: Schema.optional(ExportFormatIdSchema),
+});
 const DownloadSucceededSchema = taggedStruct('DownloadSucceeded');
 const DownloadCancelledSchema = taggedStruct('DownloadCancelled');
 const DownloadFailedRequestSchema = taggedStruct('DownloadFailed', {
@@ -103,8 +106,13 @@ export const CancelCollectionRequest =
 	Data.tagged<CancelCollectionRequest>('CancelCollection');
 
 type DownloadExportRequest = Schema.Schema.Type<typeof DownloadExportSchema>;
-export const DownloadExportRequest =
+const makeDownloadExportRequest =
 	Data.tagged<DownloadExportRequest>('DownloadExport');
+export function DownloadExportRequest(
+	fields: Omit<DownloadExportRequest, '_tag'> = {},
+): DownloadExportRequest {
+	return makeDownloadExportRequest(fields);
+}
 
 type DownloadSucceededRequest = Schema.Schema.Type<
 	typeof DownloadSucceededSchema

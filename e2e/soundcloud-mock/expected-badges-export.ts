@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 
+import { exportBackupFilename } from '@/common/model/export-backup-filename';
 import type { ExportPayload } from '@/common/model/exporter';
 
 import { SOUNDCLOUD_LIKES_URL } from './constants';
@@ -90,7 +91,7 @@ function isIsoExportedAt(value: string): boolean {
 export function expectedExportFilenameFromExportedAt(
 	exportedAt: string,
 ): string {
-	return `likes-to-go-${exportedAt.slice(0, 10)}.json`;
+	return exportBackupFilename(new Date(exportedAt), 'json');
 }
 
 export function assertExpectedBadgesExportPayload(

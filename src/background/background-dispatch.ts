@@ -23,6 +23,7 @@ import {
 } from '@/common/model/collection/state-to-response';
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { transition } from '@/common/model/collection/transition';
+import { resolveExportFormatId } from '@/common/model/export-format/export-format-id';
 import {
 	isCancelCollection,
 	isDownloadExport,
@@ -139,7 +140,10 @@ export function handleMessageEffect(
 		const ref = yield* StateRefTag;
 		const state = yield* Ref.get(ref);
 		const response = isDownloadExport(message)
-			? collectionStateToDownloadExportResponse(state)
+			? collectionStateToDownloadExportResponse(
+					state,
+					resolveExportFormatId(message),
+				)
 			: collectionStateToGetStateResponse(state);
 		yield* Effect.log('handleMessage responding', message._tag, {
 			status: response.status,

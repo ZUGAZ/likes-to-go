@@ -5,6 +5,7 @@ export {
 	CollectionVisibilityPausedRequest,
 	CollectionVisibilityResumedRequest,
 	DownloadExportRequest,
+	DownloadExportSchema,
 	DownloadSucceededRequest,
 	DownloadCancelledRequest,
 	DownloadFailedRequest,

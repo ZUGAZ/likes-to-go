@@ -1,4 +1,5 @@
 import { errorToReason } from '@/common/model/error-to-reason';
+import type { SaveFilePickerType } from '@/common/model/export-format/save-file-picker-type';
 import { Data, Effect } from 'effect';
 
 export class SaveFilePickerUnavailable extends Data.TaggedError(
@@ -61,10 +62,7 @@ function isShowSaveFilePickerFn(value: unknown): value is (
 	options: {
 		readonly suggestedName: string;
 		readonly signal?: AbortSignal;
-		readonly types: ReadonlyArray<{
-			readonly description: string;
-			readonly accept: { readonly 'application/json': readonly ['.json'] };
-		}>;
+		readonly types: readonly SaveFilePickerType[];
 	},
 ) => unknown {
 	return typeof value === 'function';
@@ -72,6 +70,7 @@ function isShowSaveFilePickerFn(value: unknown): value is (
 
 function callShowSaveFilePicker(
 	suggestedName: string,
+	types: readonly SaveFilePickerType[],
 	signal: AbortSignal | undefined,
 ): Promise<unknown> {
 	const picker: unknown = Reflect.get(window, 'showSaveFilePicker');
@@ -82,12 +81,7 @@ function callShowSaveFilePicker(
 	const result: unknown = picker.call(window, {
 		suggestedName,
 		...(signal === undefined ? {} : { signal }),
-		types: [
-			{
-				description: 'JSON backup',
-				accept: { 'application/json': ['.json'] },
-			},
-		],
+		types,
 	});
 
 	if (!(result instanceof Promise)) {
@@ -108,10 +102,13 @@ export interface PendingSaveFilePicker {
  */
 export function startSaveFilePicker(
 	suggestedName: string,
+	types: readonly SaveFilePickerType[],
 	signal?: AbortSignal,
 ): Effect.Effect<PendingSaveFilePicker, SaveFilePickerUnavailable> {
 	return Effect.try({
-		try: () => ({ promise: callShowSaveFilePicker(suggestedName, signal) }),
+		try: () => ({
+			promise: callShowSaveFilePicker(suggestedName, types, signal),
+		}),
 		catch: (error: unknown) =>
 			new SaveFilePickerUnavailable({ reason: errorToReason(error) }),
 	});
