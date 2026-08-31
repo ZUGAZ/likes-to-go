@@ -24,6 +24,12 @@ const CollectionErrorSchema = taggedStruct('CollectionError', {
 });
 const CancelCollectionSchema = taggedStruct('CancelCollection');
 const DownloadExportSchema = taggedStruct('DownloadExport');
+const DownloadSucceededSchema = taggedStruct('DownloadSucceeded');
+const DownloadCancelledSchema = taggedStruct('DownloadCancelled');
+const DownloadFailedRequestSchema = taggedStruct('DownloadFailed', {
+	message: Schema.String,
+	reason: Schema.String,
+});
 const GetStateSchema = taggedStruct('GetState');
 const LoginRequiredSchema = taggedStruct('LoginRequired', {
 	message: Schema.String,
@@ -39,6 +45,9 @@ export const RequestMessageSchema = Schema.Union(
 	CollectionErrorSchema,
 	CancelCollectionSchema,
 	DownloadExportSchema,
+	DownloadSucceededSchema,
+	DownloadCancelledSchema,
+	DownloadFailedRequestSchema,
 	GetStateSchema,
 	LoginRequiredSchema,
 	ToggleMascotSchema,
@@ -97,6 +106,24 @@ type DownloadExportRequest = Schema.Schema.Type<typeof DownloadExportSchema>;
 export const DownloadExportRequest =
 	Data.tagged<DownloadExportRequest>('DownloadExport');
 
+type DownloadSucceededRequest = Schema.Schema.Type<
+	typeof DownloadSucceededSchema
+>;
+export const DownloadSucceededRequest =
+	Data.tagged<DownloadSucceededRequest>('DownloadSucceeded');
+
+type DownloadCancelledRequest = Schema.Schema.Type<
+	typeof DownloadCancelledSchema
+>;
+export const DownloadCancelledRequest =
+	Data.tagged<DownloadCancelledRequest>('DownloadCancelled');
+
+type DownloadFailedRequest = Schema.Schema.Type<
+	typeof DownloadFailedRequestSchema
+>;
+export const DownloadFailedRequest =
+	Data.tagged<DownloadFailedRequest>('DownloadFailed');
+
 type GetStateRequest = Schema.Schema.Type<typeof GetStateSchema>;
 export const GetStateRequest = Data.tagged<GetStateRequest>('GetState');
 
@@ -119,4 +146,7 @@ export const isCollectionVisibilityResumed = Schema.is(
 export const isCollectionError = Schema.is(CollectionErrorSchema);
 export const isCancelCollection = Schema.is(CancelCollectionSchema);
 export const isDownloadExport = Schema.is(DownloadExportSchema);
+export const isDownloadSucceeded = Schema.is(DownloadSucceededSchema);
+export const isDownloadCancelled = Schema.is(DownloadCancelledSchema);
+export const isDownloadFailedRequest = Schema.is(DownloadFailedRequestSchema);
 export const isLoginRequired = Schema.is(LoginRequiredSchema);

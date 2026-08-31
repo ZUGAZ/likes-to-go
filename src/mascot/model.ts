@@ -19,6 +19,7 @@ export type BeatState =
 	| 'processing'
 	| 'paused'
 	| 'done'
+	| 'saving'
 	| 'login-required'
 	| 'error';
 
@@ -48,6 +49,8 @@ export function mapStatusToBeatState(status: CollectionStatus): BeatState {
 			return 'paused';
 		case 'done':
 			return 'done';
+		case 'saving':
+			return 'saving';
 		case 'login-required':
 			return 'login-required';
 		case 'error':
@@ -61,6 +64,7 @@ export function mapStateToBusy(state: BeatState): boolean {
 		case 'loading':
 		case 'checking-login':
 		case 'processing':
+		case 'saving':
 			return true;
 		case 'initial':
 		case 'paused':

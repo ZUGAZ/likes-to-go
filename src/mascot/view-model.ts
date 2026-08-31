@@ -1,11 +1,23 @@
 import { Effect, Runtime } from 'effect';
-import { batch, createEffect, createSignal, on, onMount, untrack } from 'solid-js';
+import {
+	batch,
+	createEffect,
+	createSignal,
+	on,
+	onMount,
+	untrack,
+} from 'solid-js';
 
 import {
 	decodeGetStateResponse,
 	getState,
 	sendToBackgroundEffect,
 } from '@/common/infrastructure/chrome-messaging';
+import {
+	awaitSaveFilePicker,
+	startSaveFilePicker,
+	writeTextFile,
+} from '@/common/infrastructure/save-file-picker';
 import { getResolvedPopupThemeEffect } from '@/common/infrastructure/get-resolved-popup-theme';
 import {
 	listenForStateUpdatesEffect,
@@ -13,9 +25,13 @@ import {
 } from '@/common/infrastructure/listen-for-state-updates';
 import {
 	CancelCollectionRequest,
+	DownloadCancelledRequest,
 	DownloadExportRequest,
+	DownloadFailedRequest,
+	DownloadSucceededRequest,
 	StartCollectionRequest,
 } from '@/common/model/request-message';
+import { exportBackupFilename } from '@/common/model/exporter';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import type { ViewModelEffect } from '@/common/viewmodel/bind-viewmodel';
 import {
@@ -61,6 +77,7 @@ export interface MascotViewModel {
 		readonly startCollection: ViewModelEffect;
 		readonly cancelCollection: ViewModelEffect;
 		readonly download: ViewModelEffect;
+		readonly dismiss: ViewModelEffect;
 		readonly handleAction: (actionId: BeatActionId) => ViewModelEffect;
 	};
 	readonly teardown: () => void;
@@ -70,12 +87,13 @@ export interface MascotViewModelOptions {
 	readonly runtime: Runtime.Runtime<never>;
 	readonly visibility: MascotVisibilityControls;
 	readonly resolvePoseUrl: (pose: BeatPoseKey) => string;
+	readonly onSurfaceDismiss: () => void;
 }
 
 export function createMascotViewModel(
 	vmOptions: MascotViewModelOptions,
 ): MascotViewModel {
-	const { runtime, visibility, resolvePoseUrl } = vmOptions;
+	const { runtime, visibility, resolvePoseUrl, onSurfaceDismiss } = vmOptions;
 
 	const boot = initializingBeatModel();
 	const [state, setState] = createSignal<BeatState>(boot.state);
@@ -88,6 +106,7 @@ export function createMascotViewModel(
 	const [source, setSource] = createSignal<BeatSource>(boot.source);
 
 	let currentSource = boot.source;
+	let savePickerAbort: AbortController | undefined;
 
 	const isStatusBusy = (): boolean => mapStateToBusy(state());
 
@@ -137,6 +156,28 @@ export function createMascotViewModel(
 	const setToLoading = (): void => {
 		applyModel(loadingBeatModel());
 	};
+
+	const setToSaving = (): void => {
+		applyModel({
+			state: 'saving',
+			trackCount: untrack(trackCount),
+			message: undefined,
+			skippedTrackCount: untrack(skippedTrackCount),
+			source: currentSource,
+		});
+	};
+
+	const applyBackgroundReply = (
+		message:
+			| ReturnType<typeof DownloadCancelledRequest>
+			| ReturnType<typeof DownloadFailedRequest>
+			| ReturnType<typeof DownloadSucceededRequest>,
+	) =>
+		sendToBackgroundEffect(message).pipe(
+			Effect.flatMap(decodeGetStateResponse),
+			Effect.tap(applyGetStateResponse),
+			Effect.catchAll(() => Effect.void),
+		);
 
 	const stopListening = Effect.runSync(
 		listenForStateUpdatesEffect(applyGetStateResponse),
@@ -188,12 +229,14 @@ export function createMascotViewModel(
 	});
 
 	const retryAfterError = Effect.gen(function* () {
-		const shouldDismissError = untrack(() => state() === 'error');
 		applyModel(initializingBeatModel());
-		if (shouldDismissError) {
+		const snapshot = yield* getState();
+		if (snapshot.status === 'error') {
 			yield* sendToBackgroundEffect(CancelCollectionRequest());
+			yield* getState().pipe(Effect.tap(applyGetStateResponse));
+			return;
 		}
-		yield* getState().pipe(Effect.tap(applyGetStateResponse));
+		applyGetStateResponse(snapshot);
 	});
 
 	const cancelCollection = Effect.gen(function* () {
@@ -201,11 +244,111 @@ export function createMascotViewModel(
 		setToInitial();
 	});
 
-	const download = sendToBackgroundEffect(DownloadExportRequest()).pipe(
-		Effect.flatMap(decodeGetStateResponse),
-		Effect.tap(applyGetStateResponse),
-		Effect.catchAll(() => Effect.sync(setToInitial)),
-	);
+	const download = Effect.gen(function* () {
+		const pickerAbort = new AbortController();
+		savePickerAbort = pickerAbort;
+		const pending = yield* startSaveFilePicker(
+			exportBackupFilename(new Date()),
+			pickerAbort.signal,
+		).pipe(
+			Effect.catchTag('SaveFilePickerUnavailable', (err) =>
+				Effect.sync(() => {
+					applyModel({
+						state: 'error',
+						trackCount: untrack(trackCount),
+						message: 'Could not open the save dialog. Want to try again?',
+						skippedTrackCount: untrack(skippedTrackCount),
+						source: currentSource,
+					});
+				}).pipe(Effect.zipRight(Effect.fail(err))),
+			),
+		);
+		void pending.promise.then(
+			() => undefined,
+			() => undefined,
+		);
+		setToSaving();
+
+		const response = yield* sendToBackgroundEffect(
+			DownloadExportRequest(),
+		).pipe(
+			Effect.flatMap(decodeGetStateResponse),
+			Effect.tap(applyGetStateResponse),
+			Effect.catchTag('SendToBackgroundFailed', (err) =>
+				applyBackgroundReply(
+					DownloadFailedRequest({
+						message: 'Could not save your export',
+						reason: err.reason,
+					}),
+				).pipe(Effect.zipRight(Effect.fail(err))),
+			),
+			Effect.catchTag('DecodeGetStateResponseFailed', (err) =>
+				applyBackgroundReply(
+					DownloadFailedRequest({
+						message: 'Could not save your export',
+						reason: err.reason,
+					}),
+				).pipe(Effect.zipRight(Effect.fail(err))),
+			),
+		);
+
+		const exportJson = response.exportJson;
+		if (exportJson === undefined || exportJson.length === 0) {
+			yield* awaitSaveFilePicker(pending).pipe(Effect.ignore);
+			yield* applyBackgroundReply(
+				DownloadFailedRequest({
+					message: 'Could not save your export',
+					reason: 'Export payload was missing',
+				}),
+			);
+			return;
+		}
+
+		const handle = yield* awaitSaveFilePicker(pending).pipe(
+			Effect.catchTag('SaveFilePickerCancelled', (err) =>
+				applyBackgroundReply(DownloadCancelledRequest()).pipe(
+					Effect.zipRight(Effect.fail(err)),
+				),
+			),
+			Effect.catchTag('SaveFilePickerUnavailable', (err) =>
+				applyBackgroundReply(
+					DownloadFailedRequest({
+						message: 'Could not save your export',
+						reason: err.reason,
+					}),
+				).pipe(Effect.zipRight(Effect.fail(err))),
+			),
+		);
+
+		yield* writeTextFile(handle, exportJson).pipe(
+			Effect.catchTag('SaveFileWriteFailed', (err) =>
+				applyBackgroundReply(
+					DownloadFailedRequest({
+						message: 'Could not save your export',
+						reason: err.reason,
+					}),
+				).pipe(Effect.zipRight(Effect.fail(err))),
+			),
+		);
+
+		yield* applyBackgroundReply(DownloadSucceededRequest());
+	}).pipe(Effect.catchAll(() => Effect.void));
+
+	const dismiss = Effect.gen(function* () {
+		const abort = savePickerAbort;
+		savePickerAbort = undefined;
+		abort?.abort();
+		const current = untrack(state);
+		if (current === 'done' || current === 'saving') {
+			yield* sendToBackgroundEffect(CancelCollectionRequest()).pipe(
+				Effect.catchAll(() => Effect.void),
+			);
+			setToInitial();
+		}
+		yield* Effect.sync(() => {
+			onSurfaceDismiss();
+		});
+	});
 
 	const handleAction = (actionId: BeatActionId): ViewModelEffect => {
 		switch (actionId) {
@@ -261,6 +404,7 @@ export function createMascotViewModel(
 			startCollection,
 			cancelCollection,
 			download,
+			dismiss,
 			handleAction,
 		},
 		teardown,

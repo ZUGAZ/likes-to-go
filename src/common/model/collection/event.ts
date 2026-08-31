@@ -5,8 +5,10 @@ import type { CollectionSourceInvalidated } from '@/common/model/collection/even
 import type { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import type { CollectionVisibilityPaused } from '@/common/model/collection/events/collection-visibility-paused';
 import type { CollectionVisibilityResumed } from '@/common/model/collection/events/collection-visibility-resumed';
+import type { DownloadCancelled } from '@/common/model/collection/events/download-cancelled';
 import type { DownloadExport } from '@/common/model/collection/events/download-export-event';
 import type { DownloadFailed } from '@/common/model/collection/events/download-failed';
+import type { DownloadSucceeded } from '@/common/model/collection/events/download-succeeded';
 import type { GetStateRequested } from '@/common/model/collection/events/get-state-requested';
 import type { LoginRequired } from '@/common/model/collection/events/login-required';
 import type { LoginVerified } from '@/common/model/collection/events/login-verified';
@@ -26,6 +28,8 @@ export type CollectionEvent =
 	| CollectionError
 	| CancelCollection
 	| DownloadExport
+	| DownloadSucceeded
+	| DownloadCancelled
 	| SendToTabFailed
 	| DownloadFailed
 	| LoginVerified

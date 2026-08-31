@@ -16,7 +16,7 @@ export default defineConfig({
 	autoIcons: { baseIconPath: 'assets/icon.svg' },
 	imports: false,
 	manifest: {
-		permissions: ['downloads', 'cookies', 'tabs', 'storage'],
+		permissions: ['cookies', 'tabs', 'storage'],
 		host_permissions: ['https://*.soundcloud.com/*'],
 		web_accessible_resources: [...mascotWebAccessibleResources],
 	},

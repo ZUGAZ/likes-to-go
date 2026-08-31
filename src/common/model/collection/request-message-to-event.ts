@@ -4,7 +4,10 @@ import { CollectionComplete } from '@/common/model/collection/events/collection-
 import { CollectionError } from '@/common/model/collection/events/collection-error';
 import { CollectionVisibilityPaused } from '@/common/model/collection/events/collection-visibility-paused';
 import { CollectionVisibilityResumed } from '@/common/model/collection/events/collection-visibility-resumed';
+import { DownloadCancelled } from '@/common/model/collection/events/download-cancelled';
 import { DownloadExport } from '@/common/model/collection/events/download-export-event';
+import { DownloadFailed } from '@/common/model/collection/events/download-failed';
+import { DownloadSucceeded } from '@/common/model/collection/events/download-succeeded';
 import { GetStateRequested } from '@/common/model/collection/events/get-state-requested';
 import { LoginRequired } from '@/common/model/collection/events/login-required';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
@@ -16,7 +19,10 @@ import {
 	isCollectionError,
 	isCollectionVisibilityPaused,
 	isCollectionVisibilityResumed,
+	isDownloadCancelled,
 	isDownloadExport,
+	isDownloadFailedRequest,
+	isDownloadSucceeded,
 	isGetStateRequest,
 	isLoginRequired,
 	isStartCollection,
@@ -55,5 +61,12 @@ export function requestMessageToCollectionEvent(
 		});
 	if (isCancelCollection(message)) return CancelCollection();
 	if (isDownloadExport(message)) return DownloadExport();
+	if (isDownloadSucceeded(message)) return DownloadSucceeded();
+	if (isDownloadCancelled(message)) return DownloadCancelled();
+	if (isDownloadFailedRequest(message))
+		return DownloadFailed({
+			message: message.message,
+			reason: message.reason,
+		});
 	return absurd(message);
 }

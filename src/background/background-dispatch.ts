@@ -17,7 +17,10 @@ import type { CollectionCommand } from '@/common/model/collection/command';
 import type { CollectionEvent } from '@/common/model/collection/event';
 import { requestMessageToCollectionEvent } from '@/common/model/collection/request-message-to-event';
 import { hasTracks } from '@/common/model/collection/state';
-import { collectionStateToGetStateResponse } from '@/common/model/collection/state-to-response';
+import {
+	collectionStateToDownloadExportResponse,
+	collectionStateToGetStateResponse,
+} from '@/common/model/collection/state-to-response';
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { transition } from '@/common/model/collection/transition';
 import {
@@ -135,7 +138,9 @@ export function handleMessageEffect(
 
 		const ref = yield* StateRefTag;
 		const state = yield* Ref.get(ref);
-		const response = collectionStateToGetStateResponse(state);
+		const response = isDownloadExport(message)
+			? collectionStateToDownloadExportResponse(state)
+			: collectionStateToGetStateResponse(state);
 		yield* Effect.log('handleMessage responding', message._tag, {
 			status: response.status,
 			trackCount: response.trackCount,

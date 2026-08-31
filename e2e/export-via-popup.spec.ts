@@ -21,10 +21,10 @@ import {
 	USER_NAV_SELECTOR,
 } from './soundcloud-mock/constants';
 import {
-	decodeExportDataUrl,
-	installDownloadCapture,
-	waitForCapturedDownload,
-} from './soundcloud-mock/download-capture';
+	decodeSavedExportJson,
+	installSaveCapture,
+	waitForCapturedSave,
+} from './soundcloud-mock/save-capture';
 import {
 	assertExpectedBadgesExportPayload,
 	expectedExportFilenameFromExportedAt,
@@ -61,7 +61,6 @@ test('popup start export completes against mocked likes and downloads v1 JSON', 
 	await seedSoundCloudSessionCookie(context, SESSION_COOKIE_VALUE);
 
 	const serviceWorker = await waitForExtensionServiceWorker(context);
-	await installDownloadCapture(serviceWorker);
 
 	const popup = await context.newPage();
 	const popupConsole = installConsoleCapture(popup);
@@ -110,13 +109,15 @@ test('popup start export completes against mocked likes and downloads v1 JSON', 
 			popup.getByRole('button', { name: 'Download backup' }),
 		).toBeVisible({ timeout: COLLECTION_WAIT_MS });
 
+		const saveCapture = await installSaveCapture(popup);
 		await popup.getByRole('button', { name: 'Download backup' }).click();
 
-		const captured = await waitForCapturedDownload(serviceWorker);
+		const captured = await waitForCapturedSave(saveCapture);
 		const payload = assertExpectedBadgesExportPayload(
-			decodeExportDataUrl(captured.url),
+			decodeSavedExportJson(captured.body),
 		);
 
+		expect(captured.filename).toMatch(/^likes-to-go-\d{4}-\d{2}-\d{2}\.json$/);
 		expect(expectedExportFilenameFromExportedAt(payload.exported_at)).toMatch(
 			/^likes-to-go-\d{4}-\d{2}-\d{2}\.json$/,
 		);
@@ -144,7 +145,6 @@ test('popup-started export shows the likes overlay after the popup closes', asyn
 	await seedSoundCloudSessionCookie(context, SESSION_COOKIE_VALUE);
 
 	const serviceWorker = await waitForExtensionServiceWorker(context);
-	await installDownloadCapture(serviceWorker);
 
 	const popup = await context.newPage();
 	const popupConsole = installConsoleCapture(popup);
@@ -187,10 +187,11 @@ test('popup-started export shows the likes overlay after the popup closes', asyn
 			name: 'Download backup',
 		});
 		await expect(downloadBackup).toBeVisible({ timeout: COLLECTION_WAIT_MS });
+		const saveCapture = await installSaveCapture(likesPage);
 		await downloadBackup.click();
 
-		const captured = await waitForCapturedDownload(serviceWorker);
-		assertExpectedBadgesExportPayload(decodeExportDataUrl(captured.url));
+		const captured = await waitForCapturedSave(saveCapture);
+		assertExpectedBadgesExportPayload(decodeSavedExportJson(captured.body));
 		expect(routes.continuedToNetwork()).toEqual([]);
 	} catch (error) {
 		await attachConsoleOnFailure(testInfo, popupConsole);

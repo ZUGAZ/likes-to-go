@@ -7,6 +7,7 @@ const COLLECTION_STATUSES = [
 	'collecting',
 	'paused',
 	'done',
+	'saving',
 	'login-required',
 	'error',
 ] as const;
@@ -21,6 +22,7 @@ export const GetStateResponseSchema = Schema.Struct({
 	message: Schema.optional(Schema.String),
 	skippedTrackCount: Schema.optional(Schema.Number),
 	source: Schema.optional(SourceSchema),
+	exportJson: Schema.optional(Schema.String),
 });
 
 export type GetStateResponse = Schema.Schema.Type<

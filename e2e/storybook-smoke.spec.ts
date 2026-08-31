@@ -23,6 +23,40 @@ test.describe('Storybook smoke', () => {
 		).toBeVisible();
 	});
 
+	test('BeatView done story offers download and dismiss', async ({ page }) => {
+		const baseUrl = storybookBaseUrl ?? 'http://127.0.0.1:6006';
+		await page.goto(`${baseUrl}/?path=/story/mascot-beatview--done`);
+
+		const preview = page.frameLocator('#storybook-preview-iframe');
+
+		await expect(
+			preview.getByRole('button', { name: 'Download backup' }),
+		).toBeVisible();
+		const dismiss = preview.getByRole('button', { name: 'Dismiss' });
+		await expect(dismiss).toBeVisible();
+		await dismiss.click();
+		await expect(
+			preview.getByRole('button', { name: 'Download backup' }),
+		).toBeVisible();
+	});
+
+	test('BeatView saving story shows save copy without a download button', async ({
+		page,
+	}) => {
+		const baseUrl = storybookBaseUrl ?? 'http://127.0.0.1:6006';
+		await page.goto(`${baseUrl}/?path=/story/mascot-beatview--saving`);
+
+		const preview = page.frameLocator('#storybook-preview-iframe');
+
+		await expect(
+			preview.getByText('Pick a place to save your backup.'),
+		).toBeVisible();
+		await expect(
+			preview.getByRole('button', { name: 'Download backup' }),
+		).toHaveCount(0);
+		await expect(preview.locator('[aria-busy="true"]')).toBeVisible();
+	});
+
 	test('Beat sticker ring is present in light, dark, and overlay', async ({
 		page,
 	}) => {

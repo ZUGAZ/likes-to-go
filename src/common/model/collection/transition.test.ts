@@ -16,6 +16,10 @@ import { TabCreated } from '@/common/model/collection/events/tab-created';
 import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { CollectionComplete } from '@/common/model/collection/events/collection-complete';
+import { DownloadCancelled } from '@/common/model/collection/events/download-cancelled';
+import { DownloadExport } from '@/common/model/collection/events/download-export-event';
+import { DownloadFailed } from '@/common/model/collection/events/download-failed';
+import { DownloadSucceeded } from '@/common/model/collection/events/download-succeeded';
 import { CollectionError } from '@/common/model/collection/events/collection-error';
 import { CollectionVisibilityPaused } from '@/common/model/collection/events/collection-visibility-paused';
 import { CollectionVisibilityResumed } from '@/common/model/collection/events/collection-visibility-resumed';
@@ -29,6 +33,9 @@ import {
 import { TrackSchema } from '@/common/model/track';
 import { COLLECTION_VISIBILITY_PAUSED_MESSAGE } from '@/common/model/collection/visibility-paused-message';
 import { isPaused } from '@/common/model/collection/states/paused';
+import { isSaving } from '@/common/model/collection/states/saving';
+import { isDone } from '@/common/model/collection/states/done';
+import { isIdle } from '@/common/model/collection/states/idle';
 
 function validTrack(
 	overrides: { title?: string; url?: string } = {},
@@ -495,6 +502,58 @@ describe('collection-transition', () => {
 			expect(result.commands.map((command) => command._tag)).toEqual([
 				'CheckSource',
 			]);
+		});
+	});
+
+	describe('download export holds tracks until save finishes', () => {
+		function makeDoneState() {
+			let state = makeCollectingState();
+			state = transition(
+				state,
+				TracksBatch({ tracks: [validTrack()], skippedTrackCount: 1 }),
+			).state;
+			return transition(state, CollectionComplete()).state;
+		}
+
+		it('Done + DownloadExport goes to Saving and keeps tracks', () => {
+			const done = makeDoneState();
+			const result = transition(done, DownloadExport());
+
+			expect(isSaving(result.state)).toBe(true);
+			expect(hasTracks(result.state) && result.state.tracks.length).toBe(1);
+			expect(result.commands.map((command) => command._tag)).toEqual([
+				'NotifyPopup',
+			]);
+		});
+
+		it('Saving + DownloadSucceeded goes Idle', () => {
+			const saving = transition(makeDoneState(), DownloadExport()).state;
+			const result = transition(saving, DownloadSucceeded());
+
+			expect(isIdle(result.state)).toBe(true);
+			expect(hasTracks(result.state)).toBe(false);
+		});
+
+		it('Saving + DownloadCancelled returns to Done with the same tracks', () => {
+			const saving = transition(makeDoneState(), DownloadExport()).state;
+			const result = transition(saving, DownloadCancelled());
+
+			expect(isDone(result.state)).toBe(true);
+			expect(hasTracks(result.state) && result.state.tracks.length).toBe(1);
+		});
+
+		it('Saving + DownloadFailed returns to Done with the same tracks', () => {
+			const saving = transition(makeDoneState(), DownloadExport()).state;
+			const result = transition(
+				saving,
+				DownloadFailed({
+					message: 'Could not save your export',
+					reason: 'disk',
+				}),
+			);
+
+			expect(isDone(result.state)).toBe(true);
+			expect(hasTracks(result.state) && result.state.tracks.length).toBe(1);
 		});
 	});
 });

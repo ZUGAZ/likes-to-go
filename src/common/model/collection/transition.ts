@@ -1,7 +1,6 @@
 import type { CollectionCommand } from '@/common/model/collection/command';
 import { CheckLogin } from '@/common/model/collection/commands/check-login';
 import { CheckSource } from '@/common/model/collection/commands/check-source';
-import { DownloadExportCommand } from '@/common/model/collection/commands/download-export-command';
 import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
 import { SelectCollectionTab } from '@/common/model/collection/commands/select-collection-tab';
 import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
@@ -14,8 +13,10 @@ import { isCollectionVisibilityPausedEvent } from '@/common/model/collection/eve
 import { isCollectionVisibilityResumedEvent } from '@/common/model/collection/events/collection-visibility-resumed';
 import { isCollectionSourceInvalidatedEvent } from '@/common/model/collection/events/collection-source-invalidated';
 import { isCollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
+import { isDownloadCancelledEvent } from '@/common/model/collection/events/download-cancelled';
 import { isDownloadExportEvent } from '@/common/model/collection/events/download-export-event';
 import { isDownloadFailedEvent } from '@/common/model/collection/events/download-failed';
+import { isDownloadSucceededEvent } from '@/common/model/collection/events/download-succeeded';
 import { isGetStateRequested } from '@/common/model/collection/events/get-state-requested';
 import { isLoginRequired } from '@/common/model/collection/events/login-required';
 import { isLoginVerified } from '@/common/model/collection/events/login-verified';
@@ -37,6 +38,7 @@ import {
 	isCollectingRequested,
 } from '@/common/model/collection/states/collecting-requested';
 import { Done, isDone } from '@/common/model/collection/states/done';
+import { Saving, isSaving } from '@/common/model/collection/states/saving';
 import {
 	ErrorState,
 	isErrorState,
@@ -274,16 +276,6 @@ export function transition(
 				commands: [NotifyPopup({ state: newState })],
 			};
 		}
-		if (isDownloadExportEvent(event)) {
-			const newState = Idle({});
-			return {
-				state: newState,
-				commands: [
-					DownloadExportCommand({ tracks: current.tracks }),
-					NotifyPopup({ state: newState }),
-				],
-			};
-		}
 		return { state: current, commands: [] };
 	}
 
@@ -381,28 +373,56 @@ export function transition(
 				commands: [NotifyPopup({ state: newState })],
 			};
 		}
-		if (isDownloadExportEvent(event)) {
-			const newState = Idle({});
-			return {
-				state: newState,
-				commands: [
-					DownloadExportCommand({ tracks: current.tracks }),
-					NotifyPopup({ state: newState }),
-				],
-			};
-		}
 		return { state: current, commands: [] };
 	}
 
 	if (isDone(current)) {
 		if (isDownloadExportEvent(event)) {
+			const newState = Saving({
+				tracks: current.tracks,
+				skippedTrackCount: current.skippedTrackCount,
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isCancelCollectionEvent(event)) {
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [
-					DownloadExportCommand({ tracks: current.tracks }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		return { state: current, commands: [] };
+	}
+
+	if (isSaving(current)) {
+		if (isDownloadSucceededEvent(event)) {
+			const newState = Idle({});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isDownloadCancelledEvent(event)) {
+			const newState = Done({
+				tracks: current.tracks,
+				skippedTrackCount: current.skippedTrackCount,
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
+			};
+		}
+		if (isDownloadFailedEvent(event)) {
+			const newState = Done({
+				tracks: current.tracks,
+				skippedTrackCount: current.skippedTrackCount,
+			});
+			return {
+				state: newState,
+				commands: [NotifyPopup({ state: newState })],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {

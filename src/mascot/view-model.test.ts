@@ -9,6 +9,10 @@ import { silentLoggerLayer } from '@/test/effect-log-test';
 
 import { createMascotViewModel } from '@/mascot/view-model';
 import { poseResourcePath } from '@/mascot/pose-resource-path';
+import {
+	SaveFilePickerCancelled,
+	SaveFilePickerUnavailable,
+} from '@/common/infrastructure/save-file-picker';
 import { createMascotVisibility } from '@/mascot/visibility';
 import type { BeatPoseKey } from '@/mascot/persona';
 import {
@@ -54,7 +58,7 @@ const { getStateMock, sendToBackgroundMock } = vi.hoisted(() => ({
 		}),
 	),
 	sendToBackgroundMock: vi.fn<
-		(message: { readonly _tag: string }) => Effect.Effect<void>
+		(message: { readonly _tag: string }) => Effect.Effect<unknown>
 	>(() => Effect.succeed(undefined)),
 }));
 
@@ -63,6 +67,13 @@ const { getResolvedPopupThemeMock } = vi.hoisted(() => ({
 		() => Effect.succeed('light'),
 	),
 }));
+
+const { startSaveFilePickerMock, awaitSaveFilePickerMock, writeTextFileMock } =
+	vi.hoisted(() => ({
+		startSaveFilePickerMock: vi.fn(),
+		awaitSaveFilePickerMock: vi.fn(),
+		writeTextFileMock: vi.fn(),
+	}));
 
 vi.mock('@/common/infrastructure/chrome-messaging', async (importOriginal) => {
 	const actual =
@@ -86,6 +97,19 @@ vi.mock('@/common/infrastructure/get-resolved-popup-theme', () => ({
 	getResolvedPopupThemeEffect: getResolvedPopupThemeMock,
 }));
 
+vi.mock('@/common/infrastructure/save-file-picker', async (importOriginal) => {
+	const actual =
+		await importOriginal<
+			typeof import('@/common/infrastructure/save-file-picker')
+		>();
+	return {
+		...actual,
+		startSaveFilePicker: startSaveFilePickerMock,
+		awaitSaveFilePicker: awaitSaveFilePickerMock,
+		writeTextFile: writeTextFileMock,
+	};
+});
+
 vi.mock('solid-js', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('solid-js')>();
 	return {
@@ -105,14 +129,18 @@ beforeAll(async () => {
 	testRuntime = await managed.runtime();
 });
 
-function makeVm(initiallyVisible = true) {
+function makeVm(
+	initiallyVisible = true,
+	onSurfaceDismiss: () => void = () => undefined,
+) {
 	const visibility = createMascotVisibility(initiallyVisible);
 	const vm = createMascotViewModel({
 		runtime: testRuntime,
 		visibility,
 		resolvePoseUrl: poseResourcePath,
+		onSurfaceDismiss,
 	});
-	return { vm, visibility, runtime: testRuntime };
+	return { vm, visibility, runtime: testRuntime, onSurfaceDismiss };
 }
 
 describe('MascotViewModel', () => {
@@ -273,21 +301,13 @@ describe('MascotViewModel', () => {
 	});
 
 	it('retryAfterError re-runs getState when sync returned login-required', async () => {
-		getStateMock
-			.mockImplementationOnce(() =>
-				Effect.succeed({
-					status: 'login-required',
-					trackCount: 0,
-					message: LOGIN_REQUIRED_MESSAGE,
-				}),
-			)
-			.mockImplementation(() =>
-				Effect.succeed({
-					status: 'error',
-					trackCount: 0,
-					message: 'Still need login.',
-				}),
-			);
+		getStateMock.mockImplementation(() =>
+			Effect.succeed({
+				status: 'login-required',
+				trackCount: 0,
+				message: LOGIN_REQUIRED_MESSAGE,
+			}),
+		);
 		const runtime = makeTestRuntime();
 		const { vm } = makeVm();
 		sendToBackgroundMock.mockClear();
@@ -299,12 +319,19 @@ describe('MascotViewModel', () => {
 
 		expect(sendToBackgroundMock).not.toHaveBeenCalled();
 		expect(getStateMock).toHaveBeenCalledTimes(2);
-		expect(vm.state()).toBe('error');
-		expect(vm.message()).toBe('Still need login.');
+		expect(vm.state()).toBe('login-required');
+		expect(vm.message()).toBe(LOGIN_REQUIRED_MESSAGE);
 	});
 
 	it('retryAfterError dismisses generic error before re-syncing', async () => {
 		getStateMock
+			.mockImplementationOnce(() =>
+				Effect.succeed({
+					status: 'error',
+					trackCount: 0,
+					message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
+				}),
+			)
 			.mockImplementationOnce(() =>
 				Effect.succeed({
 					status: 'error',
@@ -517,6 +544,7 @@ describe('MascotViewModel — poseUrl', () => {
 			runtime: testRuntime,
 			visibility,
 			resolvePoseUrl: customResolver,
+			onSurfaceDismiss: () => undefined,
 		});
 
 		expect(vm.poseUrl()).toBe(`custom://${vm.pose()}`);
@@ -541,5 +569,176 @@ describe('MascotViewModel — handleAction', () => {
 		expect(vm.effects.handleAction('cancel')).toBe(vm.effects.cancelCollection);
 		expect(vm.effects.handleAction('download')).toBe(vm.effects.download);
 		expect(vm.effects.handleAction('retry')).toBe(vm.effects.retryAfterError);
+	});
+});
+
+describe('MascotViewModel — download', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		getStateMock.mockImplementation(() =>
+			Effect.succeed({ status: 'idle', trackCount: 0, message: undefined }),
+		);
+		getResolvedPopupThemeMock.mockImplementation(() => Effect.succeed('light'));
+		startSaveFilePickerMock.mockImplementation(() =>
+			Effect.succeed({ promise: Promise.resolve({}) }),
+		);
+		awaitSaveFilePickerMock.mockImplementation(() =>
+			Effect.succeed({
+				createWritable: () =>
+					Promise.resolve({
+						write: () => Promise.resolve(undefined),
+						close: () => Promise.resolve(undefined),
+					}),
+			}),
+		);
+		writeTextFileMock.mockImplementation(() => Effect.void);
+	});
+
+	it('opens the save picker before messaging the background', async () => {
+		const order: string[] = [];
+		startSaveFilePickerMock.mockImplementation(() => {
+			order.push('picker');
+			return Effect.succeed({ promise: Promise.resolve({}) });
+		});
+		sendToBackgroundMock.mockImplementation((message) => {
+			order.push(message._tag);
+			if (message._tag === 'DownloadExport') {
+				return Effect.succeed({
+					status: 'saving',
+					trackCount: 1,
+					exportJson: '{"format_version":1}',
+				});
+			}
+			return Effect.succeed({ status: 'idle', trackCount: 0 });
+		});
+
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+		await runtime.runPromise(vm.effects.download);
+
+		expect(order[0]).toBe('picker');
+		expect(order).toContain('DownloadExport');
+		expect(order).toContain('DownloadSucceeded');
+		expect(writeTextFileMock).toHaveBeenCalled();
+		expect(vm.state()).toBe('initial');
+	});
+
+	it('returns to done when the picker is cancelled', async () => {
+		awaitSaveFilePickerMock.mockImplementation(() =>
+			Effect.fail(new SaveFilePickerCancelled({ reason: 'cancel' })),
+		);
+		sendToBackgroundMock.mockImplementation((message) => {
+			if (message._tag === 'DownloadExport') {
+				return Effect.succeed({
+					status: 'saving',
+					trackCount: 1,
+					exportJson: '{"format_version":1}',
+				});
+			}
+			return Effect.succeed({ status: 'done', trackCount: 1 });
+		});
+
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+		await runtime.runPromise(vm.effects.download);
+
+		expect(vm.state()).toBe('done');
+		expect(writeTextFileMock).not.toHaveBeenCalled();
+	});
+
+	it('keeps collected tracks when the picker cannot open', async () => {
+		startSaveFilePickerMock.mockImplementation(() =>
+			Effect.fail(new SaveFilePickerUnavailable({ reason: 'missing' })),
+		);
+		getStateMock.mockImplementation(() =>
+			Effect.succeed({ status: 'done', trackCount: 1 }),
+		);
+		sendToBackgroundMock.mockImplementation((message) => {
+			if (message._tag === 'CancelCollection') {
+				return Effect.succeed({ status: 'idle', trackCount: 0 });
+			}
+			return Effect.succeed({ status: 'done', trackCount: 1 });
+		});
+
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+		await runtime.runPromise(vm.effects.download);
+
+		expect(vm.state()).toBe('error');
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) => message._tag === 'DownloadExport',
+			),
+		).toBe(false);
+
+		await runtime.runPromise(vm.effects.retryAfterError);
+
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) => message._tag === 'CancelCollection',
+			),
+		).toBe(false);
+		expect(vm.state()).toBe('done');
+		expect(vm.trackCount()).toBe(1);
+	});
+});
+
+describe('MascotViewModel — dismiss', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		getStateMock.mockImplementation(() =>
+			Effect.succeed({ status: 'idle', trackCount: 0, message: undefined }),
+		);
+		sendToBackgroundMock.mockImplementation(() => Effect.succeed(undefined));
+		getResolvedPopupThemeMock.mockImplementation(() => Effect.succeed('light'));
+	});
+
+	it('hides Beat without cancelling unless a backup is ready', async () => {
+		const onSurfaceDismiss = vi.fn();
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm(true, onSurfaceDismiss);
+
+		await runtime.runPromise(vm.effects.dismiss);
+
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) => message._tag === 'CancelCollection',
+			),
+		).toBe(false);
+		expect(onSurfaceDismiss).toHaveBeenCalledTimes(1);
+	});
+
+	it('returns a ready backup to idle when dismissed', async () => {
+		const onSurfaceDismiss = vi.fn();
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm(true, onSurfaceDismiss);
+		triggerStateUpdate({ status: 'done', trackCount: 3 });
+
+		await runtime.runPromise(vm.effects.dismiss);
+
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) => message._tag === 'CancelCollection',
+			),
+		).toBe(true);
+		expect(vm.state()).toBe('initial');
+		expect(onSurfaceDismiss).toHaveBeenCalledTimes(1);
+	});
+
+	it('returns a saving backup to idle when dismissed', async () => {
+		const onSurfaceDismiss = vi.fn();
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm(true, onSurfaceDismiss);
+		triggerStateUpdate({ status: 'saving', trackCount: 3 });
+
+		await runtime.runPromise(vm.effects.dismiss);
+
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) => message._tag === 'CancelCollection',
+			),
+		).toBe(true);
+		expect(vm.state()).toBe('initial');
+		expect(onSurfaceDismiss).toHaveBeenCalledTimes(1);
 	});
 });

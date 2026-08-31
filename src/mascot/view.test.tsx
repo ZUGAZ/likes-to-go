@@ -200,6 +200,20 @@ describe('BeatView', () => {
 		expect(view.getByText(expectedCopy)).toBeTruthy();
 	});
 
+	it('renders balloon copy for saving state without a download button', () => {
+		const view = renderBeatView({ state: 'saving', trackCount: 10 });
+		const expectedCopy = resolveBalloonCopy('saving', {
+			trackCount: 10,
+			skippedTrackCount: 0,
+			source: 'likes-page',
+			message: undefined,
+		});
+
+		expect(view.getByText(expectedCopy)).toBeTruthy();
+		expect(view.queryByRole('button', { name: 'Download backup' })).toBeNull();
+		expect(view.container.querySelector('[aria-busy="true"]')).toBeTruthy();
+	});
+
 	it('renders role=alert for login-required state (alert before retry button)', () => {
 		const view = renderBeatView({ state: 'login-required' });
 

@@ -88,6 +88,16 @@ export const beatPersonaCatalog: Readonly<Record<BeatState, BeatPersonaEntry>> =
 					? `Couldn't read ${String(ctx.skippedTrackCount)}; got the rest though.`
 					: undefined,
 		},
+		saving: {
+			pose: 'working',
+			balloonCopy: 'Pick a place to save your backup.',
+			options: [],
+			accessibilityLiveMessage: 'Choose where to save your backup.',
+			footnoteCopy: (ctx: PersonaBalloonContext) =>
+				ctx.skippedTrackCount > 0
+					? `Couldn't read ${String(ctx.skippedTrackCount)}; got the rest though.`
+					: undefined,
+		},
 		'login-required': {
 			pose: 'sad',
 			balloonCopy: (ctx: PersonaBalloonContext) =>

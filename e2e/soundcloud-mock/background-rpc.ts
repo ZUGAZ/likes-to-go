@@ -18,6 +18,7 @@ function isCollectionStatus(value: unknown): value is CollectionStatus {
 		value === 'collecting' ||
 		value === 'paused' ||
 		value === 'done' ||
+		value === 'saving' ||
 		value === 'login-required' ||
 		value === 'error'
 	);

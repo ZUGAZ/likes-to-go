@@ -24,12 +24,11 @@ import {
 	USER_NAV_SELECTOR,
 } from './soundcloud-mock/constants';
 import {
-	decodeExportDataUrl,
-	installDownloadCapture,
-	startJsonDataUrlDownload,
-	waitForCapturedDownload,
-	type DownloadCapture,
-} from './soundcloud-mock/download-capture';
+	decodeSavedExportJson,
+	installSaveCapture,
+	startSyntheticSave,
+	waitForCapturedSave,
+} from './soundcloud-mock/save-capture';
 import {
 	installSoundCloudMockRoutes,
 	type SoundCloudRouteJournal,
@@ -77,7 +76,6 @@ test('soundcloud mock harness seams', async ({
 	await seedSoundCloudSessionCookie(context, SESSION_COOKIE_VALUE);
 
 	const serviceWorker = await waitForExtensionServiceWorker(context);
-	await installDownloadCapture(serviceWorker);
 
 	const cookie = await readSoundCloudSessionCookieFromWorker(serviceWorker);
 	expect(
@@ -119,18 +117,13 @@ test('soundcloud mock harness seams', async ({
 		expect(hasCollectionStatus(state)).toBe(true);
 		await waitForGetStateStatus(context, extensionId, 'idle');
 
+		const saveCapture = await installSaveCapture(page);
 		const syntheticJson = JSON.stringify(SYNTHETIC_EXPORT);
-		await startJsonDataUrlDownload(
-			serviceWorker,
-			syntheticJson,
-			SYNTHETIC_FILENAME,
-		);
+		await startSyntheticSave(saveCapture, syntheticJson, SYNTHETIC_FILENAME);
 
-		const captured: DownloadCapture =
-			await waitForCapturedDownload(serviceWorker);
-		expect(typeof captured.id).toBe('number');
-		expect(typeof captured.filename).toBe('string');
-		expect(decodeExportDataUrl(captured.url)).toEqual({
+		const captured = await waitForCapturedSave(saveCapture);
+		expect(captured.filename).toBe(SYNTHETIC_FILENAME);
+		expect(decodeSavedExportJson(captured.body)).toEqual({
 			harness: 'soundcloud-mock',
 			ok: true,
 		});

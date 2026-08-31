@@ -6,6 +6,7 @@ import { isLoginRequiredReason } from '@/common/model/collection/error-reason';
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { isIdle } from '@/common/model/collection/states/idle';
 import { isPaused } from '@/common/model/collection/states/paused';
+import { isSaving } from '@/common/model/collection/states/saving';
 import type { CollectionStatus } from '@/common/model/request-message';
 
 export function collectionStateToStatus(
@@ -25,6 +26,9 @@ export function collectionStateToStatus(
 	}
 	if (isDone(state)) {
 		return 'done';
+	}
+	if (isSaving(state)) {
+		return 'saving';
 	}
 	if (isErrorState(state)) {
 		return isLoginRequiredReason(state.reason) ? 'login-required' : 'error';

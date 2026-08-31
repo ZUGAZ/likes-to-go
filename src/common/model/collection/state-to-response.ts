@@ -4,9 +4,10 @@ import { hasTracks } from '@/common/model/collection/state';
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { isIdle } from '@/common/model/collection/states/idle';
 import { isPaused } from '@/common/model/collection/states/paused';
+import { isSaving } from '@/common/model/collection/states/saving';
 import { collectionStateToStatus } from '@/common/model/collection/state-to-status';
-import { isCollecting } from './states/collecting';
 import { COLLECTION_VISIBILITY_PAUSED_MESSAGE } from '@/common/model/collection/visibility-paused-message';
+import { buildExportPayload } from '@/common/model/exporter';
 
 export function collectionStateToGetStateResponse(
 	state: CollectionState,
@@ -18,10 +19,9 @@ export function collectionStateToGetStateResponse(
 		: isPaused(state)
 			? COLLECTION_VISIBILITY_PAUSED_MESSAGE
 			: undefined;
-	const skippedTrackCount =
-		isCollecting(state) || isPaused(state)
-			? state.skippedTrackCount
-			: undefined;
+	const skippedTrackCount = hasTracks(state)
+		? state.skippedTrackCount
+		: undefined;
 	const baseResponse = {
 		status,
 		trackCount,
@@ -38,4 +38,18 @@ export function collectionStateToGetStateResponse(
 	}
 
 	return baseResponse;
+}
+
+export function collectionStateToDownloadExportResponse(
+	state: CollectionState,
+): GetStateResponse {
+	const base = collectionStateToGetStateResponse(state);
+	if (!isSaving(state)) {
+		return base;
+	}
+
+	return {
+		...base,
+		exportJson: JSON.stringify(buildExportPayload({ tracks: state.tracks })),
+	};
 }

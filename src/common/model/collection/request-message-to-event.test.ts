@@ -3,6 +3,9 @@ import { requestMessageToCollectionEvent } from '@/common/model/collection/reque
 import {
 	CollectionVisibilityPausedRequest,
 	CollectionVisibilityResumedRequest,
+	DownloadCancelledRequest,
+	DownloadFailedRequest,
+	DownloadSucceededRequest,
 	GetStateRequest,
 	LoginRequiredRequest,
 	StartCollectionRequest,
@@ -29,6 +32,33 @@ describe('requestMessageToCollectionEvent', () => {
 			_tag: 'LoginRequired',
 			message: 'Please log in to SoundCloud',
 			reason: 'User nav selector not found',
+		});
+	});
+
+	it('maps DownloadSucceededRequest to DownloadSucceeded event', () => {
+		expect(
+			requestMessageToCollectionEvent(DownloadSucceededRequest()),
+		).toMatchObject({ _tag: 'DownloadSucceeded' });
+	});
+
+	it('maps DownloadCancelledRequest to DownloadCancelled event', () => {
+		expect(
+			requestMessageToCollectionEvent(DownloadCancelledRequest()),
+		).toMatchObject({ _tag: 'DownloadCancelled' });
+	});
+
+	it('maps DownloadFailedRequest to DownloadFailed event', () => {
+		expect(
+			requestMessageToCollectionEvent(
+				DownloadFailedRequest({
+					message: 'Could not save your export',
+					reason: 'disk',
+				}),
+			),
+		).toMatchObject({
+			_tag: 'DownloadFailed',
+			message: 'Could not save your export',
+			reason: 'disk',
 		});
 	});
 

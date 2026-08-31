@@ -137,7 +137,7 @@ Layout-specific DOM knowledge lives in `src/layout/`; the shared collection pipe
 ### Runtime components
 
 - **Popup** (View + ViewModel): Solid.js UI for views; Effect for ViewModel actions and runtime. Sends commands, displays progress.
-- **Background service worker** (Orchestrator): Effect-based orchestration. Coordinates content script, accumulates data, triggers download.
+- **Background service worker** (Orchestrator): Effect-based orchestration. Coordinates content script, accumulates data, and holds the backup until the UI finishes saving.
 - **Content script** (Model + Infrastructure): Effect-based collection pipeline. Injected into SoundCloud. Reads the DOM, collects track data, reports to the background worker.
 
 ## 🧠 Technical decisions

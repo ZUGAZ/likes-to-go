@@ -20,7 +20,7 @@ export function BeatContainer(props: BeatContainerProps) {
 	const runtime = untrack(() => props.runtime);
 	const visibility = untrack(() => props.visibility);
 	const resolvePoseUrl = untrack(() => props.resolvePoseUrl);
-	const onDismiss = untrack(() => props.onDismiss) ?? visibility.dismiss;
+	const onSurfaceDismiss = untrack(() => props.onDismiss) ?? visibility.dismiss;
 
 	const vm = bindViewModel(
 		runtime,
@@ -28,6 +28,7 @@ export function BeatContainer(props: BeatContainerProps) {
 			runtime,
 			visibility,
 			resolvePoseUrl,
+			onSurfaceDismiss,
 		}),
 		'MascotViewModel',
 	);
@@ -51,7 +52,7 @@ export function BeatContainer(props: BeatContainerProps) {
 			footnoteCopy={vm.footnoteCopy}
 			liveStatusMessage={vm.liveStatusMessage}
 			onAction={vm.actions.handleAction}
-			onDismiss={onDismiss}
+			onDismiss={vm.actions.dismiss}
 		/>
 	);
 }

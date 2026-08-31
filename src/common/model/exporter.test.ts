@@ -1,4 +1,7 @@
-import { buildExportPayload } from '@/common/model/exporter';
+import {
+	buildExportPayload,
+	exportBackupFilename,
+} from '@/common/model/exporter';
 import type { Track } from '@/common/model/track';
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
@@ -151,6 +154,12 @@ describe('buildExportPayload', () => {
 					}
 				},
 			),
+		);
+	});
+
+	it('exportBackupFilename uses the UTC calendar date', () => {
+		expect(exportBackupFilename(new Date('2026-08-31T22:15:00.000Z'))).toBe(
+			'likes-to-go-2026-08-31.json',
 		);
 	});
 });

@@ -31,10 +31,10 @@ import {
 	USER_NAV_SELECTOR,
 } from './soundcloud-mock/constants';
 import {
-	decodeExportDataUrl,
-	installDownloadCapture,
-	waitForCapturedDownload,
-} from './soundcloud-mock/download-capture';
+	decodeSavedExportJson,
+	installSaveCapture,
+	waitForCapturedSave,
+} from './soundcloud-mock/save-capture';
 import {
 	assertExpectedBadgesExportPayload,
 	EXPECTED_VALID_TRACK_COUNT,
@@ -272,7 +272,6 @@ test('overlay start export completes against mocked likes and downloads v1 JSON'
 	await seedSoundCloudSessionCookie(context, SESSION_COOKIE_VALUE);
 
 	const serviceWorker = await waitForExtensionServiceWorker(context);
-	await installDownloadCapture(serviceWorker);
 
 	const likesPage = await context.newPage();
 	const likesConsole = installConsoleCapture(likesPage);
@@ -415,11 +414,12 @@ test('overlay start export completes against mocked likes and downloads v1 JSON'
 		});
 		await expect(downloadBackup).toBeVisible({ timeout: COLLECTION_WAIT_MS });
 
+		const saveCapture = await installSaveCapture(likesPage);
 		await downloadBackup.click();
 
-		const captured = await waitForCapturedDownload(serviceWorker);
+		const captured = await waitForCapturedSave(saveCapture);
 		const payload = assertExpectedBadgesExportPayload(
-			decodeExportDataUrl(captured.url),
+			decodeSavedExportJson(captured.body),
 		);
 
 		expect(expectedExportFilenameFromExportedAt(payload.exported_at)).toMatch(

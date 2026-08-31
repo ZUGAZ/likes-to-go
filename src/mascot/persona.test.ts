@@ -21,6 +21,7 @@ const ALL_STATES: ReadonlyArray<BeatState> = [
 	'processing',
 	'paused',
 	'done',
+	'saving',
 	'login-required',
 	'error',
 ];
@@ -86,6 +87,7 @@ describe('beatPersonaCatalog exhaustiveness', () => {
 		expect(poseForState('processing')).toBe('working');
 		expect(poseForState('paused')).toBe('idle');
 		expect(poseForState('done')).toBe('happy');
+		expect(poseForState('saving')).toBe('working');
 		expect(poseForState('login-required')).toBe('sad');
 		expect(poseForState('error')).toBe('sad');
 	});
@@ -125,6 +127,11 @@ describe('options validity', () => {
 		const options = resolvePersonaOptions('done');
 		expect(options).toHaveLength(1);
 		expect(options[0]?.actionId).toBe('download');
+	});
+
+	it('saving state has no actions', () => {
+		const options = resolvePersonaOptions('saving');
+		expect(options).toHaveLength(0);
 	});
 
 	it('error and login-required states have a retry action', () => {
@@ -171,6 +178,11 @@ describe('resolver spot-checks', () => {
 		expect(copy).toContain('47');
 	});
 
+	it('resolveBalloonCopy saving asks the user to pick a place', () => {
+		const copy = resolveBalloonCopy('saving', baseContext);
+		expect(copy).toContain('save');
+	});
+
 	it('resolveBalloonCopy error/login-required prefers context.message when set', () => {
 		for (const state of ['error', 'login-required'] as const) {
 			const copy = resolveBalloonCopy(state, contextWithMessage);
@@ -195,6 +207,7 @@ describe('resolver spot-checks', () => {
 			'loading',
 			'checking-login',
 			'processing',
+			'saving',
 		];
 		for (const state of busyStates) {
 			const msg = resolveAccessibilityLiveMessage(state, baseContext);

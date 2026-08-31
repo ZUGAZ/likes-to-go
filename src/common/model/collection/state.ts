@@ -12,6 +12,10 @@ import {
 	PausedStateSchema,
 	isPaused,
 } from '@/common/model/collection/states/paused';
+import {
+	SavingStateSchema,
+	isSaving,
+} from '@/common/model/collection/states/saving';
 
 export const CollectionStateSchema = Schema.Union(
 	IdleSchema,
@@ -19,6 +23,7 @@ export const CollectionStateSchema = Schema.Union(
 	CollectingStateSchema,
 	PausedStateSchema,
 	DoneStateSchema,
+	SavingStateSchema,
 	ErrorStateSchema,
 );
 
@@ -29,8 +34,11 @@ export function hasTracks(
 ): state is
 	| Schema.Schema.Type<typeof CollectingStateSchema>
 	| Schema.Schema.Type<typeof PausedStateSchema>
-	| Schema.Schema.Type<typeof DoneStateSchema> {
-	return isCollecting(state) || isPaused(state) || isDone(state);
+	| Schema.Schema.Type<typeof DoneStateSchema>
+	| Schema.Schema.Type<typeof SavingStateSchema> {
+	return (
+		isCollecting(state) || isPaused(state) || isDone(state) || isSaving(state)
+	);
 }
 
 export function collectionTabId(state: CollectionState): number | undefined {

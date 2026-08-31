@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import {
-    BeatViewStoryHost,
-    type BeatViewStoryArgs,
+	BeatViewStoryHost,
+	type BeatViewStoryArgs,
 } from '@/mascot/beat-view-story-host';
 import type { BeatState } from '@/mascot/model';
 
@@ -14,6 +14,7 @@ const BEAT_STATES: ReadonlyArray<BeatState> = [
 	'processing',
 	'paused',
 	'done',
+	'saving',
 	'login-required',
 	'error',
 ];
@@ -100,6 +101,16 @@ export const Done: Story = {
 	args: {
 		state: 'done',
 		trackCount: 42,
+		showDismiss: true,
+	},
+};
+
+export const Saving: Story = {
+	name: 'saving',
+	args: {
+		state: 'saving',
+		trackCount: 42,
+		showDismiss: true,
 	},
 };
 
