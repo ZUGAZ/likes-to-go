@@ -51,6 +51,7 @@ const V1_TOP_LEVEL_KEYS = [
 /** Same prefix check as `exporter.test.ts` ("output has exported_at as ISO string"). */
 const EXPORTED_AT_ISO_PREFIX = /^\d{4}-\d{2}-\d{2}T/;
 
+/** Dropped v1 keys — must never appear in serialized export JSON. */
 const OMITTED_TRACK_FIELDS = [
 	'genre',
 	'tags',

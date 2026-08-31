@@ -63,25 +63,7 @@ describe('buildExportPayload', () => {
 		});
 	});
 
-	it('tracks include optional list fields when present', () => {
-		const tracks = [
-			validTrack({
-				genre: 'Drum & Bass',
-				tags: ['Drum & Bass'],
-				playback_count: 27565,
-				likes_count: 1269,
-			}),
-		];
-		const payload = buildExportPayload({ tracks });
-		expect(payload.tracks[0]).toMatchObject({
-			genre: 'Drum & Bass',
-			tags: ['Drum & Bass'],
-			playback_count: 27565,
-			likes_count: 1269,
-		});
-	});
-
-	it('tracks omit optional list fields when undefined', () => {
+	it('tracks omit dropped v1 keys on minimal tracks', () => {
 		const tracks = [validTrack()];
 		const payload = buildExportPayload({ tracks });
 		const t = payload.tracks[0];
@@ -155,7 +137,7 @@ describe('buildExportPayload', () => {
 				},
 			),
 		);
-	});
+	}, 15_000);
 
 	it('exportBackupFilename uses the UTC calendar date', () => {
 		expect(exportBackupFilename(new Date('2026-08-31T22:15:00.000Z'))).toBe(

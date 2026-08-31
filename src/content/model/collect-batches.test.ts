@@ -237,8 +237,35 @@ describe('collectBatch', () => {
 
 		expect(batch.tracks).toHaveLength(3);
 		expect(batch.tracks[0]?.title).toBe('Arax & Enif - Round');
-		expect(batch.tracks[0]?.genre).toBe('Drum & Bass');
-		expect(batch.tracks[0]?.playback_count).toBe(27565);
+		expect(batch.tracks[0]?.url.toString()).toBe(
+			'https://soundcloud.com/neurophoria_dnb/arax-enif-round-smrlbsv2',
+		);
+		expect(batch.tracks[0]?.user_url).toBe(
+			'https://soundcloud.com/neurophoria_dnb',
+		);
+		expect(batch.tracks[0]?.artwork_url).toBe(
+			'https://i1.sndcdn.com/artworks-arax-enif-t500x500.png',
+		);
+		expect(batch.tracks[1]?.title).toBe('Nais - Obscura Bass [KOSEN 42]');
+		expect(batch.tracks[1]?.url.toString()).toBe(
+			'https://soundcloud.com/kosenprod/nais-obscura-bass-kosen-42',
+		);
+		expect(batch.tracks[2]?.title).toBe('2DB - Spud Gun ( Crossfire EP 2 )');
+		expect(batch.tracks[2]?.url.toString()).toBe(
+			'https://soundcloud.com/techniquerecordings/2db-spud-gun-technique',
+		);
+
+		const omittedKeys = [
+			'genre',
+			'tags',
+			'playback_count',
+			'likes_count',
+		] as const;
+		for (const track of batch.tracks) {
+			for (const key of omittedKeys) {
+				expect(key in track).toBe(false);
+			}
+		}
 	});
 
 	it('does not add debug-style outlines on list items (overlay only)', async () => {

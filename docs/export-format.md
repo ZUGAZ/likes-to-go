@@ -17,11 +17,7 @@ Likes to Go saves your backup as JSON. The export payload follows `format_versio
 			"artist": "Artist Name",
 			"url": "https://soundcloud.com/artist/track-name",
 			"artwork_url": "https://i1.sndcdn.com/artworks-example-large.jpg",
-			"user_url": "https://soundcloud.com/artist",
-			"genre": "Electronic",
-			"tags": ["Electronic"],
-			"playback_count": 12500,
-			"likes_count": 890
+			"user_url": "https://soundcloud.com/artist"
 		},
 		{
 			"title": "Second Track",
@@ -45,12 +41,8 @@ Likes to Go saves your backup as JSON. The export payload follows `format_versio
   - `url` (string)
   - `artwork_url` (optional string)
   - `user_url` (optional string)
-  - `genre` (optional string)
-  - `tags` (optional string array)
-  - `playback_count` (optional number)
-  - `likes_count` (optional number)
 
-**Optional track fields** (`genre`, `tags`, `playback_count`, `likes_count`) may be omitted per track. They appear when you export from **List view** and SoundCloud shows that metadata on the page. **Badges view** exports core fields only and omits these keys.
+Badges and List export the same track fields.
 
 **Not exported:** track duration and liked-at timestamp are not available from either supported view in the current release.
 
@@ -61,7 +53,3 @@ Likes to Go saves your backup as JSON. The export payload follows `format_versio
 | title, artist, url | Yes         | Yes               |
 | artwork_url        | Yes         | Yes (when loaded) |
 | user_url           | Yes         | Yes               |
-| genre              | —           | Yes (when shown)  |
-| tags               | —           | Yes (when shown)  |
-| playback_count     | —           | Yes (when shown)  |
-| likes_count        | —           | Yes (when shown)  |

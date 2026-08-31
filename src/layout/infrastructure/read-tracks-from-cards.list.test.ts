@@ -202,6 +202,18 @@ describe('list-view fixture', () => {
 			},
 		]);
 
+		const omittedKeys = [
+			'genre',
+			'tags',
+			'playback_count',
+			'likes_count',
+		] as const;
+		for (const track of tracks) {
+			for (const key of omittedKeys) {
+				expect(key in track).toBe(false);
+			}
+		}
+
 		expect(tracks.some((t) => t.url === '')).toBe(false);
 
 		const malformedArtworkStyle =

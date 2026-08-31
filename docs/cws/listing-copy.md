@@ -23,7 +23,7 @@ How it works:
 3. Click Start export.
 4. When I'm done, click Download backup to save your file.
 
-Your backup includes track title, artist, URL, and optional artwork or user links when they're available on the page. Optional metadata like genre, tags, and counts may appear from List view when SoundCloud shows them.
+Your backup includes track title, artist, URL, and optional artwork or user links when they're available on the page.
 
 ## 🔒 Privacy
 

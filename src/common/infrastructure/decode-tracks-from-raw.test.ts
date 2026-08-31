@@ -35,7 +35,7 @@ describe('decodeTracksFromRaw', () => {
 		expect(decodeTracksFromRaw(raw)).toEqual([]);
 	});
 
-	it('decodes list raw tracks with all optional list fields', () => {
+	it('strips legacy keys from raw tracks', () => {
 		const raw = [
 			{
 				title: 'Song',
@@ -49,13 +49,13 @@ describe('decodeTracksFromRaw', () => {
 		];
 		const tracks = decodeTracksFromRaw(raw);
 		expect(tracks).toHaveLength(1);
-		expect(tracks[0]).toMatchObject({
-			title: 'Song',
-			genre: 'Drum & Bass',
-			tags: ['Drum & Bass'],
-			playback_count: 27565,
-			likes_count: 1269,
-		});
+		const track = tracks[0];
+		if (track === undefined) throw new Error('expected one track');
+		expect(track.title).toBe('Song');
+		expect('genre' in track).toBe(false);
+		expect('tags' in track).toBe(false);
+		expect('playback_count' in track).toBe(false);
+		expect('likes_count' in track).toBe(false);
 	});
 
 	it('returns only valid items when mix of valid and invalid', () => {
