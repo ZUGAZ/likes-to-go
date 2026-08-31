@@ -1,3 +1,4 @@
+import { csvExportFormat } from '@/common/model/export-format/csv';
 import type { ExportFormatId } from '@/common/model/export-format/export-format-id';
 import { jsonExportFormat } from '@/common/model/export-format/json';
 import type { SaveFilePickerType } from '@/common/model/export-format/save-file-picker-type';
@@ -19,7 +20,10 @@ export class ExportFormatNotFound extends Data.TaggedError(
 	readonly formatId: string;
 }> {}
 
-const exportFormats: readonly ExportFormatDefinition[] = [jsonExportFormat];
+const exportFormats: readonly ExportFormatDefinition[] = [
+	jsonExportFormat,
+	csvExportFormat,
+];
 
 export function listExportFormats(): readonly ExportFormatDefinition[] {
 	return exportFormats;

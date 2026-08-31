@@ -24,4 +24,12 @@ describe('renderExportBody', () => {
 			JSON.stringify(buildExportPayload({ tracks })),
 		);
 	});
+
+	it('renders CSV as title,artist rows without urls', () => {
+		const tracks = [validTrack(), validTrack()];
+		const body = renderExportBody('csv', tracks);
+		expect(body.startsWith('title,artist\n')).toBe(true);
+		expect(body.split('\n')).toHaveLength(tracks.length + 1);
+		expect(body).not.toContain('http');
+	});
 });

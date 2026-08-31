@@ -43,6 +43,14 @@ describe('collectionStateToDownloadExportResponse', () => {
 		).toBeUndefined();
 	});
 
+	it('sets exportBody to CSV when format is csv', () => {
+		const tracks = [validTrack()];
+		const saving = Saving({ tracks, skippedTrackCount: 0 });
+		const response = collectionStateToDownloadExportResponse(saving, 'csv');
+		expect(response.exportBody).toBe('title,artist\nTrack,Artist');
+		expect(response.exportBody).not.toContain('http');
+	});
+
 	it('includes skippedTrackCount for Done and Saving', () => {
 		const tracks = [validTrack()];
 		expect(
