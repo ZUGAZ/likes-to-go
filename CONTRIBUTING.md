@@ -205,28 +205,23 @@ Emojis are welcome in docs, commit messages, code comments, UI text, test descri
 - **Yes:** Non-obvious "why" decisions, workaround explanations, links to external quirks, JSDoc on public APIs at layer boundaries.
 - **No:** Restating what code does, narrating control flow, explaining standard patterns.
 
-## 🧪 Testing expectations
+## 🧪 Testing
 
-### Model layer (pure FP)
+This repo uses **Vitest + fast-check + Solid Testing Library** for unit and integration tests, **Storybook** for isolated UI, and **Playwright** for E2E. Commands and fixtures for this project:
 
-Vitest + fast-check property-based tests. Schema validation, stream accumulation/dedup, exporter output conformance.
+### Unit and integration
 
-### Infrastructure layer
+```bash
+pnpm test
+pnpm test:run
+```
 
-Vitest with mocked DOM (happy-dom) and mocked Chrome APIs. Selector accuracy against HTML fixtures in `tests/fixtures/`:
+DOM reader fixtures live in `tests/fixtures/`:
 
 - `badges-view.html` — Badges view card structure
 - `list-view.html` — List view card structure (including optional metadata markup used by list-only export fields)
 
-When SoundCloud markup changes, update the relevant layout under `src/layout/infrastructure/layouts/` and the matching fixture.
-
-### View layer
-
-Solid Testing Library integration tests. Correct state rendering, button actions, progress updates.
-
-### When to use fast-check
-
-Any function that transforms data or validates schemas benefits from property-based testing. If you can describe "for all valid inputs, this property holds," use fast-check.
+When SoundCloud markup changes, update the layout under `src/layout/infrastructure/layouts/` and the matching fixture.
 
 ### E2E (Playwright)
 
