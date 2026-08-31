@@ -1,5 +1,9 @@
 import { For, Show } from 'solid-js';
 
+import {
+	ExportFormatStickerRows,
+	type ExportFormatStickerRowsProps,
+} from '@/mascot/export-format-sticker-rows';
 import type { BeatActionId, BeatPersonaOption } from '@/mascot/persona';
 
 export interface SpeechBalloonProps {
@@ -7,6 +11,7 @@ export interface SpeechBalloonProps {
 	readonly options: ReadonlyArray<BeatPersonaOption>;
 	readonly footnoteCopy: string | undefined;
 	readonly isError?: boolean;
+	readonly formatSelection?: ExportFormatStickerRowsProps;
 	readonly onAction: (actionId: BeatActionId) => void;
 	readonly onDismiss: (() => void) | undefined;
 }
@@ -20,6 +25,16 @@ export function SpeechBalloon(props: SpeechBalloonProps) {
 			>
 				{props.copy}
 			</p>
+
+			<Show when={props.formatSelection}>
+				{(selection) => (
+					<ExportFormatStickerRows
+						formats={selection().formats}
+						selectedId={selection().selectedId}
+						onSelect={selection().onSelect}
+					/>
+				)}
+			</Show>
 
 			<Show when={props.options.length > 0}>
 				<div class="beat-balloon__actions">

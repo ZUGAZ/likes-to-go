@@ -51,6 +51,11 @@ export function BeatContainer(props: BeatContainerProps) {
 			options={vm.options}
 			footnoteCopy={vm.footnoteCopy}
 			liveStatusMessage={vm.liveStatusMessage}
+			formatSelection={() => ({
+				formats: vm.exportFormatRows(),
+				selectedId: vm.selectedExportFormatId(),
+				onSelect: vm.selectExportFormat,
+			})}
 			onAction={vm.actions.handleAction}
 			onDismiss={vm.actions.dismiss}
 		/>

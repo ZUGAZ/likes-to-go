@@ -1,6 +1,11 @@
-import { Show } from 'solid-js';
+import { Show, createSignal } from 'solid-js';
 
+import {
+	defaultExportFormatId,
+	listExportFormats,
+} from '@/common/model/export-format/registry';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
+import type { ExportFormatStickerRow } from '@/mascot/export-format-sticker-rows';
 import type { BeatActionId } from '@/mascot/persona';
 import {
 	mapStateToBalloonCopy,
@@ -34,6 +39,13 @@ const logDismiss = (): void => {
 	console.info('[BeatView story] dismiss');
 };
 
+const exportFormatStoryRows: ReadonlyArray<ExportFormatStickerRow> =
+	listExportFormats().map((format) => ({
+		id: format.id,
+		label: format.label,
+		worksWith: format.worksWith,
+	}));
+
 const normalizeMessage = (message: string | undefined): string | undefined => {
 	if (message === undefined || message === '') {
 		return undefined;
@@ -42,12 +54,24 @@ const normalizeMessage = (message: string | undefined): string | undefined => {
 };
 
 function BeatViewStoryPresentation(props: BeatViewStoryArgs) {
+	const [selectedExportFormatId, setSelectedExportFormatId] = createSignal(
+		defaultExportFormatId(),
+	);
+
 	const buildCopyContext = () => ({
 		trackCount: props.trackCount,
 		skippedTrackCount: props.skippedTrackCount,
 		source: props.source,
 		message: normalizeMessage(props.message),
 	});
+
+	const selectStoryFormat = (id: string): void => {
+		const match = listExportFormats().find((format) => format.id === id);
+		if (match === undefined) {
+			return;
+		}
+		setSelectedExportFormatId(match.id);
+	};
 
 	return (
 		<BeatView
@@ -63,6 +87,15 @@ function BeatViewStoryPresentation(props: BeatViewStoryArgs) {
 			liveStatusMessage={() =>
 				mapStateToLiveMessage(props.state, buildCopyContext())
 			}
+			{...(props.state === 'done'
+				? {
+						formatSelection: () => ({
+							formats: exportFormatStoryRows,
+							selectedId: selectedExportFormatId(),
+							onSelect: selectStoryFormat,
+						}),
+					}
+				: {})}
 			onAction={logAction}
 			{...(props.showDismiss ? { onDismiss: logDismiss } : {})}
 		/>

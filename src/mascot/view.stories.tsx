@@ -158,6 +158,24 @@ export const DoneWithFootnote: Story = {
 	},
 };
 
+export const DoneDark: Story = {
+	args: {
+		state: 'done',
+		theme: 'dark',
+		trackCount: 42,
+		showDismiss: true,
+	},
+};
+
+export const DoneOverlay: Story = {
+	args: {
+		state: 'done',
+		presentation: 'overlay',
+		trackCount: 42,
+		showDismiss: true,
+	},
+};
+
 export const InitialActiveTab: Story = {
 	args: {
 		state: 'initial',

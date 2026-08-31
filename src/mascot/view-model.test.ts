@@ -13,7 +13,10 @@ import {
 	SaveFilePickerCancelled,
 	SaveFilePickerUnavailable,
 } from '@/common/infrastructure/save-file-picker';
-import { getExportFormat } from '@/common/model/export-format/registry';
+import {
+	getExportFormat,
+	listExportFormats,
+} from '@/common/model/export-format/registry';
 import { createMascotVisibility } from '@/mascot/visibility';
 import type { BeatPoseKey } from '@/mascot/persona';
 import {
@@ -699,6 +702,157 @@ describe('MascotViewModel — download', () => {
 		).toBe(false);
 		expect(vm.state()).toBe('done');
 		expect(vm.trackCount()).toBe(1);
+	});
+});
+
+describe('MascotViewModel — export format selection', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		getStateMock.mockImplementation(() =>
+			Effect.succeed({ status: 'idle', trackCount: 0, message: undefined }),
+		);
+		getResolvedPopupThemeMock.mockImplementation(() => Effect.succeed('light'));
+		startSaveFilePickerMock.mockImplementation(() =>
+			Effect.succeed({ promise: Promise.resolve({}) }),
+		);
+		awaitSaveFilePickerMock.mockImplementation(() =>
+			Effect.succeed({
+				createWritable: () =>
+					Promise.resolve({
+						write: () => Promise.resolve(undefined),
+						close: () => Promise.resolve(undefined),
+					}),
+			}),
+		);
+		writeTextFileMock.mockImplementation(() => Effect.void);
+	});
+
+	it('maps exportFormatRows from the registry', () => {
+		const { vm } = makeVm();
+
+		expect(vm.selectedExportFormatId()).toBe('json');
+		expect(vm.exportFormatRows()).toEqual(
+			listExportFormats().map((format) => ({
+				id: format.id,
+				label: format.label,
+				worksWith: format.worksWith,
+			})),
+		);
+	});
+
+	it('selects csv and no-ops unknown ids', () => {
+		const { vm } = makeVm();
+
+		vm.selectExportFormat('csv');
+		expect(vm.selectedExportFormatId()).toBe('csv');
+
+		vm.selectExportFormat('xlsx');
+		expect(vm.selectedExportFormatId()).toBe('csv');
+	});
+
+	it('uses the selected csv format for picker, DownloadExport, and body write', async () => {
+		sendToBackgroundMock.mockImplementation((message) => {
+			if (message._tag === 'DownloadExport') {
+				return Effect.succeed({
+					status: 'saving',
+					trackCount: 1,
+					exportBody: 'title,artist\nSong,Artist',
+				});
+			}
+			return Effect.succeed({ status: 'idle', trackCount: 0 });
+		});
+
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+		vm.selectExportFormat('csv');
+		await runtime.runPromise(vm.effects.download);
+
+		const csvFormat = getExportFormat('csv');
+		expect(startSaveFilePickerMock).toHaveBeenCalledWith(
+			expect.stringMatching(/^likes-to-go-\d{4}-\d{2}-\d{2}\.csv$/),
+			csvFormat.pickerTypes,
+			expect.any(AbortSignal),
+		);
+		expect(
+			sendToBackgroundMock.mock.calls.some(
+				([message]) =>
+					message._tag === 'DownloadExport' && message.format === 'csv',
+			),
+		).toBe(true);
+		expect(writeTextFileMock).toHaveBeenCalledWith(
+			expect.anything(),
+			'title,artist\nSong,Artist',
+		);
+		expect(vm.selectedExportFormatId()).toBe('json');
+	});
+
+	it('keeps csv selection when the picker is cancelled', async () => {
+		awaitSaveFilePickerMock.mockImplementation(() =>
+			Effect.fail(new SaveFilePickerCancelled({ reason: 'cancel' })),
+		);
+		sendToBackgroundMock.mockImplementation((message) => {
+			if (message._tag === 'DownloadExport') {
+				return Effect.succeed({
+					status: 'saving',
+					trackCount: 1,
+					exportBody: 'title,artist\nSong,Artist',
+				});
+			}
+			return Effect.succeed({ status: 'done', trackCount: 1 });
+		});
+
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+		vm.selectExportFormat('csv');
+		await runtime.runPromise(vm.effects.download);
+
+		expect(vm.state()).toBe('done');
+		expect(vm.selectedExportFormatId()).toBe('csv');
+		expect(writeTextFileMock).not.toHaveBeenCalled();
+	});
+
+	it('resets to json when dismissed from done', async () => {
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+		triggerStateUpdate({ status: 'done', trackCount: 3 });
+		vm.selectExportFormat('csv');
+		expect(vm.selectedExportFormatId()).toBe('csv');
+
+		await runtime.runPromise(vm.effects.dismiss);
+
+		expect(vm.state()).toBe('initial');
+		expect(vm.selectedExportFormatId()).toBe('json');
+	});
+
+	it('resets to json on a fresh done from processing, not from saving', async () => {
+		const runtime = makeTestRuntime();
+		const { vm } = makeVm();
+		await runtime.runPromise(vm.effects.syncState);
+
+		triggerStateUpdate({
+			status: 'done',
+			trackCount: 3,
+			message: undefined,
+			skippedTrackCount: undefined,
+		});
+		vm.selectExportFormat('csv');
+		expect(vm.selectedExportFormatId()).toBe('csv');
+
+		triggerStateUpdate({
+			status: 'collecting',
+			trackCount: 4,
+			message: undefined,
+			skippedTrackCount: undefined,
+		});
+		expect(vm.selectedExportFormatId()).toBe('csv');
+
+		triggerStateUpdate({
+			status: 'done',
+			trackCount: 4,
+			message: undefined,
+			skippedTrackCount: undefined,
+		});
+		expect(vm.selectedExportFormatId()).toBe('json');
 	});
 });
 

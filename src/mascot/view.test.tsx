@@ -8,6 +8,10 @@ vi.mock('solid-transition-group', () => ({
 	),
 }));
 
+import {
+	defaultExportFormatId,
+	listExportFormats,
+} from '@/common/model/export-format/registry';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import type { BeatActionId } from '@/mascot/persona';
 import { resolveBalloonCopy, resolvePersonaOptions } from '@/mascot/persona';
@@ -51,6 +55,9 @@ function renderBeatView(
 	const [theme, setTheme] = createSignal<ResolvedPopupTheme>(
 		inputs?.theme ?? 'light',
 	);
+	const [selectedExportFormatId, setSelectedExportFormatId] = createSignal(
+		defaultExportFormatId(),
+	);
 
 	const onAction = vi.fn<(actionId: BeatActionId) => void>();
 
@@ -60,6 +67,12 @@ function renderBeatView(
 		source: 'likes-page' as const,
 		message: message(),
 	});
+
+	const formatRows = listExportFormats().map((format) => ({
+		id: format.id,
+		label: format.label,
+		worksWith: format.worksWith,
+	}));
 
 	const result = render(() => (
 		<BeatView
@@ -72,6 +85,17 @@ function renderBeatView(
 			options={() => resolvePersonaOptions(state())}
 			footnoteCopy={() => undefined}
 			liveStatusMessage={() => mapStateToLiveMessage(state(), buildCtx())}
+			formatSelection={() => ({
+				formats: formatRows,
+				selectedId: selectedExportFormatId(),
+				onSelect: (id: string) => {
+					const match = formatRows.find((row) => row.id === id);
+					if (match === undefined) {
+						return;
+					}
+					setSelectedExportFormatId(match.id);
+				},
+			})}
 			onAction={onAction}
 		/>
 	));
@@ -453,5 +477,77 @@ describe('BeatView', () => {
 		const view = renderBeatView({ state: 'initial' });
 
 		expect(view.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+	});
+
+	it('renders format fieldset and radios in done state', () => {
+		const view = renderBeatView({ state: 'done', trackCount: 10 });
+		const formats = listExportFormats();
+
+		expect(view.getByRole('group', { name: 'Backup format' })).toBeTruthy();
+		expect(view.getAllByRole('radio')).toHaveLength(formats.length);
+
+		const jsonRadio = view.getByRole('radio', { name: 'JSON' });
+		expect(jsonRadio instanceof HTMLInputElement).toBe(true);
+		if (!(jsonRadio instanceof HTMLInputElement)) {
+			return;
+		}
+		expect(jsonRadio.checked).toBe(true);
+
+		for (const format of formats) {
+			expect(view.getByRole('radio', { name: format.label })).toBeTruthy();
+			expect(view.getByText(format.worksWith)).toBeTruthy();
+		}
+	});
+
+	it('selects another format when a sticker row is clicked', async () => {
+		const view = renderBeatView({ state: 'done', trackCount: 10 });
+
+		fireEvent.click(view.getByRole('radio', { name: 'CSV' }));
+		await Promise.resolve();
+
+		const csvRadio = view.getByRole('radio', { name: 'CSV' });
+		const jsonRadio = view.getByRole('radio', { name: 'JSON' });
+		expect(csvRadio instanceof HTMLInputElement).toBe(true);
+		expect(jsonRadio instanceof HTMLInputElement).toBe(true);
+		if (
+			!(csvRadio instanceof HTMLInputElement) ||
+			!(jsonRadio instanceof HTMLInputElement)
+		) {
+			return;
+		}
+		expect(csvRadio.checked).toBe(true);
+		expect(jsonRadio.checked).toBe(false);
+	});
+
+	it('still calls onAction with download after format rows render', () => {
+		const view = renderBeatView({ state: 'done', trackCount: 5 });
+		const downloadOption = resolvePersonaOptions('done').find(
+			(o) => o.actionId === 'download',
+		);
+		expect(downloadOption).toBeDefined();
+		if (downloadOption === undefined) return;
+
+		fireEvent.click(view.getByRole('button', { name: downloadOption.label }));
+		expect(view.onAction).toHaveBeenCalledWith('download');
+	});
+
+	it('hides format rows on saving, initial, processing, and error', () => {
+		const hiddenStates: ReadonlyArray<BeatState> = [
+			'saving',
+			'initial',
+			'processing',
+			'error',
+		];
+
+		for (const hiddenState of hiddenStates) {
+			const view = renderBeatView({
+				state: hiddenState,
+				trackCount: 10,
+				message: hiddenState === 'error' ? 'oops' : undefined,
+			});
+
+			expect(view.queryByRole('group', { name: 'Backup format' })).toBeNull();
+			expect(view.queryAllByRole('radio')).toHaveLength(0);
+		}
 	});
 });

@@ -5,6 +5,7 @@ import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import { BeatStatus } from '@/mascot/beat-status';
 import { Mascot } from '@/mascot/mascot';
 import type { BeatState } from '@/mascot/model';
+import type { ExportFormatStickerRowsProps } from '@/mascot/export-format-sticker-rows';
 import type { BeatActionId, BeatPersonaOption } from '@/mascot/persona';
 import { SpeechBalloon } from '@/mascot/speech-balloon';
 
@@ -21,6 +22,7 @@ export interface BeatViewProps {
 	readonly options: Accessor<ReadonlyArray<BeatPersonaOption>>;
 	readonly footnoteCopy: Accessor<string | undefined>;
 	readonly liveStatusMessage: Accessor<string | undefined>;
+	readonly formatSelection?: Accessor<ExportFormatStickerRowsProps>;
 	readonly onAction: (actionId: BeatActionId) => void;
 	readonly onDismiss?: () => void;
 }
@@ -64,6 +66,9 @@ export function BeatView(props: BeatViewProps) {
 										options={props.options()}
 										footnoteCopy={props.footnoteCopy()}
 										isError={isErrorBeatState(state)}
+										{...(state === 'done' && props.formatSelection !== undefined
+											? { formatSelection: props.formatSelection() }
+											: {})}
 										onAction={props.onAction}
 										onDismiss={props.onDismiss}
 									/>

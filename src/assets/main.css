@@ -217,6 +217,83 @@ html.beat-popup-page body {
 	gap: 0.5rem;
 }
 
+.beat-balloon__formats {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	border: none;
+	min-inline-size: 0;
+}
+
+.beat-balloon__format-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	column-gap: 0.5rem;
+	row-gap: 0.25rem;
+	cursor: pointer;
+	border-radius: 0.5rem;
+}
+
+.beat-balloon__format-row:focus-within {
+	outline: 2px solid rgb(23 23 23); /* neutral-900 — matches __action */
+	outline-offset: 2px;
+}
+
+.beat-balloon__format-row .sr-only:focus,
+.beat-balloon__format-row .sr-only:focus-visible {
+	outline: none;
+}
+
+.beat-balloon__format-chip {
+	border-radius: 0.5rem;
+	background-color: white;
+	padding: 0.375rem 0.75rem;
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.125rem;
+	color: rgb(23 23 23); /* neutral-900 */
+	box-shadow: inset 0 0 0 1px rgb(23 23 23);
+}
+
+.beat-balloon__format-row:has(:checked) .beat-balloon__format-chip {
+	background-color: rgb(23 23 23); /* neutral-900 — same as __action */
+	color: white;
+	box-shadow: none;
+}
+
+.beat-balloon__format-hint {
+	flex: 1 1 8rem;
+	min-width: 0;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: rgb(115 115 115); /* neutral-500 — same scale as __footnote */
+}
+
+:where([data-theme='dark']) .beat-balloon__format-row:focus-within {
+	outline-color: rgb(245 245 245); /* neutral-100 */
+}
+
+:where([data-theme='dark']) .beat-balloon__format-chip {
+	background-color: transparent;
+	color: rgb(245 245 245); /* neutral-100 */
+	box-shadow: inset 0 0 0 1px rgb(245 245 245);
+}
+
+:where([data-theme='dark'])
+	.beat-balloon__format-row:has(:checked)
+	.beat-balloon__format-chip {
+	background-color: rgb(245 245 245); /* neutral-100 — mirrors __action */
+	color: rgb(10 10 10); /* neutral-950 */
+	box-shadow: none;
+}
+
+:where([data-theme='dark']) .beat-balloon__format-hint {
+	color: rgb(163 163 163); /* neutral-400 — same as __footnote */
+}
+
 .beat-balloon__action {
 	border-radius: 0.5rem;
 	background-color: rgb(23 23 23); /* neutral-900 */

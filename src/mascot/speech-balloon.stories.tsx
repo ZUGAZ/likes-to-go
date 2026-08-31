@@ -1,5 +1,11 @@
+import { createSignal } from 'solid-js';
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
+import {
+	defaultExportFormatId,
+	listExportFormats,
+} from '@/common/model/export-format/registry';
+import type { ExportFormatStickerRow } from '@/mascot/export-format-sticker-rows';
 import type { BeatActionId, BeatPersonaOption } from '@/mascot/persona';
 import { SpeechBalloon } from '@/mascot/speech-balloon';
 
@@ -22,9 +28,16 @@ const retryOption: BeatPersonaOption = {
 };
 
 const downloadOption: BeatPersonaOption = {
-	label: 'Download JSON',
+	label: 'Download backup',
 	actionId: 'download',
 };
+
+const formatRows: ReadonlyArray<ExportFormatStickerRow> =
+	listExportFormats().map((format) => ({
+		id: format.id,
+		label: format.label,
+		worksWith: format.worksWith,
+	}));
 
 type SpeechBalloonStoryArgs = {
 	copy: string;
@@ -33,11 +46,21 @@ type SpeechBalloonStoryArgs = {
 	showActions: boolean;
 	showFootnote: boolean;
 	showDismiss: boolean;
+	showFormatSelection: boolean;
 };
 
 function SpeechBalloonStoryHost(props: SpeechBalloonStoryArgs) {
+	const [selectedId, setSelectedId] = createSignal(defaultExportFormatId());
 	const options = (): ReadonlyArray<BeatPersonaOption> =>
 		props.showActions ? [startOption, retryOption, downloadOption] : [];
+
+	const selectStoryFormat = (id: string): void => {
+		const match = listExportFormats().find((format) => format.id === id);
+		if (match === undefined) {
+			return;
+		}
+		setSelectedId(match.id);
+	};
 
 	return (
 		<div data-theme={props.theme} style={{ 'color-scheme': props.theme }}>
@@ -51,6 +74,15 @@ function SpeechBalloonStoryHost(props: SpeechBalloonStoryArgs) {
 							: undefined
 					}
 					isError={props.isError}
+					{...(props.showFormatSelection
+						? {
+								formatSelection: {
+									formats: formatRows,
+									selectedId: selectedId(),
+									onSelect: selectStoryFormat,
+								},
+							}
+						: {})}
 					onAction={logAction}
 					onDismiss={props.showDismiss ? logDismiss : undefined}
 				/>
@@ -69,6 +101,7 @@ const meta = {
 		showActions: true,
 		showFootnote: false,
 		showDismiss: false,
+		showFormatSelection: false,
 	} satisfies SpeechBalloonStoryArgs,
 	argTypes: {
 		theme: {
@@ -80,6 +113,7 @@ const meta = {
 		showActions: { control: 'boolean' },
 		showFootnote: { control: 'boolean' },
 		showDismiss: { control: 'boolean' },
+		showFormatSelection: { control: 'boolean' },
 	},
 } satisfies Meta<typeof SpeechBalloonStoryHost>;
 
@@ -119,5 +153,13 @@ export const WithDismiss: Story = {
 export const Dark: Story = {
 	args: {
 		theme: 'dark',
+	},
+};
+
+export const WithFormatSelection: Story = {
+	args: {
+		copy: 'Done! Your 42 tracks are ready to download.',
+		showActions: true,
+		showFormatSelection: true,
 	},
 };

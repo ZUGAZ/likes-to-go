@@ -32,9 +32,11 @@ import {
 	StartCollectionRequest,
 } from '@/common/model/request-message';
 import { exportBackupFilename } from '@/common/model/export-backup-filename';
+import type { ExportFormatId } from '@/common/model/export-format/export-format-id';
 import {
 	defaultExportFormatId,
 	getExportFormat,
+	listExportFormats,
 } from '@/common/model/export-format/registry';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import type { ViewModelEffect } from '@/common/viewmodel/bind-viewmodel';
@@ -53,6 +55,7 @@ import {
 	type BeatSource,
 	type BeatState,
 } from '@/mascot/model';
+import type { ExportFormatStickerRow } from '@/mascot/export-format-sticker-rows';
 import type {
 	BeatActionId,
 	BeatPersonaOption,
@@ -75,6 +78,9 @@ export interface MascotViewModel {
 	readonly options: () => ReadonlyArray<BeatPersonaOption>;
 	readonly liveStatusMessage: () => string | undefined;
 	readonly footnoteCopy: () => string | undefined;
+	readonly selectedExportFormatId: () => ExportFormatId;
+	readonly exportFormatRows: () => ReadonlyArray<ExportFormatStickerRow>;
+	readonly selectExportFormat: (id: string) => void;
 	readonly effects: {
 		readonly syncState: ViewModelEffect;
 		readonly retryAfterError: ViewModelEffect;
@@ -108,6 +114,8 @@ export function createMascotViewModel(
 		boot.skippedTrackCount ?? 0,
 	);
 	const [source, setSource] = createSignal<BeatSource>(boot.source);
+	const [selectedExportFormatId, setSelectedExportFormatId] =
+		createSignal<ExportFormatId>(defaultExportFormatId());
 
 	let currentSource = boot.source;
 	let savePickerAbort: AbortController | undefined;
@@ -132,7 +140,23 @@ export function createMascotViewModel(
 	const footnoteCopy = (): string | undefined =>
 		mapStateToFootnote(state(), buildCopyContext());
 
+	const exportFormatRows = (): ReadonlyArray<ExportFormatStickerRow> =>
+		listExportFormats().map((format) => ({
+			id: format.id,
+			label: format.label,
+			worksWith: format.worksWith,
+		}));
+
+	const selectExportFormat = (id: string): void => {
+		const format = listExportFormats().find((entry) => entry.id === id);
+		if (format === undefined) {
+			return;
+		}
+		setSelectedExportFormatId(format.id);
+	};
+
 	const applyModel = (model: BeatModel): void => {
+		const previousState = untrack(state);
 		batch(() => {
 			setState(model.state);
 			setTrackCount(model.trackCount);
@@ -140,6 +164,14 @@ export function createMascotViewModel(
 			setSkippedTrackCount(model.skippedTrackCount ?? 0);
 			currentSource = model.source;
 			setSource(model.source);
+			if (
+				model.state === 'initial' ||
+				(model.state === 'done' &&
+					previousState !== 'saving' &&
+					previousState !== 'done')
+			) {
+				setSelectedExportFormatId(defaultExportFormatId());
+			}
 		});
 	};
 
@@ -249,7 +281,7 @@ export function createMascotViewModel(
 	});
 
 	const download = Effect.gen(function* () {
-		const formatId = defaultExportFormatId();
+		const formatId = untrack(selectedExportFormatId);
 		const format = getExportFormat(formatId);
 		const pickerAbort = new AbortController();
 		savePickerAbort = pickerAbort;
@@ -405,6 +437,9 @@ export function createMascotViewModel(
 		options,
 		liveStatusMessage,
 		footnoteCopy,
+		selectedExportFormatId,
+		exportFormatRows,
+		selectExportFormat,
 		effects: {
 			syncState,
 			retryAfterError,
