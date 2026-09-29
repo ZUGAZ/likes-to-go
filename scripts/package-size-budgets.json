@@ -1,39 +1,39 @@
 {
 	"format_version": 1,
-	"recorded_at": "2026-08-31T20:52:31.223Z",
-	"total_bytes": 761766,
+	"recorded_at": "2026-09-29T14:17:03.614Z",
+	"total_bytes": 762695,
 	"classes": [
 		{
 			"id": "background.js",
 			"type": "path",
 			"path": "background.js",
-			"max_bytes": 194732
+			"max_bytes": 194972
 		},
 		{
 			"id": "content-scripts/likes.js",
 			"type": "path",
 			"path": "content-scripts/likes.js",
-			"max_bytes": 235299
+			"max_bytes": 235605
 		},
 		{
 			"id": "content-scripts/likes.css",
 			"type": "path",
 			"path": "content-scripts/likes.css",
-			"max_bytes": 17251
+			"max_bytes": 17422
 		},
 		{
 			"id": "chunks/popup.js",
 			"type": "glob",
 			"glob": "chunks/popup-*.js",
 			"expected_count": 1,
-			"max_bytes": 203869
+			"max_bytes": 203910
 		},
 		{
 			"id": "assets/popup.css",
 			"type": "glob",
 			"glob": "assets/popup-*.css",
 			"expected_count": 1,
-			"max_bytes": 17251
+			"max_bytes": 17422
 		},
 		{
 			"id": "mascot",
