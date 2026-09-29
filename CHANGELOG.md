@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.8.0](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v2.7.0...likes-to-go-v2.8.0) (2026-09-29)
+
+
+### Features
+
+* 🎚️ let Beat pick backup format before download ([fc2b5f4](https://github.com/ZUGAZ/likes-to-go/commit/fc2b5f4331a58be47d4c3602d1b78cc6e09443ed))
+* 🎯 export the same track fields from both views ([9aab5b1](https://github.com/ZUGAZ/likes-to-go/commit/9aab5b1700d317e1bf9ba64d885723f0303db325))
+* 📊 add CSV export of title and artist ([e5e921f](https://github.com/ZUGAZ/likes-to-go/commit/e5e921f2c4963c1bb41e71f27c7e7024a4bbb506))
+* 📝 add Artist - Title text export ([4748d65](https://github.com/ZUGAZ/likes-to-go/commit/4748d65970efa0f64e488076379779ab14f0eb3f))
+* 📤 add a format registry for JSON downloads ([a17a3bd](https://github.com/ZUGAZ/likes-to-go/commit/a17a3bd74055d4d643f1188e4352014efc3dd8ea))
+* 🔗 add M3U export of SoundCloud page links ([3e7f5e1](https://github.com/ZUGAZ/likes-to-go/commit/3e7f5e16788a04274042daa1a319620ea2b0e8a6))
+
+
+### Bug Fixes
+
+* ⏳ keep collecting while the likes loader is up ([69510e7](https://github.com/ZUGAZ/likes-to-go/commit/69510e75b1b7b945aa610ff1f4332c5b0f45ced2))
+* 🎈 keep Beat's balloon on screen as it grows ([3c2b3eb](https://github.com/ZUGAZ/likes-to-go/commit/3c2b3ebee3a07a7206a123c1dea4642c4638ca2d))
+* 🎈 keep open popup Beat live during collection ([6311bd4](https://github.com/ZUGAZ/likes-to-go/commit/6311bd4525100dcde621c66e7148c8c7873792e8))
+* 🎨 show Beat sticker ring in light theme ([b36de2d](https://github.com/ZUGAZ/likes-to-go/commit/b36de2d2d7433e99e28dbd907c798b9c1201f9af))
+* 👁️ show Beat overlay when popup-started export closes ([b9ad37b](https://github.com/ZUGAZ/likes-to-go/commit/b9ad37b94659c2935d5cca9c83e3ba78d66e38c5))
+* 💾 hold backup until save finishes ([6d815a5](https://github.com/ZUGAZ/likes-to-go/commit/6d815a5f66fa4c94952b17473aee5ead321b954d))
+* 🧹 hide unused text renderer helpers ([82759e9](https://github.com/ZUGAZ/likes-to-go/commit/82759e9ebe00c76d8c2110d22faed3d71adaa07e))
+
 ## [2.7.0](https://github.com/ZUGAZ/likes-to-go/compare/likes-to-go-v2.6.0...likes-to-go-v2.7.0) (2026-08-30)
 
 ### Bug Fixes
