@@ -83,14 +83,10 @@ html.beat-popup-page body {
 	/*
 	 * Framing contract (512×512 normalized poses, south-extent baseline):
 	 * --beat-mouth-art-ratio = smile Y ÷ canvas height.
-	 * Balloon grows upward from a bottom-left corner tail locked to that Y.
+	 * The tail stays on that Y. Copy fills the space above it, then grows downward.
 	 */
 	--beat-mouth-art-ratio: 0.5;
-	/*
-	 * Tip sits this far above the balloon's bottom edge (half of --arrow-height),
-	 * so the stub hugs the bottom-left corner.
-	 */
-	--beat-tail-from-bottom: 0.3rem;
+	--beat-mouth-y: calc(var(--beat-mascot-size) * var(--beat-mouth-art-ratio));
 	/* Horizontal gap between mascot frame and balloon (negative overlaps empty art padding). */
 	--beat-balloon-gap: -0.75rem;
 
@@ -134,23 +130,22 @@ html.beat-popup-page body {
 
 /*
  * Comic speech bubble.
- * Wide layout: absolute + translateY so the bubble grows upward from the mouth.
- * Tail: short left-pointing stub at the bottom-left corner (not a mid-side diamond).
+ * Wide layout: in-flow in column 2. A translate drops the bubble until the tail
+ * meets the mouth, and stops at the top of the layout so leftover height grows down.
+ * Tail: short left-pointing stub (not a mid-side diamond).
  */
 .beat-balloon {
 	--arrow-width: 0.875rem;
 	--arrow-height: 0.6rem;
 	--bubble-corners: 1rem;
+	/* Tip sits halfway up the stub. */
+	--beat-tail-from-bottom: calc(var(--arrow-height) / 2);
 
 	box-sizing: border-box;
+	position: relative;
 	min-width: 0;
-	width: calc(100% - var(--beat-mascot-size) - var(--beat-balloon-gap));
+	width: auto;
 	max-width: 100%;
-	position: absolute;
-	left: calc(var(--beat-mascot-size) + var(--beat-balloon-gap));
-	top: calc(var(--beat-mascot-size) * var(--beat-mouth-art-ratio));
-	/* Pin corner-tail tip to mouth; taller copy grows upward. */
-	transform: translateY(calc(-100% + var(--beat-tail-from-bottom)));
 	isolation: isolate;
 	padding: 0.875rem;
 	display: flex;
@@ -158,8 +153,6 @@ html.beat-popup-page body {
 	gap: 0.5rem;
 	border: none;
 	border-radius: var(--bubble-corners);
-	/* Keep the bottom-left corner sharp so the stub meets a real corner. */
-	border-bottom-left-radius: 0;
 	background: var(--beat-balloon-bg);
 	box-shadow: none;
 	/* drop-shadow outlines bubble + ::after as one shape (matches 1px ring). */
@@ -172,6 +165,24 @@ html.beat-popup-page body {
 	line-height: 1.4rem;
 	--beat-balloon-bg: white;
 	--beat-balloon-ring: rgb(229 229 229); /* neutral-200 */
+}
+
+/* Use the space above the mouth first; further height stays in flow below it. */
+.beat-layout > .beat-balloon {
+	grid-column: 2;
+	grid-row: 1;
+	align-self: start;
+	max-width: none;
+	margin-left: var(--beat-balloon-gap);
+	transform: translateY(
+		max(
+			0px,
+			calc(
+				var(--beat-mouth-y) - 100% + var(--bubble-corners) +
+					var(--beat-tail-from-bottom)
+			)
+		)
+	);
 }
 
 :where([data-theme='dark']) .beat-balloon {
@@ -187,7 +198,10 @@ html.beat-popup-page body {
 	content: none;
 }
 
-/* Short left stub seated on the bottom-left corner. */
+/*
+ * Just above the rounded corner while the bubble fits above the mouth.
+ * Once the bubble is pinned to the layout top, the stub stays at mouth height.
+ */
 .beat-balloon::after {
 	content: '';
 	position: absolute;
@@ -196,7 +210,10 @@ html.beat-popup-page body {
 	width: var(--arrow-width);
 	height: var(--arrow-height);
 	left: calc(-1 * var(--arrow-width) + 1px);
-	bottom: 0;
+	top: min(
+		calc(100% - var(--bubble-corners) - var(--arrow-height)),
+		calc(var(--beat-mouth-y) - var(--beat-tail-from-bottom))
+	);
 	background: var(--beat-balloon-bg);
 	/* Tip on the left midline; base flush with the balloon's left edge. */
 	clip-path: polygon(100% 0, 0 50%, 100% 100%);
@@ -371,14 +388,14 @@ html.beat-popup-page body {
 		min-height: 0;
 	}
 
-	.beat-balloon {
-		position: relative;
-		left: auto;
-		top: auto;
-		transform: none;
+	.beat-layout > .beat-balloon {
+		grid-column: auto;
+		grid-row: auto;
 		width: 100%;
+		max-width: 100%;
 		margin-top: 0;
 		margin-left: 0;
+		transform: none;
 		border-bottom-left-radius: var(--bubble-corners);
 		border-top-left-radius: 0;
 	}
