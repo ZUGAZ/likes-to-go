@@ -10,7 +10,9 @@ function logMascotVisibilityTransitionEffect(
 	action: MascotVisibilityTransition,
 	visible: boolean,
 ): Effect.Effect<void> {
-	return Effect.log('overlay visibility', { action, visible });
+	return Effect.log('overlay visibility', { action, visible }).pipe(
+		Effect.withLogSpan('overlayVisibility'),
+	);
 }
 
 export function createLoggedMascotVisibility(

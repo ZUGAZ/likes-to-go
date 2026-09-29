@@ -21,12 +21,16 @@ export async function initContentScript(
 			});
 
 			chrome.runtime.onMessage.addListener(handler);
-			yield* Effect.log('content message listener registered');
+			yield* Effect.log('content message listener registered').pipe(
+				Effect.withLogSpan('initContentScript'),
+			);
 
 			const overlay = yield* Effect.promise(() =>
 				mountBeatOverlay(ctx, runtime, visibility),
 			);
-			yield* Effect.log('beat overlay mounted');
+			yield* Effect.log('beat overlay mounted').pipe(
+				Effect.withLogSpan('initContentScript'),
+			);
 
 			ctx.onInvalidated(() => {
 				overlay.remove();

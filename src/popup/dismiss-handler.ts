@@ -9,6 +9,7 @@ export function createPopupDismissHandler(
 		void run(
 			Effect.log('popup closed').pipe(
 				Effect.tap(() => Effect.sync(() => window.close())),
+				Effect.withLogSpan('popupClosed'),
 			),
 		);
 	};

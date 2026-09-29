@@ -110,7 +110,7 @@ export function rememberOverlayHandoffFromSender(
 		yield* Effect.log('overlay handoff remembered', {
 			handoff: next._tag,
 		});
-	});
+	}).pipe(Effect.withLogSpan('rememberOverlayHandoff'));
 }
 
 export function resetOverlayHandoffEffect(): Effect.Effect<
@@ -122,7 +122,7 @@ export function resetOverlayHandoffEffect(): Effect.Effect<
 		const handoffRef = yield* OverlayHandoffRefTag;
 		yield* Ref.set(handoffRef, OverlayHandoffIdle());
 		yield* Effect.log('overlay handoff reset');
-	});
+	}).pipe(Effect.withLogSpan('resetOverlayHandoff'));
 }
 
 export function maybeRevealOverlayEffect(): Effect.Effect<
@@ -172,7 +172,7 @@ export function handlePopupPortConnectedEffect(): Effect.Effect<
 		const popupPortCountRef = yield* PopupPortCountRefTag;
 		yield* Ref.update(popupPortCountRef, (count) => count + 1);
 		yield* Effect.log('popup port connected');
-	});
+	}).pipe(Effect.withLogSpan('handlePopupPortConnected'));
 }
 
 export function handlePopupPortDisconnectedEffect(): Effect.Effect<

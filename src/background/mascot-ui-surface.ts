@@ -82,7 +82,7 @@ export function rememberMascotUiSurfaceFromSender(
 			surface: surface._tag,
 			...(surface._tag === 'ContentOverlay' ? { tabId: surface.tabId } : {}),
 		});
-	});
+	}).pipe(Effect.withLogSpan('rememberMascotUiSurface'));
 }
 
 export function getMascotUiSurfaceEffect(): Effect.Effect<

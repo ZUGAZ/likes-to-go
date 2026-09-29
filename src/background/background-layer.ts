@@ -1,5 +1,5 @@
 import { Effect, Layer, Ref } from 'effect';
-import { HeartLoggerLive } from '@/common/infrastructure/logger';
+import { SpanLoggerLive } from '@/common/infrastructure/logger';
 import { initialCollectionState } from '@/common/model/collection/transition';
 import { CommandRunnerTag, runCommand } from '@/background/command-runner';
 import {
@@ -56,5 +56,5 @@ export const BackgroundLive = Layer.mergeAll(
 	PopupPortCountRefLive,
 	CommandRunnerLive,
 	CollectionStateStorageLive,
-	HeartLoggerLive,
+	SpanLoggerLive,
 );

@@ -10,7 +10,7 @@ export function startPopup(mountPopup: (runtime: PopupRuntime) => void): void {
 			const runtime = yield* makePopupRuntime();
 			yield* Effect.sync(connectPopupPort);
 			mountPopup(runtime);
-			yield* Effect.log('popup opened');
+			yield* Effect.log('popup opened').pipe(Effect.withLogSpan('startPopup'));
 			return yield* Effect.never;
 		}),
 	);

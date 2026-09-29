@@ -7,7 +7,7 @@ const formatSpans = (spans: List.List<LogSpan>): string =>
 		.map((span) => `[${span.label}]`)
 		.join('');
 
-const heartLogger = Logger.make(
+const spanLogger = Logger.make(
 	({ logLevel, message, spans }: Logger.Logger.Options<unknown>) => {
 		const prefix = formatSpans(spans);
 		const parts: ReadonlyArray<unknown> = Array.isArray(message)
@@ -27,7 +27,4 @@ const heartLogger = Logger.make(
 	},
 );
 
-export const HeartLoggerLive = Logger.replace(
-	Logger.defaultLogger,
-	heartLogger,
-);
+export const SpanLoggerLive = Logger.replace(Logger.defaultLogger, spanLogger);

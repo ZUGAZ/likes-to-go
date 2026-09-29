@@ -49,6 +49,7 @@ export function syncTabActionPopupEffect(
 				reason: error.reason,
 			}),
 		),
+		Effect.withLogSpan('syncTabActionPopup'),
 	);
 }
 
@@ -70,6 +71,7 @@ export function syncTabByIdEffect(tabId: number): Effect.Effect<void> {
 				reason: error.reason,
 			}),
 		),
+		Effect.withLogSpan('syncTabById'),
 	);
 }
 
@@ -93,6 +95,7 @@ export function syncAllTabsActionPopupEffect(): Effect.Effect<void> {
 				reason: error.reason,
 			}),
 		),
+		Effect.withLogSpan('syncAllTabsActionPopup'),
 	);
 }
 

@@ -121,7 +121,9 @@ export function createContentMessageHandler(
 			onRight: (msg) => {
 				if (isStartCollection(msg)) {
 					void Runtime.runPromise(runtime)(
-						Effect.log('StartCollection tab message received'),
+						Effect.log('StartCollection tab message received').pipe(
+							Effect.withLogSpan('StartCollection'),
+						),
 					);
 					interuptFiber();
 
@@ -173,6 +175,7 @@ export function createContentMessageHandler(
 								});
 							}),
 						),
+						Effect.withLogSpan('StartCollection'),
 					);
 
 					fiber = Runtime.runFork(runtime)(program);
@@ -199,6 +202,7 @@ export function createContentMessageHandler(
 										}),
 								});
 							}),
+							Effect.withLogSpan('StartCollection'),
 						),
 					);
 
@@ -208,14 +212,16 @@ export function createContentMessageHandler(
 					void Runtime.runPromise(runtime)(
 						Effect.log(
 							'StartCollection tab message ack sent, pipeline fiber forked',
-						),
+						).pipe(Effect.withLogSpan('StartCollection')),
 					);
 					return false;
 				}
 
 				if (isCancelCollection(msg)) {
 					void Runtime.runPromise(runtime)(
-						Effect.log('content CancelCollection received'),
+						Effect.log('content CancelCollection received').pipe(
+							Effect.withLogSpan('CancelCollection'),
+						),
 					);
 					interuptFiber();
 					sendResponse();
@@ -230,7 +236,7 @@ export function createContentMessageHandler(
 							yield* Effect.log('overlay visibility toggled', {
 								visible: deps.isMascotVisible(),
 							});
-						}),
+						}).pipe(Effect.withLogSpan('ToggleMascot')),
 					);
 					sendResponse();
 					return false;
@@ -244,7 +250,7 @@ export function createContentMessageHandler(
 							yield* Effect.log('overlay visibility shown', {
 								visible: deps.isMascotVisible(),
 							});
-						}),
+						}).pipe(Effect.withLogSpan('ShowMascot')),
 					);
 					sendResponse();
 					return false;

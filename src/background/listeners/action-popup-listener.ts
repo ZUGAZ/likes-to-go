@@ -25,7 +25,7 @@ export function registerActionPopupListener(
 					wallMs: Date.now(),
 				});
 				yield* runToggleMascotOnTabEffect(tabId);
-			}),
+			}).pipe(Effect.withLogSpan('actionIconClicked')),
 		);
 	});
 
