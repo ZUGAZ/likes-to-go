@@ -1,5 +1,8 @@
 import type { Track } from '@/common/model/track';
-import { MAX_ERROR_RETRIES, NO_NEW_TRACKS_PASSES } from '@/content/constants';
+import {
+	MAX_ERROR_RETRIES,
+	STUCK_LOADING_INDICATOR_PASSES,
+} from '@/content/constants';
 import {
 	BackgroundSenderTag,
 	DocumentVisibilityTag,
@@ -243,22 +246,81 @@ function runWithTestClock(
 // ── Tests ───────────────────────────────────────────────────────
 
 describe('collectionPipeline', () => {
-	it('completes after NO_NEW_TRACKS_PASSES consecutive empty batches (spinner always present)', async () => {
+	it('does not complete after two empty passes while the loading indicator is present', async () => {
+		const calls: string[] = [];
+		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
+		const batch = makeBatch([fakeTrack, fakeTrack], 2, false);
+		const emptyBatch = makeBatch([], 2, true);
+
+		const batches = [batch, emptyBatch, emptyBatch];
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				advanceCount: 8,
+				interruptAfterAdvances: 5,
+				scanBatchMetrics,
+			}),
+		);
+
+		expect(Exit.isInterrupted(outcome)).toBe(true);
+		expect(scanBatchMetrics.scanBatchCalls).toBeGreaterThan(3);
+		expect(calls).toContain('TracksBatch:2');
+		expect(calls).not.toContain('CollectionComplete');
+	});
+
+	it('completes after the loading indicator disappears following the initial visible tracks', async () => {
+		const calls: string[] = [];
+		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
+		const firstBatch = makeBatch(
+			[fakeTrack, fakeTrack, fakeTrack, fakeTrack],
+			4,
+			false,
+		);
+		const secondBatch = makeBatch([fakeTrack, fakeTrack], 6, false);
+		const emptyBatch = makeBatch([], 6, true);
+
+		// Two track passes and two empty passes still see the indicator.
+		// The next pass sees it gone and schedules the final cycle.
+		const batches = [
+			firstBatch,
+			secondBatch,
+			emptyBatch,
+			emptyBatch,
+			emptyBatch,
+		];
+
+		const { outcome } = await Effect.runPromise(
+			runWithTestClock(batches, calls, {
+				isLoadingIndicatorPresentResponses: [true, true, true, true, false],
+				scanBatchMetrics,
+			}),
+		);
+
+		expect(Exit.isSuccess(outcome)).toBe(true);
+		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
+		expect(value).toEqual(Completed());
+		expect(scanBatchMetrics.scanBatchCalls).toBe(6);
+		expect(calls).toContain('TracksBatch:4');
+		expect(calls).toContain('TracksBatch:2');
+		expect(calls).toContain('CollectionComplete');
+	});
+
+	it('completes at the stuck loading indicator bound when tracks were collected', async () => {
 		const calls: string[] = [];
 		const batch = makeBatch([fakeTrack, fakeTrack], 2, false);
 		const emptyBatch = makeBatch([], 2, true);
 
 		const batches = [
 			batch,
-			...Array.from<CollectionBatch>({ length: NO_NEW_TRACKS_PASSES }).fill(
-				emptyBatch,
-			),
+			...Array.from<CollectionBatch>({
+				length: STUCK_LOADING_INDICATOR_PASSES,
+			}).fill(emptyBatch),
 		];
 
-		// Spinner stays present throughout — termination is driven solely by
-		// NO_NEW_TRACKS_PASSES consecutive noNewCards passes (path B).
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 5,
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -352,17 +414,17 @@ describe('collectionPipeline', () => {
 		expect(calls).toContain('CollectionComplete');
 	});
 
-	it('errors when DOM is empty after NO_NEW_TRACKS_PASSES passes (path B)', async () => {
+	it('errors when the list stays empty through the stuck loading indicator bound', async () => {
 		const calls: string[] = [];
 		const emptyBatch = makeBatch([], 0, true);
 		const batches = Array.from<CollectionBatch>({
-			length: NO_NEW_TRACKS_PASSES,
+			length: STUCK_LOADING_INDICATOR_PASSES,
 		}).fill(emptyBatch);
 
-		// Spinner stays present — termination is driven by the no-new-tracks
-		// heuristic alone (path B).
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 5,
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -380,22 +442,20 @@ describe('collectionPipeline', () => {
 		const calls: string[] = [];
 		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
 		const emptyBatch = makeBatch([], 0, true);
-		const batches = Array.from<CollectionBatch>({
-			length: NO_NEW_TRACKS_PASSES + 3,
-		}).fill(emptyBatch);
+		const batches = [emptyBatch];
 
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
-				advanceCount: 8,
-				interruptAfterAdvances: 5,
-				documentHiddenResponses: Array.from<boolean>({ length: 20 }).fill(true),
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 8,
+				interruptAfterAdvances: STUCK_LOADING_INDICATOR_PASSES + 5,
+				documentHiddenResponses: [true],
 				scanBatchMetrics,
 			}),
 		);
 
 		expect(Exit.isInterrupted(outcome)).toBe(true);
 		expect(scanBatchMetrics.scanBatchCalls).toBeGreaterThan(
-			NO_NEW_TRACKS_PASSES,
+			STUCK_LOADING_INDICATOR_PASSES,
 		);
 		expect(
 			calls.filter((c) => c === 'CollectionVisibilityPaused'),
@@ -406,12 +466,11 @@ describe('collectionPipeline', () => {
 	it('resumes empty-pass counting and clears popup message when document becomes visible', async () => {
 		const calls: string[] = [];
 		const emptyBatch = makeBatch([], 0, true);
-		const batches = Array.from<CollectionBatch>({
-			length: NO_NEW_TRACKS_PASSES + 2,
-		}).fill(emptyBatch);
+		const batches = [emptyBatch];
 
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 10,
 				documentHiddenResponses: [true, true, false, false],
 			}),
 		);
@@ -432,12 +491,11 @@ describe('collectionPipeline', () => {
 		const calls: string[] = [];
 		const scanBatchMetrics: ScanBatchMetrics = { scanBatchCalls: 0 };
 		const emptyBatch = makeBatch([], 0, true);
-		const batches = Array.from<CollectionBatch>({
-			length: NO_NEW_TRACKS_PASSES + 3,
-		}).fill(emptyBatch);
+		const batches = [emptyBatch];
 
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 10,
 				documentHiddenResponses: [false, true, false, false, false],
 				scanBatchMetrics,
 			}),
@@ -446,7 +504,9 @@ describe('collectionPipeline', () => {
 		expect(Exit.isSuccess(outcome)).toBe(true);
 		const value = Exit.isSuccess(outcome) ? outcome.value : undefined;
 		expect(value).toEqual(OutcomeError({ message: EMPTY_LIKES_LIST_MESSAGE }));
-		expect(scanBatchMetrics.scanBatchCalls).toBe(5);
+		expect(scanBatchMetrics.scanBatchCalls).toBe(
+			3 + STUCK_LOADING_INDICATOR_PASSES,
+		);
 		expect(calls).toContain('CollectionVisibilityResumed');
 		expect(calls).not.toContain('CollectionComplete');
 	});
@@ -509,15 +569,15 @@ describe('collectionPipeline', () => {
 		const batches = [
 			batch1,
 			batch2,
-			...Array.from<CollectionBatch>({ length: NO_NEW_TRACKS_PASSES }).fill(
-				emptyBatch,
-			),
+			...Array.from<CollectionBatch>({
+				length: STUCK_LOADING_INDICATOR_PASSES,
+			}).fill(emptyBatch),
 		];
 
-		// Spinner stays present — pipeline runs until NO_NEW_TRACKS_PASSES
-		// consecutive empty passes, then exits (path B).
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 5,
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -532,13 +592,13 @@ describe('collectionPipeline', () => {
 		const calls: string[] = [];
 		const emptyBatch = makeBatch([], 0, true);
 		const batches = Array.from<CollectionBatch>({
-			length: NO_NEW_TRACKS_PASSES,
+			length: STUCK_LOADING_INDICATOR_PASSES,
 		}).fill(emptyBatch);
 
-		// Spinner stays present — path B terminates after NO_NEW_TRACKS_PASSES
-		// empty passes without ever sending a TracksBatch message.
 		const { outcome } = await Effect.runPromise(
-			runWithTestClock(batches, calls),
+			runWithTestClock(batches, calls, {
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 5,
+			}),
 		);
 
 		expect(Exit.isSuccess(outcome)).toBe(true);
@@ -559,12 +619,12 @@ describe('collectionPipeline', () => {
 			noNewCards: true,
 		};
 		const batches = Array.from<CollectionBatch>({
-			length: NO_NEW_TRACKS_PASSES,
+			length: STUCK_LOADING_INDICATOR_PASSES,
 		}).fill(unreadableBatch);
 
 		const { outcome } = await Effect.runPromise(
 			runWithTestClock(batches, calls, {
-				isLoadingIndicatorPresentResponses: [true, true],
+				advanceCount: STUCK_LOADING_INDICATOR_PASSES + 5,
 			}),
 		);
 

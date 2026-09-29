@@ -1,6 +1,10 @@
 export const LIKES_PAGE_BASE_URL = 'https://soundcloud.com';
-/** Consecutive passes with 0 new cards before stopping. Higher = more resilient to slow lazy-load. */
-export const NO_NEW_TRACKS_PASSES = 2;
+/**
+ * Empty passes with the loading indicator still present before stopping.
+ * A normal run stops when the indicator disappears. This bound only
+ * catches an indicator that never leaves.
+ */
+export const STUCK_LOADING_INDICATOR_PASSES = 60;
 /** Maximum number of inline error "Retry" clicks before giving up. */
 export const MAX_ERROR_RETRIES = 3;
 /** Wait after clicking "Retry" before re-checking the inline error. */

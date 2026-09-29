@@ -2,7 +2,7 @@ import { nextDelayMs, planNextPace } from '@/common/model/pacing';
 import {
 	ERROR_RETRY_DELAY_MS,
 	MAX_ERROR_RETRIES,
-	NO_NEW_TRACKS_PASSES,
+	STUCK_LOADING_INDICATOR_PASSES,
 } from '@/content/constants';
 import {
 	BackgroundSenderTag,
@@ -215,8 +215,10 @@ function loopStep(
 			});
 		}
 
-		if (passesWithNoNewTracks >= NO_NEW_TRACKS_PASSES) {
-			yield* Effect.log('no new tracks, stopping pipeline');
+		if (passesWithNoNewTracks >= STUCK_LOADING_INDICATOR_PASSES) {
+			yield* Effect.log(
+				'loading indicator still present at empty-pass bound, stopping pipeline',
+			);
 			return stopLoop(nextState);
 		}
 
@@ -231,7 +233,8 @@ function loopStep(
 }
 
 /**
- * The full collection pipeline. Loops until natural termination (no new tracks)
+ * The full collection pipeline. Loops until the loading indicator is gone
+ * (one final cycle), the stuck-indicator empty-pass bound is reached,
  * or fiber interruption (cancel / ctx invalidation).
  *
  * On natural completion with at least one valid track, sends CollectionComplete.
