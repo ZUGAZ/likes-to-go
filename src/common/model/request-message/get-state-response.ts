@@ -1,20 +1,11 @@
 import { Schema } from 'effect';
+import { CollectionStatusSchema } from '@/common/model/collection/collection-status';
 import { SourceSchema } from '@/common/model/source';
 
-const COLLECTION_STATUSES = [
-	'idle',
-	'checking-login',
-	'collecting',
-	'paused',
-	'done',
-	'saving',
-	'login-required',
-	'error',
-] as const;
-
-export type CollectionStatus = (typeof COLLECTION_STATUSES)[number];
-
-export const CollectionStatusSchema = Schema.Literal(...COLLECTION_STATUSES);
+export {
+	CollectionStatusSchema,
+	type CollectionStatus,
+} from '@/common/model/collection/collection-status';
 
 export const GetStateResponseSchema = Schema.Struct({
 	status: CollectionStatusSchema,

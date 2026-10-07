@@ -7,7 +7,7 @@ import { isErrorState } from '@/common/model/collection/states/error-state';
 import { isIdle } from '@/common/model/collection/states/idle';
 import { isPaused } from '@/common/model/collection/states/paused';
 import { isSaving } from '@/common/model/collection/states/saving';
-import type { CollectionStatus } from '@/common/model/request-message';
+import type { CollectionStatus } from '@/common/model/collection/collection-status';
 
 export function collectionStateToStatus(
 	state: CollectionState,
