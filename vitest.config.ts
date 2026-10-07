@@ -15,6 +15,12 @@ export default defineConfig({
 			'verify-package-size.test.ts',
 		],
 		setupFiles: ['vitest.setup.ts'],
+		server: {
+			deps: {
+				// Source-only TypeScript package; Node cannot strip types under node_modules.
+				inline: ['browser-extension-kit'],
+			},
+		},
 	},
 	resolve: {
 		alias: [

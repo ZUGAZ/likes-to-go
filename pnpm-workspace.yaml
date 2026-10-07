@@ -1,0 +1,9 @@
+onlyBuiltDependencies:
+  - esbuild
+
+ignoredBuiltDependencies:
+  - msgpackr-extract
+
+peerDependencyRules:
+  allowedVersions:
+    '@effect/vitest>vitest': '4'
