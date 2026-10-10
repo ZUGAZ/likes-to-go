@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { Content, ExtensionPage, Popup } from 'browser-extension-kit/messaging';
 
 import {
 	ContentOverlaySurface,
 	ExtensionPopupSurface,
+	isPopupLikeCaller,
+	mascotUiSurfaceFromCaller,
 	mascotUiSurfaceFromSender,
 	shouldClaimMascotNotifySurface,
 } from '@/background/mascot-ui-surface';
@@ -31,6 +34,25 @@ describe('mascotUiSurfaceFromSender', () => {
 				tab: { id: 42 } as chrome.tabs.Tab,
 			}),
 		).toEqual(ContentOverlaySurface({ tabId: 42 }));
+	});
+});
+
+describe('mascotUiSurfaceFromCaller', () => {
+	it('treats popup and extension page callers as the extension popup', () => {
+		expect(isPopupLikeCaller(new Popup())).toBe(true);
+		expect(isPopupLikeCaller(new ExtensionPage({ tabId: 3 }))).toBe(true);
+		expect(isPopupLikeCaller(new Content({ tabId: 7, frameId: 0 }))).toBe(
+			false,
+		);
+		expect(mascotUiSurfaceFromCaller(new Popup())).toEqual(
+			ExtensionPopupSurface(),
+		);
+		expect(mascotUiSurfaceFromCaller(new ExtensionPage({ tabId: 3 }))).toEqual(
+			ExtensionPopupSurface(),
+		);
+		expect(
+			mascotUiSurfaceFromCaller(new Content({ tabId: 7, frameId: 0 })),
+		).toEqual(ContentOverlaySurface({ tabId: 7 }));
 	});
 });
 

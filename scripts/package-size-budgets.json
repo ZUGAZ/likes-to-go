@@ -1,13 +1,13 @@
 {
 	"format_version": 1,
-	"recorded_at": "2026-10-07T17:10:00.000Z",
-	"total_bytes": 816614,
+	"recorded_at": "2026-10-07T18:45:00.000Z",
+	"total_bytes": 932562,
 	"classes": [
 		{
 			"id": "background.js",
 			"type": "path",
 			"path": "background.js",
-			"max_bytes": 262097
+			"max_bytes": 378045
 		},
 		{
 			"id": "content-scripts/likes.js",

@@ -1,3 +1,9 @@
+import {
+	isContent,
+	isExtensionPage,
+	isPopup,
+	type Endpoint,
+} from 'browser-extension-kit/messaging';
 import { Context, Data, Effect, Ref } from 'effect';
 
 export type ExtensionPopupSurface = {
@@ -55,6 +61,16 @@ export function mascotUiSurfaceFromSender(
 	return ContentOverlaySurface({ tabId });
 }
 
+export function isPopupLikeCaller(caller: Endpoint): boolean {
+	return isPopup(caller) || isExtensionPage(caller);
+}
+
+export function mascotUiSurfaceFromCaller(caller: Endpoint): MascotUiSurface {
+	return isContent(caller)
+		? ContentOverlaySurface({ tabId: caller.tabId })
+		: ExtensionPopupSurface();
+}
+
 export function shouldClaimMascotNotifySurface(input: {
 	readonly claimsFromMessage: boolean;
 	readonly popupConnected: boolean;
@@ -81,6 +97,20 @@ export function rememberMascotUiSurfaceFromSender(
 		yield* Effect.log('mascot UI surface remembered', {
 			surface: surface._tag,
 			...(surface._tag === 'ContentOverlay' ? { tabId: surface.tabId } : {}),
+		});
+	}).pipe(Effect.withLogSpan('rememberMascotUiSurface'));
+}
+
+export function rememberMascotUiSurfaceFromCaller(
+	caller: Endpoint,
+): Effect.Effect<void, never, MascotUiSurfaceRefTag> {
+	return Effect.gen(function* () {
+		const surfaceRef = yield* MascotUiSurfaceRefTag;
+		const surface = mascotUiSurfaceFromCaller(caller);
+		yield* Ref.set(surfaceRef, surface);
+		yield* Effect.log('mascot UI surface remembered', {
+			surface: surface._tag,
+			...(isContent(caller) ? { tabId: caller.tabId } : {}),
 		});
 	}).pipe(Effect.withLogSpan('rememberMascotUiSurface'));
 }

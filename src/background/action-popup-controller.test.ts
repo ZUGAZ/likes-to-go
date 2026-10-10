@@ -1,25 +1,13 @@
 import { beforeEach, describe, expect, layer } from '@effect/vitest';
-import { Effect, Fiber, TestClock, TestContext } from 'effect';
+import { Effect } from 'effect';
 import { vi } from 'vitest';
 import {
-	runShowMascotOnTabEffect,
-	runToggleMascotOnTabEffect,
 	syncAllTabsActionPopupEffect,
 	syncTabActionPopupEffect,
 	syncTabByIdEffect,
 } from '@/background/action-popup-controller';
 import { ACTION_DEFAULT_POPUP_PATH } from '@/background/action-popup-path';
-import { sendToTabEffect } from '@/common/infrastructure/chrome-messaging';
-import { SendToTabMessagingFailed } from '@/common/infrastructure/send-to-tab';
-import {
-	ShowMascotRequest,
-	ToggleMascotRequest,
-} from '@/common/model/request-message';
 import { makeCapturingLogger } from '@/test/effect-log-test';
-
-vi.mock('@/common/infrastructure/chrome-messaging', () => ({
-	sendToTabEffect: vi.fn(() => Effect.void),
-}));
 
 describe('action-popup-controller', () => {
 	type SetPopup = (
@@ -34,7 +22,6 @@ describe('action-popup-controller', () => {
 	const setPopupMock = vi.fn<SetPopup>();
 	const getTabMock = vi.fn<GetTab>();
 	const queryTabsMock = vi.fn<QueryTabs>();
-	const sendToTabEffectMock = vi.mocked(sendToTabEffect);
 
 	const soundCloudTab: chrome.tabs.Tab = {
 		active: true,
@@ -65,7 +52,6 @@ describe('action-popup-controller', () => {
 		});
 		getTabMock.mockResolvedValue(soundCloudTab);
 		queryTabsMock.mockResolvedValue([soundCloudTab, otherTab]);
-		sendToTabEffectMock.mockReturnValue(Effect.void);
 
 		Object.defineProperty(globalThis, 'chrome', {
 			configurable: true,
@@ -141,69 +127,6 @@ describe('action-popup-controller', () => {
 					expect(setPopupMock).toHaveBeenCalledWith(
 						{ tabId: 8, popup: ACTION_DEFAULT_POPUP_PATH },
 						expect.any(Function),
-					);
-				}),
-			);
-		});
-	});
-
-	describe('runToggleMascotOnTabEffect', () => {
-		layer(makeCapturingLogger().layer)((it) => {
-			it.effect('sends ToggleMascot to the tab', () =>
-				Effect.gen(function* () {
-					yield* runToggleMascotOnTabEffect(7);
-
-					expect(sendToTabEffectMock).toHaveBeenCalledWith(
-						7,
-						ToggleMascotRequest(),
-					);
-				}),
-			);
-
-			it.effect(
-				'retries missing receiver failures then logs warning and succeeds',
-				() =>
-					Effect.gen(function* () {
-						const capturingLogger = makeCapturingLogger();
-						const missingReceiver = new SendToTabMessagingFailed({
-							reason:
-								'Could not establish connection. Receiving end does not exist.',
-						});
-
-						sendToTabEffectMock
-							.mockReturnValueOnce(Effect.fail(missingReceiver))
-							.mockReturnValueOnce(Effect.fail(missingReceiver))
-							.mockReturnValueOnce(Effect.fail(missingReceiver))
-							.mockReturnValueOnce(Effect.fail(missingReceiver));
-
-						const fiber = yield* runToggleMascotOnTabEffect(7).pipe(
-							Effect.provide(capturingLogger.layer),
-							Effect.fork,
-						);
-						yield* TestClock.adjust('1400 millis');
-						yield* Fiber.join(fiber);
-
-						expect(sendToTabEffectMock).toHaveBeenCalledTimes(4);
-						expect(capturingLogger.messages()).toEqual(
-							expect.arrayContaining([
-								expect.arrayContaining(['ToggleMascot retry']),
-								expect.arrayContaining(['ToggleMascot send failed']),
-							]),
-						);
-					}).pipe(Effect.provide(TestContext.TestContext)),
-			);
-		});
-	});
-
-	describe('runShowMascotOnTabEffect', () => {
-		layer(makeCapturingLogger().layer)((it) => {
-			it.effect('sends ShowMascot to the tab', () =>
-				Effect.gen(function* () {
-					yield* runShowMascotOnTabEffect(7);
-
-					expect(sendToTabEffectMock).toHaveBeenCalledWith(
-						7,
-						ShowMascotRequest(),
 					);
 				}),
 			);

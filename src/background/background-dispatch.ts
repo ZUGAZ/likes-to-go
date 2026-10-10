@@ -6,8 +6,8 @@ import {
 	shouldClaimMascotNotifySurface,
 } from '@/background/mascot-ui-surface';
 import {
+	isPopupOpenEffect,
 	maybeRevealOverlayEffect,
-	PopupPortCountRefTag,
 	rememberOverlayHandoffFromSender,
 	resetOverlayHandoffEffect,
 } from '@/background/overlay-handoff';
@@ -33,7 +33,7 @@ import {
 	type GetStateResponse,
 	type RequestMessage,
 } from '@/common/model/request-message';
-import { Effect, Ref } from 'effect';
+import { Effect, SubscriptionRef } from 'effect';
 
 function claimsMascotNotifySurface(message: RequestMessage): boolean {
 	return (
@@ -57,9 +57,10 @@ export function dispatchEffect(
 ): Effect.Effect<void, never, BackgroundEnv> {
 	return Effect.gen(function* () {
 		const ref = yield* StateRefTag;
-		const current = yield* Ref.get(ref);
-		const result = transition(current, event);
-		yield* Ref.set(ref, result.state);
+		const result = yield* SubscriptionRef.modify(ref, (current) => {
+			const next = transition(current, event);
+			return [next, next.state] as const;
+		});
 		const storage = yield* CollectionStateStorageTag;
 		yield* storage
 			.sync(result.state)
@@ -110,7 +111,7 @@ export function handleMessageEffect(
 				`${message._tag} received by background; this is a content-only message`,
 			);
 			const ref = yield* StateRefTag;
-			const state = yield* Ref.get(ref);
+			const state = yield* SubscriptionRef.get(ref);
 			return collectionStateToGetStateResponse(state);
 		}
 
@@ -122,8 +123,7 @@ export function handleMessageEffect(
 			yield* rememberOverlayHandoffFromSender(sender);
 		}
 
-		const popupPortCountRef = yield* PopupPortCountRefTag;
-		const popupConnected = (yield* Ref.get(popupPortCountRef)) > 0;
+		const popupConnected = yield* isPopupOpenEffect;
 		if (
 			shouldClaimMascotNotifySurface({
 				claimsFromMessage: claimsMascotNotifySurface(message),
@@ -138,7 +138,7 @@ export function handleMessageEffect(
 		yield* dispatchEffect(event);
 
 		const ref = yield* StateRefTag;
-		const state = yield* Ref.get(ref);
+		const state = yield* SubscriptionRef.get(ref);
 		const response = isDownloadExport(message)
 			? collectionStateToDownloadExportResponse(
 					state,

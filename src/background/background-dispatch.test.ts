@@ -4,19 +4,11 @@ import {
 } from '@/background/background-dispatch';
 import { handleCollectionTabNavigationEffect } from '@/background/collection-tab-navigation';
 import { CommandRunnerTag } from '@/background/command-runner';
-import { CollectionStateStorageNoop } from '@/background/infrastructure/collection-state-storage';
 import {
 	ContentOverlaySurface,
-	defaultMascotUiSurface,
 	ExtensionPopupSurface,
 	getMascotUiSurfaceEffect,
-	MascotUiSurfaceRefTag,
 } from '@/background/mascot-ui-surface';
-import {
-	defaultOverlayHandoff,
-	OverlayHandoffRefTag,
-	PopupPortCountRefTag,
-} from '@/background/overlay-handoff';
 import { StateRefTag } from '@/background/state-ref';
 import { CollectionTabSelected } from '@/common/model/collection/events/collection-tab-selected';
 import { COLLECTION_SOURCE_INVALIDATED_MESSAGE } from '@/common/model/collection/events/collection-source-invalidated';
@@ -26,9 +18,12 @@ import { LoginVerified } from '@/common/model/collection/events/login-verified';
 import { SourceSelected } from '@/common/model/collection/events/source-selected';
 import { StartCollection } from '@/common/model/collection/events/start-collection';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
-import { isCollecting } from '@/common/model/collection/states/collecting';
+import {
+	Collecting,
+	isCollecting,
+} from '@/common/model/collection/states/collecting';
 import { isErrorState } from '@/common/model/collection/states/error-state';
-import { initialCollectionState } from '@/common/model/collection/transition';
+import { TracksBatch } from '@/common/model/collection/events/tracks-batch';
 import {
 	CancelCollectionRequest,
 	GetStateRequest,
@@ -39,8 +34,9 @@ import {
 } from '@/common/model/request-message';
 import type { Source } from '@/common/model/source';
 import { isSoundCloudUrl } from '@/common/model/url/is-soundcloud-url';
-import { silentLoggerLayer } from '@/test/effect-log-test';
-import { Effect, Layer, Ref } from 'effect';
+import { ContentCommandsLegacy } from '@/background/infrastructure/content-commands-legacy';
+import { makeBackgroundTestLayer } from '@/test/background-test-layer';
+import { Effect, Layer, SubscriptionRef } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 function makeStubCommandRunner(
@@ -105,20 +101,25 @@ type TestTab = {
 	readonly url?: string;
 };
 
-function tabsToSource(tabs: readonly TestTab[]): Source {
-	return isSoundCloudUrl(tabs[0]?.url) ? 'active-soundcloud-tab' : 'likes-page';
+function dispatchTestLayer(
+	recordedCommands: Array<{ _tag: string; [k: string]: unknown }>,
+	options?: {
+		readonly popupPortCount?: number;
+		readonly commandRunner?: Layer.Layer<CommandRunnerTag>;
+	},
+) {
+	return makeBackgroundTestLayer({
+		...(options?.popupPortCount === undefined
+			? {}
+			: { popupPortCount: options.popupPortCount }),
+		commandRunner:
+			options?.commandRunner ?? makeStubCommandRunner(recordedCommands),
+		contentCommands: ContentCommandsLegacy,
+	});
 }
 
-function makeMascotSessionRefLayer(
-	popupPortCount = 0,
-): Layer.Layer<
-	MascotUiSurfaceRefTag | OverlayHandoffRefTag | PopupPortCountRefTag
-> {
-	return Layer.mergeAll(
-		Layer.effect(MascotUiSurfaceRefTag, Ref.make(defaultMascotUiSurface())),
-		Layer.effect(OverlayHandoffRefTag, Ref.make(defaultOverlayHandoff())),
-		Layer.effect(PopupPortCountRefTag, Ref.make(popupPortCount)),
-	);
+function tabsToSource(tabs: readonly TestTab[]): Source {
+	return isSoundCloudUrl(tabs[0]?.url) ? 'active-soundcloud-tab' : 'likes-page';
 }
 
 describe('background dispatch', () => {
@@ -174,18 +175,7 @@ describe('background dispatch', () => {
 
 	it('dispatchEffect(StartCollection) emits CheckLogin, then LoginVerified selects a tab; CollectionTabSelected yields Collecting', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
@@ -197,7 +187,7 @@ describe('background dispatch', () => {
 				}),
 			);
 			const ref = yield* StateRefTag;
-			return yield* Ref.get(ref);
+			return yield* SubscriptionRef.get(ref);
 		}).pipe(Effect.provide(testLayer));
 
 		const state = await Effect.runPromise(program);
@@ -230,18 +220,7 @@ describe('background dispatch', () => {
 
 	it('handleCollectionTabNavigationEffect cancels when the active collection tab navigates away', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
@@ -253,7 +232,7 @@ describe('background dispatch', () => {
 			);
 			yield* handleCollectionTabNavigationEffect(42, 'https://example.com');
 			const ref = yield* StateRefTag;
-			return yield* Ref.get(ref);
+			return yield* SubscriptionRef.get(ref);
 		}).pipe(Effect.provide(testLayer));
 
 		const state = await Effect.runPromise(program);
@@ -274,22 +253,13 @@ describe('background dispatch', () => {
 
 	it('handleMessageEffect(GetStateRequest) preserves navigation error after tab navigates away', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeCheckLoginAwareRunner(
-			recordedCommands,
-			getCookieMock,
-			queryTabsMock,
-		);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			commandRunner: makeCheckLoginAwareRunner(
+				recordedCommands,
+				getCookieMock,
+				queryTabsMock,
+			),
+		});
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
@@ -305,7 +275,7 @@ describe('background dispatch', () => {
 				{} as chrome.runtime.MessageSender,
 			);
 			const ref = yield* StateRefTag;
-			const state = yield* Ref.get(ref);
+			const state = yield* SubscriptionRef.get(ref);
 			return { response, state };
 		}).pipe(Effect.provide(testLayer));
 
@@ -324,22 +294,13 @@ describe('background dispatch', () => {
 
 	it('CancelCollection after navigation error returns idle on GetState', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeCheckLoginAwareRunner(
-			recordedCommands,
-			getCookieMock,
-			queryTabsMock,
-		);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			commandRunner: makeCheckLoginAwareRunner(
+				recordedCommands,
+				getCookieMock,
+				queryTabsMock,
+			),
+		});
 		const sender: chrome.runtime.MessageSender = {};
 
 		const program = Effect.gen(function* () {
@@ -354,7 +315,7 @@ describe('background dispatch', () => {
 			yield* handleMessageEffect(CancelCollectionRequest(), sender);
 			const response = yield* handleMessageEffect(GetStateRequest(), sender);
 			const ref = yield* StateRefTag;
-			const state = yield* Ref.get(ref);
+			const state = yield* SubscriptionRef.get(ref);
 			return { response, state };
 		}).pipe(Effect.provide(testLayer));
 
@@ -370,18 +331,7 @@ describe('background dispatch', () => {
 
 	it('handleCollectionTabNavigationEffect ignores same-url updates and other tabs', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
@@ -397,7 +347,7 @@ describe('background dispatch', () => {
 			);
 			yield* handleCollectionTabNavigationEffect(43, 'https://example.com');
 			const ref = yield* StateRefTag;
-			return yield* Ref.get(ref);
+			return yield* SubscriptionRef.get(ref);
 		}).pipe(Effect.provide(testLayer));
 
 		const state = await Effect.runPromise(program);
@@ -413,18 +363,7 @@ describe('background dispatch', () => {
 
 	it('handleCollectionTabNavigationEffect ignores navigation after normal completion', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const program = Effect.gen(function* () {
 			yield* dispatchEffect(StartCollection());
@@ -437,7 +376,7 @@ describe('background dispatch', () => {
 			yield* dispatchEffect(CollectionComplete());
 			yield* handleCollectionTabNavigationEffect(42, 'https://example.com');
 			const ref = yield* StateRefTag;
-			return yield* Ref.get(ref);
+			return yield* SubscriptionRef.get(ref);
 		}).pipe(Effect.provide(testLayer));
 
 		const state = await Effect.runPromise(program);
@@ -454,22 +393,13 @@ describe('background dispatch', () => {
 
 	it('handleMessageEffect(GetStateRequest) returns idle state when ref is Idle', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeCheckLoginAwareRunner(
-			recordedCommands,
-			getCookieMock,
-			queryTabsMock,
-		);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			commandRunner: makeCheckLoginAwareRunner(
+				recordedCommands,
+				getCookieMock,
+				queryTabsMock,
+			),
+		});
 
 		const program = handleMessageEffect(
 			GetStateRequest(),
@@ -503,22 +433,13 @@ describe('background dispatch', () => {
 			},
 		]);
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeCheckLoginAwareRunner(
-			recordedCommands,
-			getCookieMock,
-			queryTabsMock,
-		);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			commandRunner: makeCheckLoginAwareRunner(
+				recordedCommands,
+				getCookieMock,
+				queryTabsMock,
+			),
+		});
 		const sender: chrome.runtime.MessageSender = {};
 
 		const response = await Effect.runPromise(
@@ -541,22 +462,13 @@ describe('background dispatch', () => {
 	it('handleMessageEffect(GetStateRequest) returns login error when cookie is missing', async () => {
 		getCookieMock.mockResolvedValueOnce(null);
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeCheckLoginAwareRunner(
-			recordedCommands,
-			getCookieMock,
-			queryTabsMock,
-		);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			commandRunner: makeCheckLoginAwareRunner(
+				recordedCommands,
+				getCookieMock,
+				queryTabsMock,
+			),
+		});
 
 		const response = await Effect.runPromise(
 			handleMessageEffect(
@@ -579,18 +491,7 @@ describe('background dispatch', () => {
 
 	it('handleMessageEffect(StartCollectionRequest) dispatches and returns state while checking login', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const stateRefLayer = Layer.effect(
-			StateRefTag,
-			Ref.make(initialCollectionState),
-		);
-		const runnerLayer = makeStubCommandRunner(recordedCommands);
-		const testLayer = Layer.mergeAll(
-			stateRefLayer,
-			makeMascotSessionRefLayer(),
-			runnerLayer,
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const program = handleMessageEffect(
 			StartCollectionRequest(),
@@ -617,13 +518,9 @@ describe('background dispatch', () => {
 
 	it('reveals the likes-tab overlay after a popup-started export when the popup is gone', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = Layer.mergeAll(
-			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
-			makeMascotSessionRefLayer(0),
-			makeStubCommandRunner(recordedCommands),
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			popupPortCount: 0,
+		});
 
 		const program = Effect.gen(function* () {
 			yield* handleMessageEffect(
@@ -647,13 +544,9 @@ describe('background dispatch', () => {
 
 	it('reveals after a popup-as-tab export when that extension page closes', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = Layer.mergeAll(
-			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
-			makeMascotSessionRefLayer(0),
-			makeStubCommandRunner(recordedCommands),
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			popupPortCount: 0,
+		});
 
 		const program = Effect.gen(function* () {
 			yield* handleMessageEffect(StartCollectionRequest(), {
@@ -680,13 +573,9 @@ describe('background dispatch', () => {
 
 	it('does not auto-show the overlay when the popup is still open', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = Layer.mergeAll(
-			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
-			makeMascotSessionRefLayer(1),
-			makeStubCommandRunner(recordedCommands),
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			popupPortCount: 1,
+		});
 
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -708,13 +597,9 @@ describe('background dispatch', () => {
 
 	it('keeps popup notify surface when overlay GetState arrives while the popup is open', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = Layer.mergeAll(
-			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
-			makeMascotSessionRefLayer(1),
-			makeStubCommandRunner(recordedCommands),
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			popupPortCount: 1,
+		});
 
 		const surface = await Effect.runPromise(
 			Effect.gen(function* () {
@@ -735,13 +620,9 @@ describe('background dispatch', () => {
 
 	it('does not steal overlay notify surface when popup GetState arrives mid-run', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = Layer.mergeAll(
-			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
-			makeMascotSessionRefLayer(0),
-			makeStubCommandRunner(recordedCommands),
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			popupPortCount: 0,
+		});
 
 		const surface = await Effect.runPromise(
 			Effect.gen(function* () {
@@ -761,13 +642,9 @@ describe('background dispatch', () => {
 
 	it('does not auto-show the overlay for an overlay-started export', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = Layer.mergeAll(
-			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
-			makeMascotSessionRefLayer(0),
-			makeStubCommandRunner(recordedCommands),
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			popupPortCount: 0,
+		});
 
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -790,13 +667,9 @@ describe('background dispatch', () => {
 
 	it('does not re-summon the overlay after it was already revealed', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = Layer.mergeAll(
-			Layer.effect(StateRefTag, Ref.make(initialCollectionState)),
-			makeMascotSessionRefLayer(0),
-			makeStubCommandRunner(recordedCommands),
-			CollectionStateStorageNoop,
-			silentLoggerLayer,
-		);
+		const testLayer = dispatchTestLayer(recordedCommands, {
+			popupPortCount: 0,
+		});
 
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -818,5 +691,55 @@ describe('background dispatch', () => {
 		expect(
 			sendTabMessageMock.mock.calls.filter((call) => isShowMascot(call[1])),
 		).toEqual([]);
+	});
+
+	it('applies two concurrent dispatches without losing an update', async () => {
+		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
+		const firstTrack = {
+			title: 'First',
+			artist: 'Artist',
+			url: new URL('https://soundcloud.com/artist/first'),
+		};
+		const secondTrack = {
+			title: 'Second',
+			artist: 'Artist',
+			url: new URL('https://soundcloud.com/artist/second'),
+		};
+		const testLayer = makeBackgroundTestLayer({
+			state: Collecting({
+				sourceUrl: 'https://soundcloud.com/you/likes',
+				tabId: 7,
+				tracks: [],
+				skippedTrackCount: 0,
+			}),
+			commandRunner: makeStubCommandRunner(recordedCommands),
+			contentCommands: ContentCommandsLegacy,
+		});
+
+		const state = await Effect.runPromise(
+			Effect.gen(function* () {
+				yield* Effect.all(
+					[
+						dispatchEffect(
+							TracksBatch({ tracks: [firstTrack], skippedTrackCount: 0 }),
+						),
+						dispatchEffect(
+							TracksBatch({ tracks: [secondTrack], skippedTrackCount: 0 }),
+						),
+					],
+					{ concurrency: 'unbounded' },
+				);
+				const ref = yield* StateRefTag;
+				return yield* SubscriptionRef.get(ref);
+			}).pipe(Effect.provide(testLayer)),
+		);
+
+		expect(isCollecting(state)).toBe(true);
+		if (isCollecting(state)) {
+			expect(state.tracks.map((track) => track.title).sort()).toEqual([
+				'First',
+				'Second',
+			]);
+		}
 	});
 });

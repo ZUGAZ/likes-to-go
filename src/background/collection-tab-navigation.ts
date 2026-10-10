@@ -8,7 +8,7 @@ import {
 import { isCollecting } from '@/common/model/collection/states/collecting';
 import { isPaused } from '@/common/model/collection/states/paused';
 import { parseUrl } from '@/common/model/url/parse-url';
-import { Effect, Ref } from 'effect';
+import { Effect, SubscriptionRef } from 'effect';
 
 function normalizeUrl(rawUrl: string): string | undefined {
 	return parseUrl(rawUrl)?.toString();
@@ -31,7 +31,7 @@ export function handleCollectionTabNavigationEffect(
 ): Effect.Effect<void, never, BackgroundEnv> {
 	return Effect.gen(function* () {
 		const ref = yield* StateRefTag;
-		const state = yield* Ref.get(ref);
+		const state = yield* SubscriptionRef.get(ref);
 
 		if (!isCollecting(state) && !isPaused(state)) return;
 		if (state.tabId !== tabId) return;

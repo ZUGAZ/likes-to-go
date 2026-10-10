@@ -1,15 +1,11 @@
-import { sendToTabEffect } from '@/common/infrastructure/chrome-messaging';
-import { isMissingContentScriptReceiverReason } from '@/common/infrastructure/is-missing-content-script-receiver';
+import { ContentCommandsTag } from '@/background/content-commands';
 import { catchError } from '@/common/model/catch-error';
 import { SendToTabFailed } from '@/common/model/collection/events/send-to-tab-failed';
-import { StartCollectionRequest } from '@/common/model/request-message';
 import { Effect } from 'effect';
-
-const SEND_START_RETRY_DELAYS_MS: readonly number[] = [200, 400, 800, 1600];
 
 export function runSendStartToTab(
 	tabId: number,
-): Effect.Effect<void, SendToTabFailed> {
+): Effect.Effect<void, SendToTabFailed, ContentCommandsTag> {
 	const focusTabEffect = Effect.tryPromise({
 		try: async () => {
 			const tab = await chrome.tabs.update(tabId, { active: true });
@@ -19,42 +15,10 @@ export function runSendStartToTab(
 		catch: catchError(SendToTabFailed, 'Could not focus the collection tab'),
 	});
 
-	const sendEffect = sendToTabEffect(tabId, StartCollectionRequest()).pipe(
-		Effect.mapError((err) =>
-			SendToTabFailed({
-				message: 'Could not open or talk to the likes page',
-				reason: err.reason,
-			}),
-		),
-	);
-
-	const sendWithRetry = (
-		delaysMs: readonly number[],
-	): Effect.Effect<void, SendToTabFailed> =>
-		sendEffect.pipe(
-			Effect.catchAll((error) => {
-				const [delayMs, ...remainingDelaysMs] = delaysMs;
-				if (
-					!isMissingContentScriptReceiverReason(error.reason) ||
-					delayMs === undefined
-				) {
-					return Effect.fail(error);
-				}
-
-				return Effect.log('background SendStartToTab retry', {
-					tabId,
-					delayMs,
-				}).pipe(
-					Effect.zipRight(Effect.sleep(delayMs)),
-					Effect.zipRight(sendWithRetry(remainingDelaysMs)),
-				);
-			}),
-		);
-
 	return Effect.gen(function* () {
 		yield* Effect.log('background SendStartToTab begin', { tabId });
 		yield* focusTabEffect;
-		yield* sendWithRetry(SEND_START_RETRY_DELAYS_MS);
+		yield* (yield* ContentCommandsTag).startPageCollection(tabId);
 		yield* Effect.log('background SendStartToTab content ack received', {
 			tabId,
 		});

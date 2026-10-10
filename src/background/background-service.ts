@@ -3,24 +3,16 @@ import { registerMessageListener } from '@/background/listeners/message-listener
 import { registerPopupPortListener } from '@/background/listeners/popup-port-listener';
 import { registerTabNavigationListener } from '@/background/listeners/tab-navigation-listener';
 import { makeBackgroundRuntime } from '@/background/runtime/background-runtime';
-import { Effect } from 'effect';
 
 /**
- * Initializes the background service: builds the Effect runtime from BackgroundLive,
- * registers Chrome listeners, then keeps the scope alive.
- * Listener registration runs in the same tick as long as BackgroundLive is sync.
+ * Builds the background runtime synchronously and registers listeners in the first turn.
+ * `runSync` throws if the layer becomes async.
+ * The legacy message listener and the RPC port listener are both live before any await.
  */
 export function initBackgroundService(): void {
-	const program = Effect.scoped(
-		Effect.gen(function* () {
-			const runtime = yield* makeBackgroundRuntime();
-			registerMessageListener(runtime);
-			registerTabNavigationListener(runtime);
-			registerActionPopupListener(runtime);
-			registerPopupPortListener(runtime);
-			return yield* Effect.never;
-		}),
-	);
-
-	void Effect.runPromise(program);
+	const { runtime } = makeBackgroundRuntime();
+	registerMessageListener(runtime);
+	registerTabNavigationListener(runtime);
+	registerActionPopupListener(runtime);
+	registerPopupPortListener(runtime);
 }

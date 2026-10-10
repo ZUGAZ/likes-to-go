@@ -1,19 +1,11 @@
 import { actionPopupPathForUrl } from '@/background/action-popup-for-url';
+import { ContentCommandsTag } from '@/background/content-commands';
 import {
 	setTabActionPopupEffect,
 	SetTabActionPopupFailed,
 } from '@/background/infrastructure/action-popup';
-import { sendToTabEffect } from '@/common/infrastructure/chrome-messaging';
-import { isMissingContentScriptReceiverReason } from '@/common/infrastructure/is-missing-content-script-receiver';
 import { errorToReason } from '@/common/model/error-to-reason';
-import {
-	ShowMascotRequest,
-	ToggleMascotRequest,
-	type RequestMessage,
-} from '@/common/model/request-message';
 import { Data, Effect } from 'effect';
-
-const TOGGLE_MASCOT_RETRY_DELAYS_MS: readonly number[] = [200, 400, 800];
 
 class GetTabForActionPopupFailed extends Data.TaggedError(
 	'GetTabForActionPopupFailed',
@@ -99,49 +91,18 @@ export function syncAllTabsActionPopupEffect(): Effect.Effect<void> {
 	);
 }
 
-function sendToTabWithMissingReceiverRetry(
+export function runToggleMascotOnTabEffect(
 	tabId: number,
-	message: RequestMessage,
-	delaysMs: readonly number[],
-): Effect.Effect<void> {
-	const sendEffect = sendToTabEffect(tabId, message);
-
-	return sendEffect.pipe(
-		Effect.tap(() => Effect.log(`${message._tag} sent`, { tabId })),
-		Effect.catchAll((error) => {
-			const [delayMs, ...remainingDelaysMs] = delaysMs;
-			if (
-				!isMissingContentScriptReceiverReason(error.reason) ||
-				delayMs === undefined
-			) {
-				return Effect.logWarning(`${message._tag} send failed`, {
-					tabId,
-					reason: error.reason,
-				});
-			}
-
-			return Effect.log(`${message._tag} retry`, { tabId, delayMs }).pipe(
-				Effect.zipRight(Effect.sleep(delayMs)),
-				Effect.zipRight(
-					sendToTabWithMissingReceiverRetry(tabId, message, remainingDelaysMs),
-				),
-			);
-		}),
-	);
-}
-
-export function runToggleMascotOnTabEffect(tabId: number): Effect.Effect<void> {
-	return sendToTabWithMissingReceiverRetry(
-		tabId,
-		ToggleMascotRequest(),
-		TOGGLE_MASCOT_RETRY_DELAYS_MS,
+): Effect.Effect<void, never, ContentCommandsTag> {
+	return Effect.flatMap(ContentCommandsTag, (commands) =>
+		commands.toggleMascot(tabId),
 	).pipe(Effect.withLogSpan('runToggleMascotOnTab'));
 }
 
-export function runShowMascotOnTabEffect(tabId: number): Effect.Effect<void> {
-	return sendToTabWithMissingReceiverRetry(
-		tabId,
-		ShowMascotRequest(),
-		TOGGLE_MASCOT_RETRY_DELAYS_MS,
+export function runShowMascotOnTabEffect(
+	tabId: number,
+): Effect.Effect<void, never, ContentCommandsTag> {
+	return Effect.flatMap(ContentCommandsTag, (commands) =>
+		commands.showMascot(tabId),
 	).pipe(Effect.withLogSpan('runShowMascotOnTab'));
 }
