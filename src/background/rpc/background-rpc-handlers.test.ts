@@ -74,7 +74,6 @@ const likes = Collecting({
 
 const handlerLayer = (options?: {
 	readonly state?: CollectionState;
-	readonly popupPortCount?: number;
 	readonly popupPresenceOpen?: boolean;
 	readonly recorded?: Array<CollectionCommand>;
 }) => {
@@ -83,9 +82,6 @@ const handlerLayer = (options?: {
 		Layer.provideMerge(
 			makeBackgroundTestLayer({
 				...(options?.state === undefined ? {} : { state: options.state }),
-				...(options?.popupPortCount === undefined
-					? {}
-					: { popupPortCount: options.popupPortCount }),
 				...(options?.popupPresenceOpen === undefined
 					? {}
 					: { popupPresenceOpen: options.popupPresenceOpen }),
@@ -331,10 +327,7 @@ describe('background rpc handlers', () => {
 				yield* getMascotUiSurfaceEffect().pipe(Effect.provide(contentEnv)),
 			).toEqual(ContentOverlaySurface({ tabId: 7 }));
 
-			for (const options of [
-				{ popupPresenceOpen: true },
-				{ popupPortCount: 1 },
-			]) {
+			for (const options of [{ popupPresenceOpen: true }]) {
 				const blocked = yield* Layer.build(handlerLayer(options));
 				const caller = yield* clientFor(
 					new Content({ tabId: 7, frameId: 0 }),

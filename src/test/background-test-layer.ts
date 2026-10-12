@@ -16,7 +16,6 @@ import {
 import {
 	defaultOverlayHandoff,
 	OverlayHandoffRefTag,
-	PopupPortCountRefTag,
 	PopupPresenceRefTag,
 } from '@/background/overlay-handoff';
 import type { BackgroundEnv } from '@/background/runtime/background-env';
@@ -104,7 +103,6 @@ export function makeFailingStorage(
 
 export function makeBackgroundTestLayer(options?: {
 	readonly state?: CollectionState;
-	readonly popupPortCount?: number;
 	readonly popupPresenceOpen?: boolean;
 	readonly commandRunner?: Layer.Layer<CommandRunnerTag>;
 	readonly contentCommands?: Layer.Layer<ContentCommandsTag>;
@@ -127,7 +125,6 @@ export function makeBackgroundTestLayer(options?: {
 		CollectionStateStorageNoop,
 		Layer.effect(MascotUiSurfaceRefTag, Ref.make(defaultMascotUiSurface())),
 		Layer.effect(OverlayHandoffRefTag, Ref.make(defaultOverlayHandoff())),
-		Layer.effect(PopupPortCountRefTag, Ref.make(options?.popupPortCount ?? 0)),
 		Layer.effect(
 			PopupPresenceRefTag,
 			Ref.make(options?.popupPresenceOpen ?? false),

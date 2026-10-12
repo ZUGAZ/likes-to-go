@@ -5,7 +5,6 @@ import type { CollectionStateStorageTag } from '@/background/infrastructure/coll
 import type { MascotUiSurfaceRefTag } from '@/background/mascot-ui-surface';
 import type {
 	OverlayHandoffRefTag,
-	PopupPortCountRefTag,
 	PopupPresenceRefTag,
 } from '@/background/overlay-handoff';
 import type {
@@ -20,7 +19,6 @@ export type BackgroundEnv =
 	| CollectionStateStorageTag
 	| MascotUiSurfaceRefTag
 	| OverlayHandoffRefTag
-	| PopupPortCountRefTag
 	| PopupPresenceRefTag
 	| DispatchLaneTag
 	| ContentCommandsTag;

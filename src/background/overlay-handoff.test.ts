@@ -149,19 +149,16 @@ describe('caller handoff and popup open', () => {
 		).resolves.toEqual(OverlayHandoffIdle());
 	});
 
-	it('is open when the legacy count or presence says so', async () => {
+	it('is open when presence says so', async () => {
 		const cases = [
-			{ popupPortCount: 0, popupPresenceOpen: false, open: false },
-			{ popupPortCount: 1, popupPresenceOpen: false, open: true },
-			{ popupPortCount: 0, popupPresenceOpen: true, open: true },
-			{ popupPortCount: 2, popupPresenceOpen: true, open: true },
+			{ popupPresenceOpen: false, open: false },
+			{ popupPresenceOpen: true, open: true },
 		];
 		for (const entry of cases) {
 			const open = await Effect.runPromise(
 				isPopupOpenEffect.pipe(
 					Effect.provide(
 						makeBackgroundTestLayer({
-							popupPortCount: entry.popupPortCount,
 							popupPresenceOpen: entry.popupPresenceOpen,
 						}),
 					),

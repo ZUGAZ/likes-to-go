@@ -1,4 +1,4 @@
-import { Effect, Runtime } from 'effect';
+import { Context, Effect, Fiber, Option, Runtime, Stream } from 'effect';
 import {
 	batch,
 	createEffect,
@@ -9,28 +9,12 @@ import {
 } from 'solid-js';
 
 import {
-	decodeGetStateResponse,
-	getState,
-	sendToBackgroundEffect,
-} from '@/common/infrastructure/chrome-messaging';
-import {
 	awaitSaveFilePicker,
 	startSaveFilePicker,
 	writeTextFile,
 } from '@/common/infrastructure/save-file-picker';
 import { getResolvedPopupThemeEffect } from '@/common/infrastructure/get-resolved-popup-theme';
-import {
-	listenForStateUpdatesEffect,
-	type StateUpdatePayload,
-} from '@/common/infrastructure/listen-for-state-updates';
-import {
-	CancelCollectionRequest,
-	DownloadCancelledRequest,
-	DownloadExportRequest,
-	DownloadFailedRequest,
-	DownloadSucceededRequest,
-	StartCollectionRequest,
-} from '@/common/model/request-message';
+import { backgroundUnreachableMessage } from '@/common/model/background-unreachable-message';
 import { exportBackupFilename } from '@/common/model/export-backup-filename';
 import type { ExportFormatId } from '@/common/model/export-format/export-format-id';
 import {
@@ -40,6 +24,13 @@ import {
 } from '@/common/model/export-format/registry';
 import type { ResolvedPopupTheme } from '@/common/model/soundcloud-theme';
 import type { ViewModelEffect } from '@/common/viewmodel/bind-viewmodel';
+import type { ExportFormatStickerRow } from '@/mascot/export-format-sticker-rows';
+import {
+	CollectionBackendTag,
+	type BackgroundUnreachable,
+	type CollectionSnapshot,
+	type DownloadFailure,
+} from '@/mascot/collection-backend';
 import {
 	initialBeatModel,
 	initializingBeatModel,
@@ -55,7 +46,6 @@ import {
 	type BeatSource,
 	type BeatState,
 } from '@/mascot/model';
-import type { ExportFormatStickerRow } from '@/mascot/export-format-sticker-rows';
 import type {
 	BeatActionId,
 	BeatPersonaOption,
@@ -94,7 +84,7 @@ export interface MascotViewModel {
 }
 
 export interface MascotViewModelOptions {
-	readonly runtime: Runtime.Runtime<never>;
+	readonly runtime: Runtime.Runtime<CollectionBackendTag>;
 	readonly visibility: MascotVisibilityControls;
 	readonly resolvePoseUrl: (pose: BeatPoseKey) => string;
 	readonly onSurfaceDismiss: () => void;
@@ -104,6 +94,7 @@ export function createMascotViewModel(
 	vmOptions: MascotViewModelOptions,
 ): MascotViewModel {
 	const { runtime, visibility, resolvePoseUrl, onSurfaceDismiss } = vmOptions;
+	const backend = Context.get(runtime.context, CollectionBackendTag);
 
 	const boot = initializingBeatModel();
 	const [state, setState] = createSignal<BeatState>(boot.state);
@@ -119,6 +110,7 @@ export function createMascotViewModel(
 
 	let currentSource = boot.source;
 	let savePickerAbort: AbortController | undefined;
+	let latestSnapshot: Option.Option<CollectionSnapshot> = Option.none();
 
 	const isStatusBusy = (): boolean => mapStateToBusy(state());
 
@@ -175,14 +167,19 @@ export function createMascotViewModel(
 		});
 	};
 
-	const applyGetStateResponse = (response: StateUpdatePayload): void => {
+	const applySnapshot = (snapshot: CollectionSnapshot): void => {
 		applyModel({
-			state: mapStatusToBeatState(response.status),
-			trackCount: response.trackCount,
-			message: response.message,
-			skippedTrackCount: response.skippedTrackCount,
-			source: response.source ?? currentSource,
+			state: mapStatusToBeatState(snapshot.status),
+			trackCount: snapshot.trackCount,
+			message: snapshot.message,
+			skippedTrackCount: snapshot.skippedTrackCount,
+			source: snapshot.source ?? currentSource,
 		});
+	};
+
+	const onSnapshot = (snapshot: CollectionSnapshot): void => {
+		latestSnapshot = Option.some(snapshot);
+		applySnapshot(snapshot);
 	};
 
 	const setToInitial = (): void => {
@@ -203,20 +200,30 @@ export function createMascotViewModel(
 		});
 	};
 
-	const applyBackgroundReply = (
-		message:
-			| ReturnType<typeof DownloadCancelledRequest>
-			| ReturnType<typeof DownloadFailedRequest>
-			| ReturnType<typeof DownloadSucceededRequest>,
-	) =>
-		sendToBackgroundEffect(message).pipe(
-			Effect.flatMap(decodeGetStateResponse),
-			Effect.tap(applyGetStateResponse),
-			Effect.catchAll(() => Effect.void),
+	const applyUnreachable = (error: BackgroundUnreachable) =>
+		Effect.logWarning('collection updates ended', error.reason).pipe(
+			Effect.zipRight(
+				Effect.sync(() => {
+					applyModel({
+						state: 'error',
+						trackCount: untrack(trackCount),
+						message: backgroundUnreachableMessage(error.reason),
+						skippedTrackCount: untrack(skippedTrackCount),
+						source: currentSource,
+					});
+				}),
+			),
 		);
 
-	const stopListening = Effect.runSync(
-		listenForStateUpdatesEffect(applyGetStateResponse),
+	const reportDownloadFailure = (failure: DownloadFailure) =>
+		backend.downloadFailed(failure).pipe(Effect.ignore);
+
+	const subscription = Runtime.runFork(runtime)(
+		backend.collectionUpdates.pipe(
+			Stream.runForEach((snapshot) => Effect.sync(() => onSnapshot(snapshot))),
+			Effect.catchTag('BackgroundUnreachable', applyUnreachable),
+			Effect.withLogSpan('collectionUpdates'),
+		),
 	);
 
 	const syncTheme = getResolvedPopupThemeEffect().pipe(Effect.tap(setTheme));
@@ -224,30 +231,27 @@ export function createMascotViewModel(
 	const syncState = Effect.gen(function* () {
 		yield* Effect.log('mascot syncState start');
 		yield* syncTheme;
-		yield* getState().pipe(Effect.tap(applyGetStateResponse));
+		yield* backend.refresh.pipe(
+			Effect.catchTag('BackgroundUnreachable', (error) =>
+				Effect.logWarning('refresh failed', error.reason),
+			),
+		);
 		yield* Effect.log('mascot syncState complete');
 	});
 
 	const startCollection = Effect.gen(function* () {
 		yield* Effect.log('startCollection begin');
 		setToLoading();
-		yield* sendToBackgroundEffect(StartCollectionRequest()).pipe(
-			Effect.flatMap(decodeGetStateResponse),
-			Effect.tap(applyGetStateResponse),
-			Effect.tap((response) =>
-				Effect.log('startCollection background responded', {
-					status: response.status,
-					trackCount: response.trackCount,
-				}),
-			),
-			Effect.catchTag('SendToBackgroundFailed', (err) =>
-				Effect.logWarning('startCollection send failed', err.reason).pipe(
+		yield* backend.startCollection.pipe(
+			Effect.tap(() => Effect.log('startCollection accepted')),
+			Effect.catchTag('BackgroundUnreachable', (error) =>
+				Effect.logWarning('startCollection send failed', error.reason).pipe(
 					Effect.zipRight(
 						Effect.sync(() => {
 							applyModel({
 								state: 'error',
 								trackCount: 0,
-								message: err.reason,
+								message: error.reason,
 								skippedTrackCount: undefined,
 								source: currentSource,
 							});
@@ -255,28 +259,25 @@ export function createMascotViewModel(
 					),
 				),
 			),
-			Effect.catchTag('DecodeGetStateResponseFailed', (err) =>
-				Effect.logWarning(
-					'startCollection background responded with unexpected payload',
-					err.reason,
-				),
-			),
 		);
 	});
 
 	const retryAfterError = Effect.gen(function* () {
 		applyModel(initializingBeatModel());
-		const snapshot = yield* getState();
-		if (snapshot.status === 'error') {
-			yield* sendToBackgroundEffect(CancelCollectionRequest());
-			yield* getState().pipe(Effect.tap(applyGetStateResponse));
-			return;
+		if (
+			Option.exists(latestSnapshot, (snapshot) => snapshot.status === 'error')
+		) {
+			yield* backend.cancelCollection;
 		}
-		applyGetStateResponse(snapshot);
+		yield* backend.refresh;
+		yield* Option.match(latestSnapshot, {
+			onNone: () => Effect.sync(setToInitial),
+			onSome: (snapshot) => Effect.sync(() => applySnapshot(snapshot)),
+		});
 	});
 
 	const cancelCollection = Effect.gen(function* () {
-		yield* sendToBackgroundEffect(CancelCollectionRequest());
+		yield* backend.cancelCollection;
 		setToInitial();
 	});
 
@@ -290,7 +291,7 @@ export function createMascotViewModel(
 			format.pickerTypes,
 			pickerAbort.signal,
 		).pipe(
-			Effect.catchTag('SaveFilePickerUnavailable', (err) =>
+			Effect.catchTag('SaveFilePickerUnavailable', (error) =>
 				Effect.sync(() => {
 					applyModel({
 						state: 'error',
@@ -299,7 +300,7 @@ export function createMascotViewModel(
 						skippedTrackCount: untrack(skippedTrackCount),
 						source: currentSource,
 					});
-				}).pipe(Effect.zipRight(Effect.fail(err))),
+				}).pipe(Effect.zipRight(Effect.fail(error))),
 			),
 		);
 		void pending.promise.then(
@@ -308,69 +309,51 @@ export function createMascotViewModel(
 		);
 		setToSaving();
 
-		const response = yield* sendToBackgroundEffect(
-			DownloadExportRequest({ format: formatId }),
-		).pipe(
-			Effect.flatMap(decodeGetStateResponse),
-			Effect.tap(applyGetStateResponse),
-			Effect.catchTag('SendToBackgroundFailed', (err) =>
-				applyBackgroundReply(
-					DownloadFailedRequest({
+		const body = yield* backend.downloadExport(formatId).pipe(
+			Effect.catchTags({
+				BackgroundUnreachable: (error) =>
+					reportDownloadFailure({
 						message: 'Could not save your export',
-						reason: err.reason,
-					}),
-				).pipe(Effect.zipRight(Effect.fail(err))),
-			),
-			Effect.catchTag('DecodeGetStateResponseFailed', (err) =>
-				applyBackgroundReply(
-					DownloadFailedRequest({
-						message: 'Could not save your export',
-						reason: err.reason,
-					}),
-				).pipe(Effect.zipRight(Effect.fail(err))),
-			),
+						reason: error.reason,
+					}).pipe(Effect.zipRight(Effect.fail(error))),
+				ExportUnavailable: () => Effect.succeed(''),
+			}),
 		);
 
-		const exportBody = response.exportBody;
-		if (exportBody === undefined || exportBody.length === 0) {
+		if (body.length === 0) {
 			yield* awaitSaveFilePicker(pending).pipe(Effect.ignore);
-			yield* applyBackgroundReply(
-				DownloadFailedRequest({
-					message: 'Could not save your export',
-					reason: 'Export payload was missing',
-				}),
-			);
+			yield* reportDownloadFailure({
+				message: 'Could not save your export',
+				reason: 'Export payload was missing',
+			});
 			return;
 		}
 
 		const handle = yield* awaitSaveFilePicker(pending).pipe(
-			Effect.catchTag('SaveFilePickerCancelled', (err) =>
-				applyBackgroundReply(DownloadCancelledRequest()).pipe(
-					Effect.zipRight(Effect.fail(err)),
+			Effect.catchTag('SaveFilePickerCancelled', (error) =>
+				backend.downloadCancelled.pipe(
+					Effect.ignore,
+					Effect.zipRight(Effect.fail(error)),
 				),
 			),
-			Effect.catchTag('SaveFilePickerUnavailable', (err) =>
-				applyBackgroundReply(
-					DownloadFailedRequest({
-						message: 'Could not save your export',
-						reason: err.reason,
-					}),
-				).pipe(Effect.zipRight(Effect.fail(err))),
+			Effect.catchTag('SaveFilePickerUnavailable', (error) =>
+				reportDownloadFailure({
+					message: 'Could not save your export',
+					reason: error.reason,
+				}).pipe(Effect.zipRight(Effect.fail(error))),
 			),
 		);
 
-		yield* writeTextFile(handle, exportBody).pipe(
-			Effect.catchTag('SaveFileWriteFailed', (err) =>
-				applyBackgroundReply(
-					DownloadFailedRequest({
-						message: 'Could not save your export',
-						reason: err.reason,
-					}),
-				).pipe(Effect.zipRight(Effect.fail(err))),
+		yield* writeTextFile(handle, body).pipe(
+			Effect.catchTag('SaveFileWriteFailed', (error) =>
+				reportDownloadFailure({
+					message: 'Could not save your export',
+					reason: error.reason,
+				}).pipe(Effect.zipRight(Effect.fail(error))),
 			),
 		);
 
-		yield* applyBackgroundReply(DownloadSucceededRequest());
+		yield* backend.downloadSucceeded.pipe(Effect.ignore);
 	}).pipe(Effect.catchAll(() => Effect.void));
 
 	const dismiss = Effect.gen(function* () {
@@ -379,9 +362,7 @@ export function createMascotViewModel(
 		abort?.abort();
 		const current = untrack(state);
 		if (current === 'done' || current === 'saving') {
-			yield* sendToBackgroundEffect(CancelCollectionRequest()).pipe(
-				Effect.catchAll(() => Effect.void),
-			);
+			yield* backend.cancelCollection.pipe(Effect.ignore);
 			setToInitial();
 		}
 		yield* Effect.sync(() => {
@@ -403,7 +384,7 @@ export function createMascotViewModel(
 	};
 
 	const teardown = (): void => {
-		stopListening();
+		Runtime.runFork(runtime)(Fiber.interrupt(subscription));
 	};
 
 	onMount(() => {

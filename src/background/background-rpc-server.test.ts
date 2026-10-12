@@ -27,7 +27,6 @@ import { makeBackgroundLayer } from '@/background/background-layer';
 import { CommandRunnerTag } from '@/background/command-runner';
 import {
 	isPopupOpenEffect,
-	PopupPortCountRefTag,
 	PopupPresenceRefTag,
 } from '@/background/overlay-handoff';
 import {
@@ -60,9 +59,7 @@ const track = (name: string) => ({
 	url: new URL(`https://soundcloud.com/artist/${name}`),
 });
 
-const waitUntilPopupOpen = (
-	context: Context.Context<PopupPortCountRefTag | PopupPresenceRefTag>,
-) =>
+const waitUntilPopupOpen = (context: Context.Context<PopupPresenceRefTag>) =>
 	Effect.gen(function* () {
 		for (let attempt = 0; attempt < 40; attempt += 1) {
 			if (yield* isPopupOpenEffect) {

@@ -6,7 +6,7 @@ export default defineConfig({
 		'soundcloud-mock-harness.spec.ts',
 		'export-via-popup.spec.ts',
 		'export-via-overlay.spec.ts',
-		'background-rpc-server.spec.ts',
+		'popup-live-state.spec.ts',
 	],
 	fullyParallel: false,
 	workers: 1,

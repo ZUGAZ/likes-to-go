@@ -56,6 +56,8 @@ vi.mock('@/common/infrastructure/get-resolved-popup-theme', () => ({
 }));
 
 import { MascotOverlayRoot } from '@/content/components/mascot-overlay/mascot-overlay-root';
+import type { ContentEnv } from '@/content/runtime/content-env';
+import { CollectionBackendLegacy } from '@/mascot/infrastructure/collection-backend-legacy';
 import { createMascotVisibility } from '@/mascot/visibility';
 import { silentLoggerLayer } from '@/test/effect-log-test';
 
@@ -68,10 +70,12 @@ afterEach(() => {
 });
 
 describe('MascotOverlayRoot', () => {
-	let runtime: Runtime.Runtime<never>;
+	let runtime: Runtime.Runtime<ContentEnv>;
 
 	beforeAll(async () => {
-		const managed = ManagedRuntime.make(Layer.mergeAll(silentLoggerLayer));
+		const managed = ManagedRuntime.make(
+			CollectionBackendLegacy.pipe(Layer.provideMerge(silentLoggerLayer)),
+		);
 		runtime = await managed.runtime();
 	});
 

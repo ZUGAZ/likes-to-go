@@ -9,7 +9,8 @@ import {
 } from '@/common/model/request-message';
 import { UNSUPPORTED_COLLECTION_PAGE_MESSAGE } from '@/content/model/collection-error-messages';
 import { createContentMessageHandler } from '@/content/content-message-handler';
-import { Either, ManagedRuntime, Runtime } from 'effect';
+import { CollectionBackendLegacy } from '@/mascot/infrastructure/collection-backend-legacy';
+import { Either, Layer, ManagedRuntime, Runtime } from 'effect';
 import {
 	afterAll,
 	afterEach,
@@ -20,11 +21,12 @@ import {
 	it,
 	vi,
 } from 'vitest';
+import type { ContentEnv } from '@/content/runtime/content-env';
 import { silentLoggerLayer } from '@/test/effect-log-test';
 
 describe('createContentMessageHandler', () => {
-	let managed: ManagedRuntime.ManagedRuntime<never, never>;
-	let runtime: Runtime.Runtime<never>;
+	let managed: ManagedRuntime.ManagedRuntime<ContentEnv, never>;
+	let runtime: Runtime.Runtime<ContentEnv>;
 
 	const sendMessageMock = vi.fn((message: unknown) => {
 		void message;
@@ -32,7 +34,22 @@ describe('createContentMessageHandler', () => {
 	});
 
 	beforeAll(async () => {
-		managed = ManagedRuntime.make(silentLoggerLayer);
+		Object.defineProperty(globalThis, 'chrome', {
+			configurable: true,
+			writable: true,
+			value: {
+				runtime: {
+					sendMessage: sendMessageMock,
+					onMessage: {
+						addListener: () => undefined,
+						removeListener: () => undefined,
+					},
+				},
+			},
+		});
+		managed = ManagedRuntime.make(
+			CollectionBackendLegacy.pipe(Layer.provideMerge(silentLoggerLayer)),
+		);
 		runtime = await managed.runtime();
 	});
 
@@ -50,6 +67,10 @@ describe('createContentMessageHandler', () => {
 			value: {
 				runtime: {
 					sendMessage: sendMessageMock,
+					onMessage: {
+						addListener: () => undefined,
+						removeListener: () => undefined,
+					},
 				},
 			},
 		});

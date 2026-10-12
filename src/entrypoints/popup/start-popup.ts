@@ -1,14 +1,16 @@
 import { Effect } from 'effect';
 
-import { connectPopupPort } from '@/popup/infrastructure/connect-popup-port';
 import { makePopupRuntime } from '@/popup/runtime/popup-runtime';
 import type { PopupRuntime } from '@/popup/runtime/popup-runtime-type';
 
+/**
+ * Starts the popup.
+ * The background port opens with the runtime and stays open for the page's lifetime.
+ */
 export function startPopup(mountPopup: (runtime: PopupRuntime) => void): void {
 	const program = Effect.scoped(
 		Effect.gen(function* () {
 			const runtime = yield* makePopupRuntime();
-			yield* Effect.sync(connectPopupPort);
 			mountPopup(runtime);
 			yield* Effect.log('popup opened').pipe(Effect.withLogSpan('startPopup'));
 			return yield* Effect.never;

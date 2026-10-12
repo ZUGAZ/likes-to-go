@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 
 import { mountBeatOverlay } from '@/content/beat-overlay/mount-beat-overlay';
+import { CollectionBackendLegacy } from '@/mascot/infrastructure/collection-backend-legacy';
 import { createMascotVisibility } from '@/mascot/visibility';
 import { silentLoggerLayer } from '@/test/effect-log-test';
 
@@ -100,7 +101,9 @@ describe('mountBeatOverlay', () => {
 
 		const ctx = new ContentScriptContext('likes');
 
-		const managed = ManagedRuntime.make(Layer.mergeAll(silentLoggerLayer));
+		const managed = ManagedRuntime.make(
+			CollectionBackendLegacy.pipe(Layer.provideMerge(silentLoggerLayer)),
+		);
 		const runtime = await managed.runtime();
 		const visibility = createMascotVisibility(false);
 

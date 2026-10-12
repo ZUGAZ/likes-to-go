@@ -11,7 +11,6 @@ import {
 import {
 	defaultOverlayHandoff,
 	OverlayHandoffRefTag,
-	PopupPortCountRefTag,
 	PopupPresenceRefTag,
 } from '@/background/overlay-handoff';
 import { BackgroundRpcServerLive } from '@/background/rpc/background-rpc-server';
@@ -72,11 +71,6 @@ const OverlayHandoffRefLive: Layer.Layer<OverlayHandoffRefTag> = Layer.effect(
 	Ref.make(defaultOverlayHandoff()),
 );
 
-const PopupPortCountRefLive: Layer.Layer<PopupPortCountRefTag> = Layer.effect(
-	PopupPortCountRefTag,
-	Ref.make(0),
-);
-
 const PopupPresenceRefLive: Layer.Layer<PopupPresenceRefTag> = Layer.effect(
 	PopupPresenceRefTag,
 	Ref.make(false),
@@ -102,7 +96,6 @@ export function makeBackgroundLayer(deps: {
 		CollectionStateLive.pipe(Layer.provideMerge(deps.storage)),
 		MascotUiSurfaceRefLive,
 		OverlayHandoffRefLive,
-		PopupPortCountRefLive,
 		PopupPresenceRefLive,
 		DispatchLaneLive,
 		deps.commandRunner,

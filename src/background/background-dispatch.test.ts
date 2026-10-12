@@ -104,14 +104,14 @@ type TestTab = {
 function dispatchTestLayer(
 	recordedCommands: Array<{ _tag: string; [k: string]: unknown }>,
 	options?: {
-		readonly popupPortCount?: number;
+		readonly popupPresenceOpen?: boolean;
 		readonly commandRunner?: Layer.Layer<CommandRunnerTag>;
 	},
 ) {
 	return makeBackgroundTestLayer({
-		...(options?.popupPortCount === undefined
+		...(options?.popupPresenceOpen === undefined
 			? {}
-			: { popupPortCount: options.popupPortCount }),
+			: { popupPresenceOpen: options.popupPresenceOpen }),
 		commandRunner:
 			options?.commandRunner ?? makeStubCommandRunner(recordedCommands),
 		contentCommands: ContentCommandsLegacy,
@@ -518,9 +518,7 @@ describe('background dispatch', () => {
 
 	it('reveals the likes-tab overlay after a popup-started export when the popup is gone', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = dispatchTestLayer(recordedCommands, {
-			popupPortCount: 0,
-		});
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const program = Effect.gen(function* () {
 			yield* handleMessageEffect(
@@ -544,9 +542,7 @@ describe('background dispatch', () => {
 
 	it('reveals after a popup-as-tab export when that extension page closes', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = dispatchTestLayer(recordedCommands, {
-			popupPortCount: 0,
-		});
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const program = Effect.gen(function* () {
 			yield* handleMessageEffect(StartCollectionRequest(), {
@@ -574,7 +570,7 @@ describe('background dispatch', () => {
 	it('does not auto-show the overlay when the popup is still open', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
 		const testLayer = dispatchTestLayer(recordedCommands, {
-			popupPortCount: 1,
+			popupPresenceOpen: true,
 		});
 
 		await Effect.runPromise(
@@ -598,7 +594,7 @@ describe('background dispatch', () => {
 	it('keeps popup notify surface when overlay GetState arrives while the popup is open', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
 		const testLayer = dispatchTestLayer(recordedCommands, {
-			popupPortCount: 1,
+			popupPresenceOpen: true,
 		});
 
 		const surface = await Effect.runPromise(
@@ -620,9 +616,7 @@ describe('background dispatch', () => {
 
 	it('does not steal overlay notify surface when popup GetState arrives mid-run', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = dispatchTestLayer(recordedCommands, {
-			popupPortCount: 0,
-		});
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		const surface = await Effect.runPromise(
 			Effect.gen(function* () {
@@ -642,9 +636,7 @@ describe('background dispatch', () => {
 
 	it('does not auto-show the overlay for an overlay-started export', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = dispatchTestLayer(recordedCommands, {
-			popupPortCount: 0,
-		});
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -667,9 +659,7 @@ describe('background dispatch', () => {
 
 	it('does not re-summon the overlay after it was already revealed', async () => {
 		const recordedCommands: Array<{ _tag: string; [k: string]: unknown }> = [];
-		const testLayer = dispatchTestLayer(recordedCommands, {
-			popupPortCount: 0,
-		});
+		const testLayer = dispatchTestLayer(recordedCommands);
 
 		await Effect.runPromise(
 			Effect.gen(function* () {

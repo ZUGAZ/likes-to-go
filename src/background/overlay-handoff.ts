@@ -64,11 +64,6 @@ export class OverlayHandoffRefTag extends Context.Tag('OverlayHandoffRef')<
 	Ref.Ref<OverlayHandoff>
 >() {}
 
-export class PopupPortCountRefTag extends Context.Tag('PopupPortCountRef')<
-	PopupPortCountRefTag,
-	Ref.Ref<number>
->() {}
-
 export class PopupPresenceRefTag extends Context.Tag('PopupPresenceRef')<
 	PopupPresenceRefTag,
 	Ref.Ref<boolean>
@@ -85,14 +80,8 @@ export function popupPresentIn(
 export const isPopupOpenEffect: Effect.Effect<
 	boolean,
 	never,
-	PopupPortCountRefTag | PopupPresenceRefTag
-> = Effect.gen(function* () {
-	const popupPortCountRef = yield* PopupPortCountRefTag;
-	const popupPresenceRef = yield* PopupPresenceRefTag;
-	const legacyPopupPortCount = yield* Ref.get(popupPortCountRef);
-	const popupPresenceOpen = yield* Ref.get(popupPresenceRef);
-	return legacyPopupPortCount > 0 || popupPresenceOpen;
-});
+	PopupPresenceRefTag
+> = PopupPresenceRefTag.pipe(Effect.flatMap(Ref.get));
 
 const POPUP_DISCONNECT_GRACE_MS = 100;
 
@@ -178,7 +167,6 @@ export function maybeRevealOverlayEffect(): Effect.Effect<
 	void,
 	never,
 	| OverlayHandoffRefTag
-	| PopupPortCountRefTag
 	| PopupPresenceRefTag
 	| StateRefTag
 	| MascotUiSurfaceRefTag
@@ -213,18 +201,6 @@ export function maybeRevealOverlayEffect(): Effect.Effect<
 	}).pipe(Effect.withLogSpan('maybeRevealOverlay'));
 }
 
-export function handlePopupPortConnectedEffect(): Effect.Effect<
-	void,
-	never,
-	PopupPortCountRefTag
-> {
-	return Effect.gen(function* () {
-		const popupPortCountRef = yield* PopupPortCountRefTag;
-		yield* Ref.update(popupPortCountRef, (count) => count + 1);
-		yield* Effect.log('popup port connected');
-	}).pipe(Effect.withLogSpan('handlePopupPortConnected'));
-}
-
 export function revealOverlayAfterPopupClosedEffect(): Effect.Effect<
 	void,
 	never,
@@ -235,17 +211,4 @@ export function revealOverlayAfterPopupClosedEffect(): Effect.Effect<
 		const lane = yield* DispatchLaneTag;
 		yield* lane.submit(maybeRevealOverlayEffect());
 	});
-}
-
-export function handlePopupPortDisconnectedEffect(): Effect.Effect<
-	void,
-	never,
-	PopupPortCountRefTag | DispatchLaneTag
-> {
-	return Effect.gen(function* () {
-		const popupPortCountRef = yield* PopupPortCountRefTag;
-		yield* Ref.update(popupPortCountRef, (count) => Math.max(0, count - 1));
-		yield* Effect.log('popup port disconnected');
-		yield* revealOverlayAfterPopupClosedEffect();
-	}).pipe(Effect.withLogSpan('handlePopupPortDisconnected'));
 }

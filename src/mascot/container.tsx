@@ -2,13 +2,14 @@ import type { Runtime } from 'effect';
 import { onCleanup, untrack } from 'solid-js';
 
 import { bindViewModel } from '@/common/viewmodel/bind-viewmodel';
+import type { CollectionBackendTag } from '@/mascot/collection-backend';
 import type { BeatPoseKey } from '@/mascot/persona';
 import { BeatView, type BeatPresentation } from '@/mascot/view';
 import { createMascotViewModel } from '@/mascot/view-model';
 import type { MascotVisibilityControls } from '@/mascot/visibility';
 
 interface BeatContainerProps {
-	readonly runtime: Runtime.Runtime<never>;
+	readonly runtime: Runtime.Runtime<CollectionBackendTag>;
 	readonly visibility: MascotVisibilityControls;
 	readonly resolvePoseUrl: (pose: BeatPoseKey) => string;
 	readonly presentation?: BeatPresentation;

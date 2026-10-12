@@ -7,6 +7,7 @@ import {
 	GetStateResponseSchema,
 	type GetStateResponse,
 } from '@/common/model/request-message';
+import { backgroundUnreachableMessage } from '@/common/model/background-unreachable-message';
 import { errorToReason } from '@/common/model/error-to-reason';
 import { Data, Effect, Schema } from 'effect';
 
@@ -22,7 +23,7 @@ function sendToBackgroundFailedToGetStateResponse(
 	return {
 		status: 'error',
 		trackCount: 0,
-		message: `Could not reach the extension. ${err.reason}`,
+		message: backgroundUnreachableMessage(err.reason),
 	};
 }
 
