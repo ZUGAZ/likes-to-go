@@ -79,11 +79,11 @@ function waitForTrackListContainer(
 			if (root === null) return;
 
 			observer.disconnect();
-			window.clearTimeout(timeoutId);
+			globalThis.clearTimeout(timeoutId);
 			resolve(root);
 		});
 
-		const timeoutId = window.setTimeout(() => {
+		const timeoutId = globalThis.setTimeout(() => {
 			observer.disconnect();
 			reject(new Error('Track list container did not appear in time'));
 		}, timeoutMs);
@@ -97,7 +97,7 @@ function waitForTrackListContainer(
 		if (observedRoot === null) return;
 
 		observer.disconnect();
-		window.clearTimeout(timeoutId);
+		globalThis.clearTimeout(timeoutId);
 		resolve(observedRoot);
 	});
 }
@@ -116,11 +116,11 @@ function waitForListToSettle(
 			if (!isListSettled(pageDocument, container)) return;
 
 			observer.disconnect();
-			window.clearTimeout(timeoutId);
+			globalThis.clearTimeout(timeoutId);
 			resolve();
 		});
 
-		const timeoutId = window.setTimeout(() => {
+		const timeoutId = globalThis.setTimeout(() => {
 			observer.disconnect();
 			reject(new Error('Track list did not settle in time'));
 		}, timeoutMs);
@@ -132,7 +132,7 @@ function waitForListToSettle(
 
 		if (isListSettled(pageDocument, container)) {
 			observer.disconnect();
-			window.clearTimeout(timeoutId);
+			globalThis.clearTimeout(timeoutId);
 			resolve();
 		}
 	});

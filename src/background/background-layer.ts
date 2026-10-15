@@ -1,5 +1,5 @@
 import { CommandRunnerTag, runCommand } from '@/background/command-runner';
-import { ContentCommandsLegacy } from '@/background/infrastructure/content-commands-legacy';
+import { ContentCommandsRpc } from '@/background/infrastructure/content-commands-rpc';
 import {
 	CollectionStateStorageLive,
 	CollectionStateStorageTag,
@@ -117,6 +117,6 @@ export const BackgroundLive = makeBackgroundLayer({
 	portConnector: PortConnectorLive,
 	storage: CollectionStateStorageLive,
 	commandRunner: CommandRunnerLive,
-	contentCommands: ContentCommandsLegacy,
+	contentCommands: ContentCommandsRpc,
 	logger: SpanLoggerLive,
 }) satisfies Layer.Layer<BackgroundEnv>;

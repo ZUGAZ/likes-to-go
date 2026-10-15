@@ -1,10 +1,6 @@
 import type { LayoutCollectionContext } from '@/layout';
 import { Layer } from 'effect';
 import {
-	BackgroundSenderLive,
-	BackgroundSenderTag,
-} from '@/content/infrastructure/background-sender';
-import {
 	DomScannerTag,
 	makeDomScannerLive,
 } from '@/content/infrastructure/dom-scanner';
@@ -23,12 +19,9 @@ export { ScrollerTag } from '@/content/infrastructure/scroller';
 export function makeCollectionLive(
 	root: Element,
 	layoutContext: LayoutCollectionContext,
-): Layer.Layer<
-	DomScannerTag | BackgroundSenderTag | ScrollerTag | DocumentVisibilityTag
-> {
+): Layer.Layer<DomScannerTag | ScrollerTag | DocumentVisibilityTag> {
 	return Layer.mergeAll(
 		makeDomScannerLive(root, layoutContext),
-		BackgroundSenderLive,
 		ScrollerLive,
 		DocumentVisibilityLive,
 	);

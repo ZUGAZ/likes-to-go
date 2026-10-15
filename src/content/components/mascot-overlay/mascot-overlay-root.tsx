@@ -1,7 +1,7 @@
 import { createEffect } from 'solid-js';
 import type { Runtime } from 'effect';
 
-import type { ContentEnv } from '@/content/runtime/content-env';
+import type { CollectionBackendTag } from '@/mascot/collection-backend';
 import { BeatContainer } from '@/mascot/container';
 import type { BeatPoseKey } from '@/mascot/persona';
 import type { MascotVisibilityControls } from '@/mascot/visibility';
@@ -13,7 +13,7 @@ interface MascotOverlayHostVisibility {
 }
 
 interface MascotOverlayRootProps {
-	readonly runtime: Runtime.Runtime<ContentEnv>;
+	readonly runtime: Runtime.Runtime<CollectionBackendTag>;
 	readonly visibility: MascotVisibilityControls;
 	readonly shadowHost: HTMLElement;
 	readonly resolvePoseUrl: (pose: BeatPoseKey) => string;

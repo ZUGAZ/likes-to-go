@@ -20,8 +20,7 @@ import { Duration, Effect, Layer, Schedule, Schema } from 'effect';
 
 /**
  * Calls content over ContentRpcs.
- * Production switches to this layer only once content serves ContentRpcs
- * on CONTENT_RPC_PORT_NAME.
+ * Production uses this layer.
  */
 const isReceiverGone = Schema.is(
 	Schema.Union(ReceiverUnavailable, Disconnected),

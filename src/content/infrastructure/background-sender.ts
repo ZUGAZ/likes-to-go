@@ -1,15 +1,14 @@
-import { Context, Effect, Layer } from 'effect';
+import { BackgroundClientTag } from '@/common/infrastructure/background-client';
 import { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
-import {
-	CollectionCompleteRequest,
-	CollectionErrorRequest,
-	CollectionVisibilityPausedRequest,
-	CollectionVisibilityResumedRequest,
-	TracksBatchRequest,
-	type BackgroundRequestMessage,
-} from '@/common/model/request-message';
 import type { Track } from '@/common/model/track';
-import { errorToReason } from '@/common/model/error-to-reason';
+import { portErrorReason } from '@/mascot/infrastructure/collection-backend-rpc';
+import { RpcClientError } from '@effect/rpc/RpcClientError';
+import {
+	Disconnected,
+	ExtensionContextInvalidated,
+	Timeout,
+} from 'browser-extension-kit/messaging';
+import { Context, Effect, Layer, Schema } from 'effect';
 
 interface TracksBatchPayload {
 	readonly tracks: readonly Track[];
@@ -33,6 +32,10 @@ export interface BackgroundSender {
 		message: string,
 		reason: string,
 	) => Effect.Effect<void, SendToBackgroundFailed>;
+	readonly sendLoginRequired: (
+		message: string,
+		reason: string,
+	) => Effect.Effect<void, SendToBackgroundFailed>;
 }
 
 export class BackgroundSenderTag extends Context.Tag('BackgroundSender')<
@@ -40,47 +43,92 @@ export class BackgroundSenderTag extends Context.Tag('BackgroundSender')<
 	BackgroundSender
 >() {}
 
+const isDisconnected = Schema.is(Disconnected);
+const isExtensionContextInvalidated = Schema.is(ExtensionContextInvalidated);
+const isTimeout = Schema.is(Timeout);
+
+const reasonForClientError = (error: RpcClientError): string => {
+	const cause = error.cause;
+	if (
+		isDisconnected(cause) ||
+		isExtensionContextInvalidated(cause) ||
+		isTimeout(cause)
+	) {
+		return portErrorReason(cause);
+	}
+
+	return portErrorReason(new Disconnected({ detail: error.message }));
+};
+
 /**
- * Queue a message to the background without waiting for GetStateResponse.
- * The collection pipeline must not block on the background still handling
- * StartCollectionRequest from the same content tab (Chrome serializes SW handlers).
+ * Queue a frame on the background port.
+ * The call does not wait for the background to apply it.
+ * A reconnecting client waits until the next connection.
+ * A terminal client fails the send.
  */
-function dispatchToBackground(
-	message: BackgroundRequestMessage,
+function sendDiscard(
+	call: Effect.Effect<void, RpcClientError>,
+	tag: string,
 	detail: Readonly<Record<string, unknown>> = {},
 ): Effect.Effect<void, SendToBackgroundFailed> {
-	return Effect.sync(() => {
-		void chrome.runtime.sendMessage(message);
-		return chrome.runtime.lastError;
-	}).pipe(
-		Effect.flatMap((lastError) =>
-			lastError === undefined
-				? Effect.void
-				: Effect.fail(
-						new SendToBackgroundFailed({
-							reason: errorToReason(lastError),
-						}),
-					),
+	return call.pipe(
+		Effect.mapError(
+			(error) =>
+				new SendToBackgroundFailed({
+					reason: reasonForClientError(error),
+				}),
 		),
 		Effect.tap(() =>
-			Effect.log('pipeline dispatchToBackground queued', message._tag, detail),
+			Effect.log('pipeline dispatchToBackground queued', tag, detail),
 		),
 		Effect.withLogSpan('sendToBackground'),
 	);
 }
 
-export const BackgroundSenderLive: Layer.Layer<BackgroundSenderTag> =
-	Layer.succeed(BackgroundSenderTag, {
-		sendBatch: ({ tracks, skippedTrackCount }) =>
-			dispatchToBackground(
-				TracksBatchRequest({ tracks: [...tracks], skippedTrackCount }),
-				{ trackCount: tracks.length, skippedTrackCount },
-			),
-		sendComplete: () => dispatchToBackground(CollectionCompleteRequest()),
-		sendVisibilityPaused: () =>
-			dispatchToBackground(CollectionVisibilityPausedRequest()),
-		sendVisibilityResumed: () =>
-			dispatchToBackground(CollectionVisibilityResumedRequest()),
-		sendError: (message, reason) =>
-			dispatchToBackground(CollectionErrorRequest({ message, reason })),
-	});
+export const BackgroundSenderLive: Layer.Layer<
+	BackgroundSenderTag,
+	never,
+	BackgroundClientTag
+> = Layer.effect(
+	BackgroundSenderTag,
+	Effect.gen(function* () {
+		const { client } = yield* BackgroundClientTag;
+
+		return {
+			sendBatch: ({ tracks, skippedTrackCount }) =>
+				sendDiscard(
+					client.TracksBatch(
+						{ tracks: [...tracks], skippedTrackCount },
+						{ discard: true },
+					),
+					'TracksBatch',
+					{ trackCount: tracks.length, skippedTrackCount },
+				),
+			sendComplete: () =>
+				sendDiscard(
+					client.CollectionComplete(undefined, { discard: true }),
+					'CollectionComplete',
+				),
+			sendVisibilityPaused: () =>
+				sendDiscard(
+					client.CollectionVisibilityPaused(undefined, { discard: true }),
+					'CollectionVisibilityPaused',
+				),
+			sendVisibilityResumed: () =>
+				sendDiscard(
+					client.CollectionVisibilityResumed(undefined, { discard: true }),
+					'CollectionVisibilityResumed',
+				),
+			sendError: (message, reason) =>
+				sendDiscard(
+					client.CollectionError({ message, reason }, { discard: true }),
+					'CollectionError',
+				),
+			sendLoginRequired: (message, reason) =>
+				sendDiscard(
+					client.LoginRequired({ message, reason }, { discard: true }),
+					'LoginRequired',
+				),
+		};
+	}),
+);

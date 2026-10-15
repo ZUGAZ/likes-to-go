@@ -7,6 +7,7 @@ export default defineConfig({
 		'export-via-popup.spec.ts',
 		'export-via-overlay.spec.ts',
 		'popup-live-state.spec.ts',
+		'content-rpc.spec.ts',
 	],
 	fullyParallel: false,
 	workers: 1,

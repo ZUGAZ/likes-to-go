@@ -71,16 +71,6 @@ type StartCollectionRequest = Schema.Schema.Type<typeof StartCollectionSchema>;
 export const StartCollectionRequest =
 	Data.tagged<StartCollectionRequest>('StartCollection');
 
-type TracksBatchRequest = Schema.Schema.Type<typeof TracksBatchSchema>;
-export const TracksBatchRequest =
-	Data.tagged<TracksBatchRequest>('TracksBatch');
-
-type CollectionCompleteRequest = Schema.Schema.Type<
-	typeof CollectionCompleteSchema
->;
-export const CollectionCompleteRequest =
-	Data.tagged<CollectionCompleteRequest>('CollectionComplete');
-
 type CollectionVisibilityPausedRequest = Schema.Schema.Type<
 	typeof CollectionVisibilityPausedSchema
 >;

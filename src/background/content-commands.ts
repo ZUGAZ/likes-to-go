@@ -9,7 +9,7 @@ import { SendToTabFailed } from '@/common/model/collection/events/send-to-tab-fa
 
 /**
  * Background → content commands.
- * Production wires {@link ContentCommandsLegacy} until content serves ContentRpcs.
+ * Production wires {@link ContentCommandsRpc}.
  */
 export interface ContentCommands {
 	readonly startPageCollection: (

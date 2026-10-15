@@ -1,11 +1,11 @@
 import type { CollectionBackendTag } from '@/mascot/collection-backend';
 
+import type { ContentLifetimeTag } from '@/content/runtime/content-lifetime';
+
 /**
  * Base Effect environment for content-script programs.
  *
- * The Beat overlay reads the collection backend from the runtime.
- * The collection pipeline-specific services (`DomScannerTag`, `BackgroundSenderTag`,
- * `ScrollerTag`) are provided per-run via `makeCollectionLive(root, layoutContext)`; they are
- * not required in the shared runtime's environment.
+ * The Beat overlay reads `CollectionBackend`. `ContentLifetime` ends the script.
+ * Pipeline services are not in this environment; `PageCollection` closes over them.
  */
-export type ContentEnv = CollectionBackendTag;
+export type ContentEnv = CollectionBackendTag | ContentLifetimeTag;

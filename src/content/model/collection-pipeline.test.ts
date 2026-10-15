@@ -128,6 +128,7 @@ function makeBackgroundSenderStub(calls: string[]) {
 			Effect.sync(() => {
 				calls.push(`CollectionError:${message}:${reason}`);
 			}),
+		sendLoginRequired: () => Effect.void,
 	});
 }
 
@@ -544,6 +545,7 @@ describe('collectionPipeline', () => {
 				Effect.sync(() => {
 					calls.push(`CollectionError:${message}:${reason}`);
 				}),
+			sendLoginRequired: () => Effect.void,
 		});
 
 		const { outcome } = await Effect.runPromise(

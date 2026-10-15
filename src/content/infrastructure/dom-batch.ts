@@ -20,7 +20,7 @@ export interface BatchOptions {
 }
 
 function defaultSchedulerYield(): (() => Promise<void>) | undefined {
-	const scheduler = window.scheduler;
+	const scheduler = document.defaultView?.scheduler;
 	const schedulerYield = scheduler?.yield;
 	if (scheduler === undefined || schedulerYield === undefined) return undefined;
 

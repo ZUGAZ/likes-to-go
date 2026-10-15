@@ -5,7 +5,7 @@ import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 
 import { resolveMascotPoseUrl } from '@/common/infrastructure/resolve-mascot-pose-url';
 import { applyBeatOverlayRootStyles } from '@/content/beat-overlay/apply-beat-overlay-root-styles';
-import type { ContentEnv } from '@/content/runtime/content-env';
+import type { CollectionBackendTag } from '@/mascot/collection-backend';
 import { MascotOverlayRoot } from '@/content/components/mascot-overlay/mascot-overlay-root';
 import type { MascotVisibilityControls } from '@/mascot/visibility';
 
@@ -15,7 +15,7 @@ export interface BeatOverlayHandle {
 
 export async function mountBeatOverlay(
 	ctx: ContentScriptContext,
-	runtime: Runtime.Runtime<ContentEnv>,
+	runtime: Runtime.Runtime<CollectionBackendTag>,
 	visibility: MascotVisibilityControls,
 ): Promise<BeatOverlayHandle> {
 	const ui = await createShadowRootUi(ctx, {

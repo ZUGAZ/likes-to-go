@@ -7,7 +7,7 @@ import {
 
 import { GetStateRequest } from '@/common/model/request-message/request-message';
 import type { CollectionStatus } from '@/common/model/request-message/get-state-response';
-import { ToggleMascotRequest } from '@/common/model/request-message/toggle-mascot';
+import { CONTENT_RPC_PORT_NAME } from '@/common/model/messaging/port-names';
 
 const messengerPages = new WeakMap<BrowserContext, Promise<Page>>();
 
@@ -82,12 +82,71 @@ export async function waitForTabId(
 }
 
 async function sendToggleMascot(worker: Worker, tabId: number): Promise<void> {
-	const request = ToggleMascotRequest();
 	await worker.evaluate(
-		async (payload: { tabId: number; tag: 'ToggleMascot' }) => {
-			await chrome.tabs.sendMessage(payload.tabId, { _tag: payload.tag });
+		async (payload: { tabId: number; portName: string }) => {
+			const isRecord = (value: unknown): value is Record<string, unknown> =>
+				typeof value === 'object' && value !== null;
+			const port = chrome.tabs.connect(payload.tabId, {
+				name: payload.portName,
+				frameId: 0,
+			});
+			let settled = false;
+			try {
+				await new Promise<void>((resolve, reject) => {
+					const timer = setTimeout(() => {
+						if (settled) {
+							return;
+						}
+						settled = true;
+						reject(new Error('ToggleMascot exit timed out'));
+					}, 1000);
+
+					port.onMessage.addListener((message: unknown) => {
+						if (
+							settled ||
+							!isRecord(message) ||
+							message['_tag'] !== 'Exit' ||
+							message['requestId'] !== '1' ||
+							!isRecord(message['exit'])
+						) {
+							return;
+						}
+						settled = true;
+						clearTimeout(timer);
+						if (message['exit']['_tag'] === 'Success') {
+							resolve();
+							return;
+						}
+						reject(new Error('ToggleMascot exit was not Success'));
+					});
+					port.onDisconnect.addListener(() => {
+						if (settled) {
+							return;
+						}
+						settled = true;
+						clearTimeout(timer);
+						const reason = chrome.runtime.lastError?.message;
+						reject(
+							new Error(
+								reason === undefined
+									? 'ToggleMascot port disconnected'
+									: reason,
+							),
+						);
+					});
+					port.postMessage({
+						_tag: 'Request',
+						id: '1',
+						tag: 'ToggleMascot',
+						payload: null,
+						headers: [],
+					});
+				});
+			} finally {
+				port.disconnect();
+			}
 		},
-		{ tabId, tag: request._tag },
+		{ tabId, portName: CONTENT_RPC_PORT_NAME },
 	);
 }
 

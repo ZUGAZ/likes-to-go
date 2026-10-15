@@ -13,6 +13,8 @@ export const ScrollerLive: Layer.Layer<ScrollerTag> = Layer.succeed(
 	ScrollerTag,
 	{
 		scrollToBottom: () =>
-			Effect.sync(() => window.scrollTo(0, document.body.scrollHeight)),
+			Effect.sync(() => {
+				document.defaultView?.scrollTo(0, document.body.scrollHeight);
+			}),
 	},
 );

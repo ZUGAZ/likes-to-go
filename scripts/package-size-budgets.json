@@ -1,19 +1,19 @@
 {
 	"format_version": 1,
-	"recorded_at": "2026-10-11T17:51:00.000Z",
-	"total_bytes": 1089882,
+	"recorded_at": "2026-10-15T11:50:00.000Z",
+	"total_bytes": 1461973,
 	"classes": [
 		{
 			"id": "background.js",
 			"type": "path",
 			"path": "background.js",
-			"max_bytes": 378045
+			"max_bytes": 424037
 		},
 		{
 			"id": "content-scripts/likes.js",
 			"type": "path",
 			"path": "content-scripts/likes.js",
-			"max_bytes": 302730
+			"max_bytes": 462542
 		},
 		{
 			"id": "content-scripts/likes.css",
@@ -26,7 +26,7 @@
 			"type": "glob",
 			"glob": "chunks/popup-*.js",
 			"expected_count": 1,
-			"max_bytes": 379939
+			"max_bytes": 408724
 		},
 		{
 			"id": "assets/popup.css",

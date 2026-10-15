@@ -1,6 +1,5 @@
 export {
 	CancelCollectionRequest,
-	CollectionCompleteRequest,
 	CollectionErrorRequest,
 	CollectionVisibilityPausedRequest,
 	CollectionVisibilityResumedRequest,
@@ -26,7 +25,6 @@ export {
 	LoginRequiredRequest,
 	RequestMessageSchema,
 	StartCollectionRequest,
-	TracksBatchRequest,
 } from './request-message';
 export type {
 	BackgroundRequestMessage,
