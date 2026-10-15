@@ -1,6 +1,6 @@
 import { BackgroundClientTag } from '@/common/infrastructure/background-client';
-import { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
 import type { Track } from '@/common/model/track';
+import { SendToBackgroundFailed } from '@/content/model/send-to-background-failed';
 import { portErrorReason } from '@/mascot/infrastructure/collection-backend-rpc';
 import { RpcClientError } from '@effect/rpc/RpcClientError';
 import {

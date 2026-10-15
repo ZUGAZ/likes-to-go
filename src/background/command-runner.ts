@@ -14,15 +14,13 @@ import { isCheckLogin } from '@/common/model/collection/commands/check-login';
 import { isCheckSource } from '@/common/model/collection/commands/check-source';
 import { isCloseTab } from '@/common/model/collection/commands/close-tab';
 import { isCreateTab } from '@/common/model/collection/commands/create-tab';
-import { isNotifyPopup } from '@/common/model/collection/commands/notify-popup';
 import { isSelectCollectionTab } from '@/common/model/collection/commands/select-collection-tab';
 import { isSendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
 import { isSendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
 import { Context, Effect } from 'effect';
-import { runNotifyPopup } from './commands/run-notify-popup';
 
 /**
- * CommandRunner runs collection commands (Chrome tabs, sendToTab, notify).
+ * CommandRunner runs collection commands (Chrome tabs, sendToTab).
  * It maps command success / failure into CollectionEvents and dispatches them.
  */
 export interface CommandRunner {
@@ -84,8 +82,6 @@ export function runCommand(
 					}).pipe(Effect.zipRight(dispatchEffect(error))),
 				),
 			);
-		} else if (isNotifyPopup(cmd)) {
-			yield* runNotifyPopup(cmd.state);
 		}
 	}).pipe(Effect.withLogSpan('runCommand'));
 }

@@ -2,7 +2,7 @@ import { ErrorReasonSchema } from '@/common/model/collection/error-reason';
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const ErrorStateSchema = taggedStruct('Error', {
+const ErrorStateSchema = taggedStruct('Error', {
 	reason: ErrorReasonSchema,
 	message: Schema.String,
 });

@@ -7,7 +7,7 @@ import type {
 	TestInfo,
 } from '@playwright/test';
 
-import { GetStateRequest } from '@/common/model/request-message';
+import { BACKGROUND_RPC_PORT_NAME } from '@/common/model/messaging/port-names';
 import { trackCard } from '@/layout/infrastructure/layouts/badges/selectors';
 import { TRACK_LIST_CONTAINER } from '@/layout/infrastructure/selectors/shared';
 
@@ -205,9 +205,7 @@ function readEvaluateReturnedValue(value: unknown): unknown {
 }
 
 /**
- * GetState from the likes tab's isolated content-script world.
- * Popup-page sendGetState would talk to the background from an extension
- * page, not this overlay's content-script listener.
+ * Reads the current collection view from the content script's background port.
  */
 async function attachContentWorldGetState(page: Page): Promise<{
 	readonly send: () => Promise<unknown>;
@@ -215,7 +213,7 @@ async function attachContentWorldGetState(page: Page): Promise<{
 }> {
 	const session: CDPSession = await page.context().newCDPSession(page);
 	const isolatedIds = new Set<number>();
-	const request = GetStateRequest();
+	const portName = JSON.stringify(BACKGROUND_RPC_PORT_NAME);
 
 	session.on('Runtime.executionContextCreated', (event: unknown) => {
 		const contextId = readIsolatedContextId(event);
@@ -230,7 +228,61 @@ async function attachContentWorldGetState(page: Page): Promise<{
 
 	const tryContext = async (contextId: number): Promise<unknown> => {
 		const evaluated: unknown = await session.send('Runtime.evaluate', {
-			expression: `chrome.runtime.sendMessage({ _tag: ${JSON.stringify(request._tag)} })`,
+			expression: `(async () => {
+				const isRecord = (value) => typeof value === 'object' && value !== null;
+				const port = chrome.runtime.connect({ name: ${portName} });
+				let settled = false;
+				try {
+					return await new Promise((resolve, reject) => {
+						const timer = setTimeout(() => {
+							if (settled) {
+								return;
+							}
+							settled = true;
+							reject(new Error('WatchCollectionState chunk timed out'));
+						}, 1000);
+						port.onMessage.addListener((message) => {
+							if (
+								settled ||
+								!isRecord(message) ||
+								message['_tag'] !== 'Chunk' ||
+								message['requestId'] !== '1' ||
+								!Array.isArray(message['values'])
+							) {
+								return;
+							}
+							settled = true;
+							clearTimeout(timer);
+							resolve(message['values'][0]);
+						});
+						port.onDisconnect.addListener(() => {
+							if (settled) {
+								return;
+							}
+							settled = true;
+							clearTimeout(timer);
+							const reason = chrome.runtime.lastError?.message;
+							reject(
+								new Error(
+									reason === undefined
+										? 'WatchCollectionState port disconnected'
+										: reason,
+								),
+							);
+						});
+						port.postMessage({
+							_tag: 'Request',
+							id: '1',
+							tag: 'WatchCollectionState',
+							payload: null,
+							headers: [],
+						});
+					});
+				} finally {
+					port.postMessage({ _tag: 'Ack', requestId: '1' });
+					port.disconnect();
+				}
+			})()`,
 			awaitPromise: true,
 			returnByValue: true,
 			contextId,

@@ -5,23 +5,19 @@ import {
 	type Worker,
 } from '@playwright/test';
 
-import { GetStateRequest } from '@/common/model/request-message/request-message';
-import type { CollectionStatus } from '@/common/model/request-message/get-state-response';
-import { CONTENT_RPC_PORT_NAME } from '@/common/model/messaging/port-names';
+import {
+	COLLECTION_STATUSES,
+	type CollectionStatus,
+} from '@/common/model/collection/collection-status';
+import {
+	BACKGROUND_RPC_PORT_NAME,
+	CONTENT_RPC_PORT_NAME,
+} from '@/common/model/messaging/port-names';
 
 const messengerPages = new WeakMap<BrowserContext, Promise<Page>>();
 
 function isCollectionStatus(value: unknown): value is CollectionStatus {
-	return (
-		value === 'idle' ||
-		value === 'checking-login' ||
-		value === 'collecting' ||
-		value === 'paused' ||
-		value === 'done' ||
-		value === 'saving' ||
-		value === 'login-required' ||
-		value === 'error'
-	);
+	return COLLECTION_STATUSES.some((status) => status === value);
 }
 
 function readCollectionStatus(value: unknown): CollectionStatus | undefined {
@@ -170,14 +166,66 @@ export async function sendGetState(
 	context: BrowserContext,
 	extensionId: string,
 ): Promise<unknown> {
-	const request = GetStateRequest();
 	const page = await getExtensionMessengerPage(context, extensionId);
 	const response: unknown = await page.evaluate(
-		async (message): Promise<unknown> => {
-			const raw: unknown = await chrome.runtime.sendMessage(message);
-			return raw;
+		async (portName: string): Promise<unknown> => {
+			const isRecord = (value: unknown): value is Record<string, unknown> =>
+				typeof value === 'object' && value !== null;
+			const port = chrome.runtime.connect({ name: portName });
+			let settled = false;
+			try {
+				return await new Promise<unknown>((resolve, reject) => {
+					const timer = setTimeout(() => {
+						if (settled) {
+							return;
+						}
+						settled = true;
+						reject(new Error('WatchCollectionState chunk timed out'));
+					}, 1000);
+
+					port.onMessage.addListener((message: unknown) => {
+						if (
+							settled ||
+							!isRecord(message) ||
+							message['_tag'] !== 'Chunk' ||
+							message['requestId'] !== '1' ||
+							!Array.isArray(message['values'])
+						) {
+							return;
+						}
+						settled = true;
+						clearTimeout(timer);
+						resolve(message['values'][0]);
+					});
+					port.onDisconnect.addListener(() => {
+						if (settled) {
+							return;
+						}
+						settled = true;
+						clearTimeout(timer);
+						const reason = chrome.runtime.lastError?.message;
+						reject(
+							new Error(
+								reason === undefined
+									? 'WatchCollectionState port disconnected'
+									: reason,
+							),
+						);
+					});
+					port.postMessage({
+						_tag: 'Request',
+						id: '1',
+						tag: 'WatchCollectionState',
+						payload: null,
+						headers: [],
+					});
+				});
+			} finally {
+				port.postMessage({ _tag: 'Ack', requestId: '1' });
+				port.disconnect();
+			}
 		},
-		{ _tag: request._tag },
+		BACKGROUND_RPC_PORT_NAME,
 	);
 	return response;
 }

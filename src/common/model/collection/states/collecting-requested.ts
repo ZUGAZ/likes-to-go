@@ -1,7 +1,7 @@
 import { taggedStruct } from '@/common/model/tagged-struct';
 import { Data, Schema } from 'effect';
 
-export const CollectingRequestedSchema = taggedStruct('CollectingRequested');
+const CollectingRequestedSchema = taggedStruct('CollectingRequested');
 
 export type CollectingRequested = Schema.Schema.Type<
 	typeof CollectingRequestedSchema

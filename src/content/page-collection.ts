@@ -13,10 +13,6 @@ import {
 	detectSupportedCollectionPage,
 } from '@/content/model/page-detection';
 import {
-	CollectionErrorRequest,
-	LoginRequiredRequest,
-} from '@/common/model/request-message';
-import {
 	Cause,
 	Context,
 	Effect,
@@ -26,26 +22,6 @@ import {
 	Option,
 	Ref,
 } from 'effect';
-
-type DetectionFailureRequest =
-	| ReturnType<typeof CollectionErrorRequest>
-	| ReturnType<typeof LoginRequiredRequest>;
-
-function pageDetectionErrorToRequest(
-	error: UnsupportedCollectionPage | CollectionPageLoginRequired,
-): DetectionFailureRequest {
-	if (error instanceof CollectionPageLoginRequired) {
-		return LoginRequiredRequest({
-			message: error.message,
-			reason: error.reason,
-		});
-	}
-
-	return CollectionErrorRequest({
-		message: error.message,
-		reason: error.reason,
-	});
-}
 
 function collectionFailureMessage(cause: unknown): string {
 	if (
@@ -76,17 +52,16 @@ function reportDetectionFailure(
 	sender: BackgroundSender,
 	error: UnsupportedCollectionPage | CollectionPageLoginRequired,
 ): Effect.Effect<CollectionOutcome> {
-	const request = pageDetectionErrorToRequest(error);
 	const send =
 		error instanceof CollectionPageLoginRequired
-			? sender.sendLoginRequired(request.message, request.reason)
-			: sender.sendError(request.message, request.reason);
+			? sender.sendLoginRequired(error.message, error.reason)
+			: sender.sendError(error.message, error.reason);
 
-	return Effect.log('content page detection failed', request.reason).pipe(
+	return Effect.log('content page detection failed', error.reason).pipe(
 		Effect.zipRight(send),
-		Effect.as(OutcomeError({ message: request.message })),
+		Effect.as(OutcomeError({ message: error.message })),
 		Effect.catchAll(() =>
-			Effect.succeed(OutcomeError({ message: request.message })),
+			Effect.succeed(OutcomeError({ message: error.message })),
 		),
 	);
 }

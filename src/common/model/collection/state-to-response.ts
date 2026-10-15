@@ -1,19 +1,24 @@
-import type { GetStateResponse } from '@/common/model/request-message';
+import type { CollectionStatus } from '@/common/model/collection/collection-status';
 import type { CollectionState } from '@/common/model/collection/state';
 import { hasTracks } from '@/common/model/collection/state';
 import { isErrorState } from '@/common/model/collection/states/error-state';
 import { isIdle } from '@/common/model/collection/states/idle';
 import { isPaused } from '@/common/model/collection/states/paused';
-import { isSaving } from '@/common/model/collection/states/saving';
 import { collectionStateToStatus } from '@/common/model/collection/state-to-status';
 import { COLLECTION_VISIBILITY_PAUSED_MESSAGE } from '@/common/model/collection/visibility-paused-message';
-import type { ExportFormatId } from '@/common/model/export-format/export-format-id';
-import { defaultExportFormatId } from '@/common/model/export-format/registry';
-import { renderExportBody } from '@/common/model/export-format/render-export-body';
+import type { Source } from '@/common/model/source';
+
+interface CollectionStateResponse {
+	readonly status: CollectionStatus;
+	readonly trackCount: number;
+	readonly message?: string;
+	readonly skippedTrackCount?: number;
+	readonly source?: Source;
+}
 
 export function collectionStateToGetStateResponse(
 	state: CollectionState,
-): GetStateResponse {
+): CollectionStateResponse {
 	const status = collectionStateToStatus(state);
 	const trackCount = hasTracks(state) ? state.tracks.length : 0;
 	const message = isErrorState(state)
@@ -40,19 +45,4 @@ export function collectionStateToGetStateResponse(
 	}
 
 	return baseResponse;
-}
-
-export function collectionStateToDownloadExportResponse(
-	state: CollectionState,
-	formatId: ExportFormatId = defaultExportFormatId(),
-): GetStateResponse {
-	const base = collectionStateToGetStateResponse(state);
-	if (!isSaving(state)) {
-		return base;
-	}
-
-	return {
-		...base,
-		exportBody: renderExportBody(formatId, state.tracks),
-	};
 }

@@ -2,7 +2,7 @@ import { taggedStruct } from '@/common/model/tagged-struct';
 import { SourceSchema } from '@/common/model/source';
 import { Data, Schema } from 'effect';
 
-export const IdleSchema = taggedStruct('Idle', {
+const IdleSchema = taggedStruct('Idle', {
 	source: Schema.optional(SourceSchema),
 });
 

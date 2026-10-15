@@ -3,7 +3,6 @@ import type { ContentCommandsTag } from '@/background/content-commands';
 import { DispatchLaneTag } from '@/background/dispatch-lane';
 import {
 	ContentOverlaySurface,
-	isExtensionPopupSender,
 	isPopupLikeCaller,
 	MascotUiSurfaceRefTag,
 } from '@/background/mascot-ui-surface';
@@ -119,21 +118,6 @@ export function decideOverlayReveal(input: {
 		nextHandoff: OverlayHandoffRevealed(),
 		revealTabId: tabId,
 	};
-}
-
-export function rememberOverlayHandoffFromSender(
-	sender: chrome.runtime.MessageSender,
-): Effect.Effect<void, never, OverlayHandoffRefTag> {
-	return Effect.gen(function* () {
-		const handoffRef = yield* OverlayHandoffRefTag;
-		const next = isExtensionPopupSender(sender)
-			? OverlayHandoffAwaitingPopupClose({})
-			: OverlayHandoffIdle();
-		yield* Ref.set(handoffRef, next);
-		yield* Effect.log('overlay handoff remembered', {
-			handoff: next._tag,
-		});
-	}).pipe(Effect.withLogSpan('rememberOverlayHandoff'));
 }
 
 export function rememberOverlayHandoffFromCaller(

@@ -2,7 +2,7 @@ import { taggedStruct } from '@/common/model/tagged-struct';
 import { TrackSchema } from '@/common/model/track';
 import { Data, Schema } from 'effect';
 
-export const CollectingStateSchema = taggedStruct('Collecting', {
+const CollectingStateSchema = taggedStruct('Collecting', {
 	sourceUrl: Schema.String,
 	tabId: Schema.Number,
 	tracks: Schema.Array(TrackSchema),

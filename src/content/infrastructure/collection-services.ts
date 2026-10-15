@@ -11,7 +11,7 @@ import {
 import { ScrollerLive, ScrollerTag } from '@/content/infrastructure/scroller';
 
 export { BackgroundSenderTag } from '@/content/infrastructure/background-sender';
-export { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
+export { SendToBackgroundFailed } from '@/content/model/send-to-background-failed';
 export { DomScannerTag } from '@/content/infrastructure/dom-scanner';
 export { DocumentVisibilityTag } from '@/content/infrastructure/document-visibility';
 export { ScrollerTag } from '@/content/infrastructure/scroller';

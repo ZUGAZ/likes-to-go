@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from 'effect';
-import { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
+import { SendToBackgroundFailed } from '@/content/model/send-to-background-failed';
 import {
 	collectBatch,
 	type CollectionBatch,

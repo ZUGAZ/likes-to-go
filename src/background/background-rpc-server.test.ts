@@ -190,7 +190,7 @@ describe('background rpc server', () => {
 					Array.from({ length: 30 }, (_, index) => `t${String(index)}`),
 				);
 			}
-			expect(recorded.map((command) => command._tag)).toContain('NotifyPopup');
+			expect(recorded.map((command) => command._tag)).toEqual([]);
 		}),
 	);
 

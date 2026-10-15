@@ -31,36 +31,6 @@ export class MascotUiSurfaceRefTag extends Context.Tag('MascotUiSurfaceRef')<
 	Ref.Ref<MascotUiSurface>
 >() {}
 
-export function isExtensionPopupSender(
-	sender: chrome.runtime.MessageSender,
-): boolean {
-	if (sender.tab?.id === undefined) {
-		return true;
-	}
-
-	const senderUrl = sender.url ?? sender.tab.url;
-	if (senderUrl === undefined) {
-		return false;
-	}
-
-	return senderUrl.startsWith('chrome-extension:');
-}
-
-export function mascotUiSurfaceFromSender(
-	sender: chrome.runtime.MessageSender,
-): MascotUiSurface {
-	if (isExtensionPopupSender(sender)) {
-		return ExtensionPopupSurface();
-	}
-
-	const tabId = sender.tab?.id;
-	if (tabId === undefined) {
-		return ExtensionPopupSurface();
-	}
-
-	return ContentOverlaySurface({ tabId });
-}
-
 export function isPopupLikeCaller(caller: Endpoint): boolean {
 	return isPopup(caller) || isExtensionPage(caller);
 }
@@ -85,20 +55,6 @@ export function shouldClaimMascotNotifySurface(input: {
 	}
 
 	return true;
-}
-
-export function rememberMascotUiSurfaceFromSender(
-	sender: chrome.runtime.MessageSender,
-): Effect.Effect<void, never, MascotUiSurfaceRefTag> {
-	return Effect.gen(function* () {
-		const surfaceRef = yield* MascotUiSurfaceRefTag;
-		const surface = mascotUiSurfaceFromSender(sender);
-		yield* Ref.set(surfaceRef, surface);
-		yield* Effect.log('mascot UI surface remembered', {
-			surface: surface._tag,
-			...(surface._tag === 'ContentOverlay' ? { tabId: surface.tabId } : {}),
-		});
-	}).pipe(Effect.withLogSpan('rememberMascotUiSurface'));
 }
 
 export function rememberMascotUiSurfaceFromCaller(

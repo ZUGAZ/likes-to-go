@@ -1,5 +1,13 @@
 import { Effect, Layer, ManagedRuntime, Runtime } from 'effect';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	describe,
+	expect,
+	it,
+	vi,
+} from 'vitest';
 import { render } from '@solidjs/testing-library';
 
 vi.mock('solid-transition-group', () => ({
@@ -8,47 +16,8 @@ vi.mock('solid-transition-group', () => ({
 	),
 }));
 
-const { listenForStateUpdatesMock } = vi.hoisted(() => {
-	const stopListening = vi.fn();
-	const listenForStateUpdates = vi.fn(
-		(callback: (payload: unknown) => void) => {
-			void callback;
-			return stopListening;
-		},
-	);
-	return { listenForStateUpdatesMock: listenForStateUpdates };
-});
-
-const { getStateMock, sendToBackgroundMock } = vi.hoisted(() => ({
-	getStateMock: vi.fn(() =>
-		Effect.succeed({
-			status: 'idle',
-			trackCount: 0,
-			message: undefined,
-		}),
-	),
-	sendToBackgroundMock: vi.fn(() => Effect.succeed(undefined)),
-}));
-
 const { getResolvedPopupThemeMock } = vi.hoisted(() => ({
 	getResolvedPopupThemeMock: vi.fn(() => Effect.succeed('light' as const)),
-}));
-
-vi.mock('@/common/infrastructure/chrome-messaging', () => ({
-	getState: getStateMock,
-	sendToBackgroundEffect: sendToBackgroundMock,
-	decodeGetStateResponse: () =>
-		Effect.succeed({
-			status: 'idle',
-			trackCount: 0,
-			message: undefined,
-		}),
-}));
-
-vi.mock('@/common/infrastructure/listen-for-state-updates', () => ({
-	listenForStateUpdatesEffect: vi.fn((callback: (payload: unknown) => void) =>
-		Effect.sync(() => listenForStateUpdatesMock(callback)),
-	),
 }));
 
 vi.mock('@/common/infrastructure/get-resolved-popup-theme', () => ({
@@ -57,9 +26,9 @@ vi.mock('@/common/infrastructure/get-resolved-popup-theme', () => ({
 
 import { MascotOverlayRoot } from '@/content/components/mascot-overlay/mascot-overlay-root';
 import type { CollectionBackendTag } from '@/mascot/collection-backend';
-import { CollectionBackendLegacy } from '@/mascot/infrastructure/collection-backend-legacy';
 import { createMascotVisibility } from '@/mascot/visibility';
 import { silentLoggerLayer } from '@/test/effect-log-test';
+import { makeFakeCollectionBackend } from '@/test/fake-collection-backend';
 
 const unmountFns: Array<() => void> = [];
 
@@ -71,12 +40,18 @@ afterEach(() => {
 
 describe('MascotOverlayRoot', () => {
 	let runtime: Runtime.Runtime<CollectionBackendTag>;
+	let managed: ManagedRuntime.ManagedRuntime<CollectionBackendTag, never>;
 
 	beforeAll(async () => {
-		const managed = ManagedRuntime.make(
-			CollectionBackendLegacy.pipe(Layer.provideMerge(silentLoggerLayer)),
+		const fake = await Effect.runPromise(makeFakeCollectionBackend);
+		managed = ManagedRuntime.make(
+			fake.layer.pipe(Layer.provideMerge(silentLoggerLayer)),
 		);
 		runtime = await managed.runtime();
+	});
+
+	afterAll(async () => {
+		await managed.dispose();
 	});
 
 	it('sets aria-hidden and pointer-events on shadow host from visibility', () => {

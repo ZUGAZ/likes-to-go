@@ -2,51 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 
 import { mountBeatOverlay } from '@/content/beat-overlay/mount-beat-overlay';
-import { CollectionBackendLegacy } from '@/mascot/infrastructure/collection-backend-legacy';
 import { createMascotVisibility } from '@/mascot/visibility';
 import { silentLoggerLayer } from '@/test/effect-log-test';
-
-const { listenForStateUpdatesMock } = vi.hoisted(() => {
-	const stopListening = vi.fn();
-	const listenForStateUpdates = vi.fn(
-		(callback: (payload: unknown) => void) => {
-			void callback;
-			return stopListening;
-		},
-	);
-	return { listenForStateUpdatesMock: listenForStateUpdates };
-});
-
-const { getStateMock, sendToBackgroundMock } = vi.hoisted(() => ({
-	getStateMock: vi.fn(() =>
-		Effect.succeed({
-			status: 'idle',
-			trackCount: 0,
-			message: undefined,
-		}),
-	),
-	sendToBackgroundMock: vi.fn(() => Effect.succeed(undefined)),
-}));
+import { makeFakeCollectionBackend } from '@/test/fake-collection-backend';
 
 const { getResolvedPopupThemeMock } = vi.hoisted(() => ({
 	getResolvedPopupThemeMock: vi.fn(() => Effect.succeed('light' as const)),
-}));
-
-vi.mock('@/common/infrastructure/chrome-messaging', () => ({
-	getState: getStateMock,
-	sendToBackgroundEffect: sendToBackgroundMock,
-	decodeGetStateResponse: () =>
-		Effect.succeed({
-			status: 'idle',
-			trackCount: 0,
-			message: undefined,
-		}),
-}));
-
-vi.mock('@/common/infrastructure/listen-for-state-updates', () => ({
-	listenForStateUpdatesEffect: vi.fn((callback: (payload: unknown) => void) =>
-		Effect.sync(() => listenForStateUpdatesMock(callback)),
-	),
 }));
 
 vi.mock('@/common/infrastructure/get-resolved-popup-theme', () => ({
@@ -101,8 +62,9 @@ describe('mountBeatOverlay', () => {
 
 		const ctx = new ContentScriptContext('likes');
 
+		const fake = await Effect.runPromise(makeFakeCollectionBackend);
 		const managed = ManagedRuntime.make(
-			CollectionBackendLegacy.pipe(Layer.provideMerge(silentLoggerLayer)),
+			fake.layer.pipe(Layer.provideMerge(silentLoggerLayer)),
 		);
 		const runtime = await managed.runtime();
 		const visibility = createMascotVisibility(false);

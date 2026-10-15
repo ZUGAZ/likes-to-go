@@ -467,12 +467,9 @@ describe('background rpc handlers', () => {
 			expect(Exit.isFailure(downloadExit)).toBe(true);
 			expect(steps).toEqual([
 				'unblocked',
-				'NotifyPopup',
 				'CheckLogin',
 				'SelectCollectionTab',
-				'NotifyPopup',
 				'SendStartToTab',
-				'NotifyPopup',
 			]);
 			const state = yield* StateRefTag.pipe(
 				Effect.flatMap(SubscriptionRef.get),

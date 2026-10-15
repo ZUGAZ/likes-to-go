@@ -63,8 +63,9 @@ describe('collection-transition', () => {
 		it('StartCollection notifies popup then emits CheckLogin', () => {
 			const result = transition(initialCollectionState, StartCollection());
 
-			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
-			expect(result.commands[1]).toMatchObject({ _tag: 'CheckLogin' });
+			expect(result.commands.map((command) => command._tag)).toEqual([
+				'CheckLogin',
+			]);
 		});
 
 		it('Idle + GetStateRequested emits source and login checks without state change', () => {
@@ -184,8 +185,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: LOGIN_REQUIRED_MESSAGE,
 			});
-			expect(result.commands).toHaveLength(1);
-			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.commands.map((command) => command._tag)).toEqual([]);
 		});
 
 		it('Collecting + LoginRequired transitions to ErrorState without closing tab', () => {
@@ -203,7 +203,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: LOGIN_REQUIRED_MESSAGE,
 			});
-			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+			expect(result.commands.map((c) => c._tag)).toEqual([]);
 		});
 
 		it('CollectingRequested + TabCreated transitions to Collecting and notifies popup', () => {
@@ -213,7 +213,7 @@ describe('collection-transition', () => {
 			).state;
 			const result = transition(collectingRequested, TabCreated({ tabId: 7 }));
 
-			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.commands.map((command) => command._tag)).toEqual([]);
 			expect(result.state).toMatchObject({
 				_tag: 'Collecting',
 				tabId: 7,
@@ -235,11 +235,9 @@ describe('collection-transition', () => {
 				}),
 			);
 
-			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
-			expect(result.commands[1]).toMatchObject({
-				_tag: 'SendStartToTab',
-				tabId: 7,
-			});
+			expect(result.commands).toMatchObject([
+				{ _tag: 'SendStartToTab', tabId: 7 },
+			]);
 			expect(result.state).toMatchObject({
 				_tag: 'Collecting',
 				sourceUrl: 'https://soundcloud.com/artist/track',
@@ -255,7 +253,7 @@ describe('collection-transition', () => {
 			const result = transition(collecting, CollectionComplete());
 
 			expect(result.state).toMatchObject({ _tag: 'Done' });
-			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+			expect(result.commands.map((c) => c._tag)).toEqual([]);
 		});
 
 		it('Collecting + CollectionError transitions to ErrorState without closing tab', () => {
@@ -273,7 +271,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: 'Could not read your likes list',
 			});
-			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+			expect(result.commands.map((c) => c._tag)).toEqual([]);
 		});
 
 		it('Collecting + CollectionSourceInvalidated transitions to ErrorState and cancels content without closing tab', () => {
@@ -295,10 +293,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
 			});
-			expect(result.commands.map((c) => c._tag)).toEqual([
-				'SendCancelToTab',
-				'NotifyPopup',
-			]);
+			expect(result.commands.map((c) => c._tag)).toEqual(['SendCancelToTab']);
 		});
 
 		it('Collecting + SendToTabFailed transitions to ErrorState without closing tab', () => {
@@ -316,7 +311,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: 'Could not open or talk to the likes page',
 			});
-			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+			expect(result.commands.map((c) => c._tag)).toEqual([]);
 		});
 
 		it('Collecting + CancelCollection cancels content without closing tab', () => {
@@ -325,10 +320,7 @@ describe('collection-transition', () => {
 			const result = transition(collecting, CancelCollection());
 
 			expect(result.state).toMatchObject({ _tag: 'Idle' });
-			expect(result.commands.map((c) => c._tag)).toEqual([
-				'SendCancelToTab',
-				'NotifyPopup',
-			]);
+			expect(result.commands.map((c) => c._tag)).toEqual(['SendCancelToTab']);
 		});
 
 		it('Collecting + visibility pause transitions to Paused and notifies popup', () => {
@@ -340,8 +332,7 @@ describe('collection-transition', () => {
 			expect(isPaused(result.state)).toBe(true);
 			expect(response.status).toBe('paused');
 			expect(response.message).toBe(COLLECTION_VISIBILITY_PAUSED_MESSAGE);
-			expect(result.commands).toHaveLength(1);
-			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.commands.map((command) => command._tag)).toEqual([]);
 		});
 
 		it('Paused + visibility resume transitions back to Collecting and notifies popup', () => {
@@ -353,8 +344,7 @@ describe('collection-transition', () => {
 
 			expect(response.status).toBe('collecting');
 			expect(response.message).toBeUndefined();
-			expect(result.commands).toHaveLength(1);
-			expect(result.commands[0]).toMatchObject({ _tag: 'NotifyPopup' });
+			expect(result.commands.map((command) => command._tag)).toEqual([]);
 		});
 
 		it('Paused + TracksBatch keeps paused status and appends tracks', () => {
@@ -392,7 +382,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: 'Could not read your likes list',
 			});
-			expect(result.commands.map((c) => c._tag)).toEqual(['NotifyPopup']);
+			expect(result.commands.map((c) => c._tag)).toEqual([]);
 		});
 
 		it('Paused + CollectionSourceInvalidated transitions to ErrorState and cancels content without closing tab', () => {
@@ -417,10 +407,7 @@ describe('collection-transition', () => {
 				_tag: 'Error',
 				message: COLLECTION_SOURCE_INVALIDATED_MESSAGE,
 			});
-			expect(result.commands.map((c) => c._tag)).toEqual([
-				'SendCancelToTab',
-				'NotifyPopup',
-			]);
+			expect(result.commands.map((c) => c._tag)).toEqual(['SendCancelToTab']);
 		});
 
 		it('Paused + CancelCollection cancels content without closing tab', () => {
@@ -432,10 +419,7 @@ describe('collection-transition', () => {
 			const result = transition(paused, CancelCollection());
 
 			expect(result.state).toMatchObject({ _tag: 'Idle' });
-			expect(result.commands.map((c) => c._tag)).toEqual([
-				'SendCancelToTab',
-				'NotifyPopup',
-			]);
+			expect(result.commands.map((c) => c._tag)).toEqual(['SendCancelToTab']);
 		});
 	});
 
@@ -521,9 +505,7 @@ describe('collection-transition', () => {
 
 			expect(isSaving(result.state)).toBe(true);
 			expect(hasTracks(result.state) && result.state.tracks.length).toBe(1);
-			expect(result.commands.map((command) => command._tag)).toEqual([
-				'NotifyPopup',
-			]);
+			expect(result.commands.map((command) => command._tag)).toEqual([]);
 		});
 
 		it('Saving + DownloadSucceeded goes Idle', () => {

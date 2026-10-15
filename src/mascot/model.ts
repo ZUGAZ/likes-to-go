@@ -1,4 +1,4 @@
-import type { CollectionStatus } from '@/common/model/request-message';
+import type { CollectionStatus } from '@/common/model/collection/collection-status';
 import type { Source } from '@/common/model/source';
 import {
 	poseForState,

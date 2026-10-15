@@ -2,12 +2,12 @@ import { describe, expect, it } from '@effect/vitest';
 import { Context, Deferred, Effect, Exit, Fiber, Layer, Option } from 'effect';
 import { afterEach, vi } from 'vitest';
 
-import { SendToBackgroundFailed } from '@/common/infrastructure/send-to-background';
 import { LOGIN_REQUIRED_MESSAGE } from '@/common/model/collection/login-required-message';
 import { BackgroundSenderTag } from '@/content/infrastructure/background-sender';
 import type { BackgroundSender } from '@/content/infrastructure/background-sender';
 import { MascotControlsTag } from '@/content/mascot-controls';
 import { EMPTY_LIKES_LIST_MESSAGE } from '@/content/model/collection-error-messages';
+import { SendToBackgroundFailed } from '@/content/model/send-to-background-failed';
 import {
 	PageCollectionLive,
 	PageCollectionTag,

@@ -9,7 +9,6 @@ import {
 	DocumentVisibilityTag,
 	DomScannerTag,
 	ScrollerTag,
-	type SendToBackgroundFailed,
 } from '@/content/infrastructure/collection-services';
 import {
 	initialScanState,
@@ -19,6 +18,7 @@ import {
 	EMPTY_LIKES_LIST_MESSAGE,
 	UNREADABLE_LIKES_LIST_MESSAGE,
 } from '@/content/model/collection-error-messages';
+import type { SendToBackgroundFailed } from '@/content/model/send-to-background-failed';
 import { Data, Effect } from 'effect';
 
 type Completed = { readonly _tag: 'Completed' };

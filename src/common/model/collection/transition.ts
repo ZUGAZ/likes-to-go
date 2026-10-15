@@ -1,7 +1,6 @@
 import type { CollectionCommand } from '@/common/model/collection/command';
 import { CheckLogin } from '@/common/model/collection/commands/check-login';
 import { CheckSource } from '@/common/model/collection/commands/check-source';
-import { NotifyPopup } from '@/common/model/collection/commands/notify-popup';
 import { SelectCollectionTab } from '@/common/model/collection/commands/select-collection-tab';
 import { SendCancelToTab } from '@/common/model/collection/commands/send-cancel-to-tab';
 import { SendStartToTab } from '@/common/model/collection/commands/send-start-to-tab';
@@ -89,7 +88,7 @@ export function transition(
 			const newState = CollectingRequested();
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState }), CheckLogin()],
+				commands: [CheckLogin()],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
@@ -99,7 +98,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isLoginRequired(event)) {
@@ -109,7 +108,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isLoginVerified(event)) {
@@ -128,10 +127,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [
-					NotifyPopup({ state: newState }),
-					SendStartToTab({ tabId: event.tabId }),
-				],
+				commands: [SendStartToTab({ tabId: event.tabId })],
 			};
 		}
 		if (isTabCreated(event)) {
@@ -143,7 +139,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isTabCreateFailed(event)) {
@@ -153,7 +149,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isLoginVerified(event)) {
@@ -169,14 +165,14 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		return { state: current, commands: [] };
@@ -192,7 +188,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionCompleteEvent(event)) {
@@ -202,7 +198,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionVisibilityPausedEvent(event)) {
@@ -214,7 +210,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionVisibilityResumedEvent(event)) {
@@ -227,7 +223,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionSourceInvalidatedEvent(event)) {
@@ -240,10 +236,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [
-					SendCancelToTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [SendCancelToTab({ tabId: current.tabId })],
 			};
 		}
 		if (isLoginRequired(event)) {
@@ -253,17 +246,14 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [
-					SendCancelToTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [SendCancelToTab({ tabId: current.tabId })],
 			};
 		}
 		if (isSendToTabFailed(event)) {
@@ -273,7 +263,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		return { state: current, commands: [] };
@@ -289,7 +279,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionVisibilityResumedEvent(event)) {
@@ -301,7 +291,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionVisibilityPausedEvent(event)) {
@@ -314,7 +304,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionErrorEvent(event)) {
@@ -324,7 +314,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCollectionSourceInvalidatedEvent(event)) {
@@ -337,10 +327,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [
-					SendCancelToTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [SendCancelToTab({ tabId: current.tabId })],
 			};
 		}
 		if (isLoginRequired(event)) {
@@ -350,17 +337,14 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [
-					SendCancelToTab({ tabId: current.tabId }),
-					NotifyPopup({ state: newState }),
-				],
+				commands: [SendCancelToTab({ tabId: current.tabId })],
 			};
 		}
 		if (isSendToTabFailed(event)) {
@@ -370,7 +354,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		return { state: current, commands: [] };
@@ -384,14 +368,14 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		return { state: current, commands: [] };
@@ -402,7 +386,7 @@ export function transition(
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isDownloadCancelledEvent(event)) {
@@ -412,7 +396,7 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isDownloadFailedEvent(event)) {
@@ -422,14 +406,14 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		return { state: current, commands: [] };
@@ -452,21 +436,21 @@ export function transition(
 			});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isCancelCollectionEvent(event)) {
 			const newState = Idle({});
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState })],
+				commands: [],
 			};
 		}
 		if (isStartCollectionEvent(event)) {
 			const newState = CollectingRequested();
 			return {
 				state: newState,
-				commands: [NotifyPopup({ state: newState }), CheckLogin()],
+				commands: [CheckLogin()],
 			};
 		}
 		if (isLoginVerified(event)) {

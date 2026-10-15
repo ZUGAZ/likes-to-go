@@ -1,41 +1,26 @@
-import { Schema } from 'effect';
-
 import {
-	CollectingStateSchema,
 	isCollecting,
+	type Collecting,
 } from '@/common/model/collection/states/collecting';
-import { CollectingRequestedSchema } from '@/common/model/collection/states/collecting-requested';
-import { DoneStateSchema, isDone } from '@/common/model/collection/states/done';
-import { ErrorStateSchema } from '@/common/model/collection/states/error-state';
-import { IdleSchema } from '@/common/model/collection/states/idle';
-import {
-	PausedStateSchema,
-	isPaused,
-} from '@/common/model/collection/states/paused';
-import {
-	SavingStateSchema,
-	isSaving,
-} from '@/common/model/collection/states/saving';
+import type { CollectingRequested } from '@/common/model/collection/states/collecting-requested';
+import { isDone, type Done } from '@/common/model/collection/states/done';
+import type { ErrorState } from '@/common/model/collection/states/error-state';
+import type { Idle } from '@/common/model/collection/states/idle';
+import { isPaused, type Paused } from '@/common/model/collection/states/paused';
+import { isSaving, type Saving } from '@/common/model/collection/states/saving';
 
-export const CollectionStateSchema = Schema.Union(
-	IdleSchema,
-	CollectingRequestedSchema,
-	CollectingStateSchema,
-	PausedStateSchema,
-	DoneStateSchema,
-	SavingStateSchema,
-	ErrorStateSchema,
-);
-
-export type CollectionState = Schema.Schema.Type<typeof CollectionStateSchema>;
+export type CollectionState =
+	| Idle
+	| CollectingRequested
+	| Collecting
+	| Paused
+	| Done
+	| Saving
+	| ErrorState;
 
 export function hasTracks(
 	state: CollectionState,
-): state is
-	| Schema.Schema.Type<typeof CollectingStateSchema>
-	| Schema.Schema.Type<typeof PausedStateSchema>
-	| Schema.Schema.Type<typeof DoneStateSchema>
-	| Schema.Schema.Type<typeof SavingStateSchema> {
+): state is Collecting | Paused | Done | Saving {
 	return (
 		isCollecting(state) || isPaused(state) || isDone(state) || isSaving(state)
 	);
