@@ -45,7 +45,7 @@
 	"dependencies": {
 		"@effect/platform": "^0.97.1",
 		"@effect/rpc": "^0.76.2",
-		"browser-extension-kit": "github:ZUGAZ/browser-extension-kit#c4b16d92824e1e8d3b6b0c7349f8bfbd1297ca11",
+		"browser-extension-kit": "github:ZUGAZ/browser-extension-kit#8f0ee84fb523f9058b24068676d5942cae0af082",
 		"effect": "^3.22.1",
 		"solid-js": "^1.9.11",
 		"solid-transition-group": "^0.3.0"

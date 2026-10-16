@@ -15,8 +15,8 @@ importers:
         specifier: ^0.76.2
         version: 0.76.2(@effect/platform@0.97.2(effect@3.22.2))(effect@3.22.2)
       browser-extension-kit:
-        specifier: github:ZUGAZ/browser-extension-kit#c4b16d92824e1e8d3b6b0c7349f8bfbd1297ca11
-        version: https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/c4b16d92824e1e8d3b6b0c7349f8bfbd1297ca11(@effect/platform@0.97.2(effect@3.22.2))(@effect/rpc@0.76.2(@effect/platform@0.97.2(effect@3.22.2))(effect@3.22.2))(@types/chrome@0.1.37)(effect@3.22.2)
+        specifier: github:ZUGAZ/browser-extension-kit#8f0ee84fb523f9058b24068676d5942cae0af082
+        version: https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/8f0ee84fb523f9058b24068676d5942cae0af082(@effect/platform@0.97.2(effect@3.22.2))(@effect/rpc@0.76.2(@effect/platform@0.97.2(effect@3.22.2))(effect@3.22.2))(@types/chrome@0.1.37)(effect@3.22.2)
       effect:
         specifier: ^3.22.1
         version: 3.22.2
@@ -1817,8 +1817,8 @@ packages:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
 
-  browser-extension-kit@https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/c4b16d92824e1e8d3b6b0c7349f8bfbd1297ca11:
-    resolution: {tarball: https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/c4b16d92824e1e8d3b6b0c7349f8bfbd1297ca11}
+  browser-extension-kit@https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/8f0ee84fb523f9058b24068676d5942cae0af082:
+    resolution: {tarball: https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/8f0ee84fb523f9058b24068676d5942cae0af082}
     version: 0.1.0
     peerDependencies:
       '@effect/platform': ^0.97.1
@@ -5421,7 +5421,7 @@ snapshots:
     dependencies:
       fill-range: 7.1.1
 
-  browser-extension-kit@https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/c4b16d92824e1e8d3b6b0c7349f8bfbd1297ca11(@effect/platform@0.97.2(effect@3.22.2))(@effect/rpc@0.76.2(@effect/platform@0.97.2(effect@3.22.2))(effect@3.22.2))(@types/chrome@0.1.37)(effect@3.22.2):
+  browser-extension-kit@https://codeload.github.com/ZUGAZ/browser-extension-kit/tar.gz/8f0ee84fb523f9058b24068676d5942cae0af082(@effect/platform@0.97.2(effect@3.22.2))(@effect/rpc@0.76.2(@effect/platform@0.97.2(effect@3.22.2))(effect@3.22.2))(@types/chrome@0.1.37)(effect@3.22.2):
     dependencies:
       '@effect/platform': 0.97.2(effect@3.22.2)
       '@effect/rpc': 0.76.2(@effect/platform@0.97.2(effect@3.22.2))(effect@3.22.2)
